@@ -5,7 +5,7 @@ import io
 import requests
 import psycopg2
 from psycopg2.extras import execute_values
-# ======================================================
+# ======================================================testtest
 # CONFIG
 # =======================================================stevennnnnnnn
 BATCH_SIZE = 10_000  # copy in grote chunks
