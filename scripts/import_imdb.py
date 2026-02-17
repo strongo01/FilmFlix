@@ -6,7 +6,7 @@ import requests
 import psycopg2
 from psycopg2.extras import execute_values
 # ======================================================testtest
-# CONFIG
+# CONFIGpp
 # =======================================================stevennnnnnnn
 BATCH_SIZE = 10_000  # copy in grote chunks
 TEST_LIMIT = None     # zet bv 10_000 voor testen
