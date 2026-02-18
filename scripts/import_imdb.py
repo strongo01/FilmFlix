@@ -13,6 +13,8 @@ csv.field_size_limit(sys.maxsize)
 # =======================================================
 BATCH_SIZE = 10_000  # copy in grote chunks
 TEST_LIMIT = None     # zet bv 10_000 voor testen
+ROLE_ACTOR = 1
+ROLE_DIRECTOR = 2
 
 IMDB = "https://datasets.imdbws.com"
 URLS = {
@@ -114,8 +116,7 @@ def safe_int(val):
 def insert_titles_batch(conn, rows):
     if not rows:
         return
-    cols = ("tconst","title_type","primary_title","original_title",
-            "start_year","end_year","runtime_minutes","genres")
+    cols = ("tconst","title_type","primary_title", "start_year","end_year","runtime_minutes","genres")
     q = f"INSERT INTO titles ({', '.join(cols)}) VALUES %s ON CONFLICT DO NOTHING"
     with conn.cursor() as cur:
         execute_values(cur, q, rows, page_size=1000)
@@ -132,78 +133,82 @@ def get_needed_nconsts(conn):
         """)
         return {row[0] for row in cur.fetchall()}
 
-def import_names():
+def import_names(allowed_tconsts):
     conn = connect_db()
     staging = f"names_staging_{os.getpid()}"
 
-    # Gebruik een tijdelijke staging-tabel (session-local) om persistente duplicaten te vermijden
     with conn.cursor() as cur:
-        cur.execute(f"""
-            CREATE TEMP TABLE IF NOT EXISTS {staging} (
-                nconst text,
-                primary_name text,
-                known_for_titles text[]
-            );
+        cur.execute(f"CREATE TEMP TABLE IF NOT EXISTS {staging} (nconst text, primary_name text, known_for_titles text[]);")
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS names (
+            nconst char(9) PRIMARY KEY,
+            primary_name text,
+            known_for_title text
+        );
         """)
+
+
         conn.commit()
 
-    # 1) bepaal welke nconsts we willen (uit crew EN principals)
-    needed = get_needed_nconsts(conn)
-    needed = set(needed)
+    # bepaal welke nconsts we willen (uit crew en principals)
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT unnest(directors) AS nconst FROM title_crew WHERE directors IS NOT NULL
+            UNION
+            SELECT DISTINCT unnest(writers)   AS nconst FROM title_crew WHERE writers IS NOT NULL
+            UNION
+            SELECT DISTINCT nconst FROM title_principals;
+        """)
+        needed = {row[0] for row in cur.fetchall()}
+
     if not needed:
-        print("📛 Geen crew-namen gevonden in title_crew, niets te importeren.")
+        print("📛 Geen relevante nconsts gevonden.")
         conn.close()
         return
 
-    print(f"🔎 {len(needed)} unieke nconsts gevonden in title_crew — importeert alleen die.")
-
     buffer = []
     count = 0
+    allowed = set(allowed_tconsts) if allowed_tconsts is not None else None
+
     for r in imdb_reader(URLS["names"]):
         nconst = r["nconst"]
         if nconst not in needed:
             continue
 
-        buffer.append((
-            nconst,
-            clean_text(r["primaryName"]),
-            None if r["knownForTitles"] == "\\N" else r["knownForTitles"].split(","),
-        ))
+        kft_raw = r.get("knownForTitles")
+        if kft_raw == "\\N" or not kft_raw:
+            kft = None
+        else:
+            kft_list = kft_raw.split(",")
+            if allowed is not None:
+                # only keep up to 2 allowed tconsts
+                kft_filtered = [t for t in kft_list if t in allowed][:2]
+                kft = kft_filtered if kft_filtered else None
+            else:
+                kft = kft_list[:2]  # keep at most 2
+
+        buffer.append((nconst, clean_text(r["primaryName"]), kft))
         count += 1
 
         if len(buffer) >= BATCH_SIZE:
-            copy_to_table(conn, staging,
-                          ["nconst","primary_name","known_for_titles"],
-                          buffer)
-            print(f"👤 names staged: {count}")
+            copy_to_table(conn, staging, ["nconst","primary_name","known_for_titles"], buffer)
             buffer.clear()
 
         if TEST_LIMIT and count >= TEST_LIMIT:
             break
 
-    # final batch
     if buffer:
-        copy_to_table(conn, staging,
-                      ["nconst","primary_name","known_for_titles"],
-                      buffer)
-        print(f"👤 names staged: {count} (final batch)")
+        copy_to_table(conn, staging, ["nconst","primary_name","known_for_titles"], buffer)
 
-    # upsert naar final table — maak de eindtabel aan als die ontbreekt
+    # upsert to final names table; keep previous known_for_titles if new is NULL
     with conn.cursor() as cur:
-        cur.execute(f"""
-            CREATE TABLE IF NOT EXISTS names (
-                nconst text PRIMARY KEY,
-                primary_name text,
-                known_for_titles text[]
-            );
-        """)
-        cur.execute(f"""
+        cur.execute("""
             INSERT INTO names (nconst, primary_name, known_for_titles)
-            SELECT nconst, primary_name, known_for_titles
-            FROM {staging}
-            ON CONFLICT (nconst) DO UPDATE
-              SET primary_name = EXCLUDED.primary_name;
-        """)
+            SELECT nconst, primary_name, known_for_titles FROM {stg}
+            ON CONFLICT (nconst) DO UPDATE SET
+              primary_name = EXCLUDED.primary_name,
+              known_for_titles = COALESCE(EXCLUDED.known_for_titles, names.known_for_titles);
+        """.replace("{stg}", staging))
         conn.commit()
 
     conn.close()
@@ -215,13 +220,12 @@ def import_principals(allowed_tconsts):
     conn = connect_db()
     staging = f"principals_staging_{os.getpid()}"
 
-    # tijdelijke staging table
     with conn.cursor() as cur:
         cur.execute(f"""
             CREATE TEMP TABLE {staging} (
                 tconst text,
                 nconst text,
-                characters text[]
+                role smallint
             );
         """)
         conn.commit()
@@ -236,24 +240,23 @@ def import_principals(allowed_tconsts):
 
         cat = r["category"]
         if cat not in ALLOWED_PRINCIPAL_CATEGORIES:
-            continue   # sla alle niet-relevante rollen over
+            continue
 
-        buffer.append((
-            tconst,
-            r["nconst"],
-            None if r["characters"] == "\\N"
-                else [c.strip(' "') for c in r["characters"].strip("[]").split(",")],
-        ))
+        # 🎭 role mapping
+        if cat in ("actor", "actress"):
+            role = ROLE_ACTOR
+        elif cat == "director":
+            role = ROLE_DIRECTOR
+        else:
+            continue
+
+        buffer.append((tconst, r["nconst"], role))
+
 
         count += 1
 
         if len(buffer) >= BATCH_SIZE:
-            copy_to_table(
-                conn,
-                staging,
-                ["tconst","nconst","characters"],
-                buffer
-            )
+            copy_to_table(conn, staging, ["tconst","nconst","role"], buffer)
             print(f"🎭 principals staged: {count}")
             buffer.clear()
 
@@ -261,27 +264,21 @@ def import_principals(allowed_tconsts):
             break
 
     if buffer:
-        copy_to_table(
-            conn,
-            staging,
-            ["tconst","nconst","characters"],
-            buffer
-        )
-        print(f"🎭 principals staged: {count} (final batch)")
+        copy_to_table(conn, staging, ["tconst","nconst","role"], buffer)
 
-    # definitieve tabel + insert
     with conn.cursor() as cur:
         cur.execute("""
             CREATE TABLE IF NOT EXISTS title_principals (
                 tconst text,
                 nconst text,
-                characters text[]
+                role smallint
             );
+
         """)
         cur.execute("TRUNCATE title_principals;")
         cur.execute(f"""
-            INSERT INTO title_principals
-            SELECT * FROM {staging};
+            INSERT INTO title_principals (tconst, nconst, role)
+            SELECT tconst, nconst, role FROM {staging};
         """)
         conn.commit()
 
@@ -299,7 +296,6 @@ def import_titles():
                 tconst text PRIMARY KEY,
                 title_type text,
                 primary_title text,
-                original_title text,
                 start_year integer,
                 end_year integer,
                 runtime_minutes integer,
@@ -318,7 +314,7 @@ def import_titles():
         # ❌ Filters
         if title_type not in ("movie", "tvSeries", "tvMiniSeries"):
             continue
-        if start_year is None or start_year < 1980:
+        if start_year is None or start_year < 2000:
             continue
         if runtime is None:
             continue
@@ -329,7 +325,6 @@ def import_titles():
             r["tconst"],
             title_type,
             clean_text(r.get("primaryTitle")),
-            clean_text(r.get("originalTitle")),
             start_year,
             safe_int(r.get("endYear")),
             runtime,
@@ -502,7 +497,7 @@ if __name__ == "__main__":
     import_principals(allowed_tconsts)
 
     # names (after principals so we catch those nconsts too)
-    import_names()
+    import_names(allowed_tconsts)
     # 4️⃣ Ratings
     import_ratings()
 
