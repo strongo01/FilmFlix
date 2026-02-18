@@ -14,23 +14,6 @@ jobs:
   import:
     name: Run IMDb import
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        ports: ['5432:5432']
-        env:
-          POSTGRES_DB: filmflix
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd "pg_isready -U postgres -d filmflix"
-          --health-interval 10s --health-timeout 5s --health-retries 5
-    env:
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_NAME: filmflix
-      DB_USER: postgres
-      DB_PASSWORD: postgres
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,6 +28,12 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run import script against local Postgres service
+      - name: Run import script
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
         run: |
           python scripts/import_imdb.py
