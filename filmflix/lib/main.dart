@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(const FilmFlixApp());
@@ -31,7 +35,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeIn;
   late Animation<double> _scaleIn;
@@ -46,15 +51,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     )..forward();
 
     _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.7, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      ),
     );
 
     _scaleIn = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.1, 0.8, curve: Curves.easeOutCubic)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.1, 0.8, curve: Curves.easeOutCubic),
+      ),
     );
 
     _curtainOpen = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeInOutCubic)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeInOutCubic),
+      ),
     );
   }
 
@@ -126,12 +140,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               children: [
                                 // Linker gordijn
                                 Transform.translate(
-                                  offset: Offset(-300 * (1 - _curtainOpen.value), 0),
+                                  offset: Offset(
+                                    -300 * (1 - _curtainOpen.value),
+                                    0,
+                                  ),
                                   child: const _CurtainSide(isLeft: true),
                                 ),
                                 // Rechter gordijn
                                 Transform.translate(
-                                  offset: Offset(300 * (1 - _curtainOpen.value), 0),
+                                  offset: Offset(
+                                    300 * (1 - _curtainOpen.value),
+                                    0,
+                                  ),
                                   child: const _CurtainSide(isLeft: false),
                                 ),
                                 // Logo / titel
@@ -183,13 +203,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
                 // Hoofd acties – strak, premium look
                 _ActionButton(
-                  label: 'Nu Afspelen',
-                  icon: Icons.play_circle_fill_rounded,
-                  color: const Color(0xFFD4AF37),
-                  isPrimary: true,
-                  onPressed: () => print('Start afspelen'),
+                  label: 'Bioscopen',
+                  icon: Icons.map_rounded,
+                  color: Colors.white,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CinemaMapScreen(),
+                      ),
+                    );
+                  },
                 ),
-                const SizedBox(height: 20),
+
                 _ActionButton(
                   label: 'Bladeren',
                   icon: Icons.grid_view_rounded,
@@ -330,10 +356,92 @@ class _ActionButton extends StatelessWidget {
                   : BorderSide(color: color.withOpacity(0.5), width: 1.5),
             ),
             elevation: isPrimary ? 12 : 0,
-            shadowColor: isPrimary ? color.withOpacity(0.4) : Colors.transparent,
+            shadowColor: isPrimary
+                ? color.withOpacity(0.4)
+                : Colors.transparent,
           ),
         ),
       ),
+    );
+  }
+}
+
+class CinemaMapScreen extends StatefulWidget {
+  const CinemaMapScreen({super.key});
+
+  @override
+  State<CinemaMapScreen> createState() => _CinemaMapScreenState();
+}
+
+class _CinemaMapScreenState extends State<CinemaMapScreen> {
+  final LatLng center = LatLng(52.0907, 5.1214); // Utrecht
+  List<Marker> markers = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadCinemas();
+  }
+
+  Future<void> loadCinemas() async {
+    final cinemas = await fetchCinemas();
+    final cinemaMarkers = createCinemaMarkers(cinemas);
+
+    setState(() {
+      markers = cinemaMarkers;
+      loading = false;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> fetchCinemas() async {
+    final query = '''
+  [out:json][timeout:25];
+  area["ISO3166-1"="NL"][admin_level=2];
+  (
+    node["amenity"="cinema"](area);
+    way["amenity"="cinema"](area);
+    relation["amenity"="cinema"](area);
+  );
+  out center;
+  ''';
+
+    final url = Uri.parse('https://overpass-api.de/api/interpreter');
+    final response = await http.post(url, body: {'data': query});
+    final data = jsonDecode(response.body);
+
+    return List<Map<String, dynamic>>.from(data['elements']);
+  }
+
+  List<Marker> createCinemaMarkers(List<Map<String, dynamic>> cinemas) {
+    return cinemas.map((cinema) {
+      return Marker(
+        width: 40,
+        height: 40,
+        point: LatLng(cinema['lat'], cinema['lon']),
+        child: const Icon(Icons.local_movies, color: Colors.red, size: 32),
+      );
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Bioscopen in de buurt"),
+        backgroundColor: Colors.black,
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : FlutterMap(
+              options: MapOptions(initialCenter: center, initialZoom: 13),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                ),
+                MarkerLayer(markers: markers),
+              ],
+            ),
     );
   }
 }
