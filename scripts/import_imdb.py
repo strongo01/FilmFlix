@@ -139,11 +139,29 @@ def import_names(allowed_tconsts):
 
     with conn.cursor() as cur:
         cur.execute(f"CREATE TEMP TABLE IF NOT EXISTS {staging} (nconst text, primary_name text, known_for_titles text[]);")
+        
+        # Migration: rename column, change types if old version exists
+        cur.execute("""
+            DO $$
+            BEGIN
+                -- Fix column name and type for known_for_titles
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='names' AND column_name='known_for_title') THEN
+                    ALTER TABLE names RENAME COLUMN known_for_title TO known_for_titles;
+                    ALTER TABLE names ALTER COLUMN known_for_titles TYPE text[] USING string_to_array(known_for_titles, ',');
+                END IF;
+                
+                -- Fix nconst type if it was created as char(9)
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='names' AND column_name='nconst' AND data_type='character') THEN
+                    ALTER TABLE names ALTER COLUMN nconst TYPE text;
+                END IF;
+            END $$;
+        """)
+
         cur.execute("""
         CREATE TABLE IF NOT EXISTS names (
-            nconst char(9) PRIMARY KEY,
+            nconst text PRIMARY KEY,
             primary_name text,
-            known_for_title text
+            known_for_titles text[]
         );
         """)
 
