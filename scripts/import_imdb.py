@@ -10,7 +10,7 @@ from psycopg2.extras import execute_values
 csv.field_size_limit(sys.maxsize)
 # ======================================================
 # CONFIG
-# =======================================================
+# =======================================================test
 BATCH_SIZE = 10_000  # copy in grote chunks
 TEST_LIMIT = None     # zet bv 10_000 voor testen
 ROLE_ACTOR = 1
