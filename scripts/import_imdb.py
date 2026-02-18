@@ -188,14 +188,14 @@ def import_names(allowed_tconsts):
 
     # upsert to final names table; keep previous known_for_titles if new is NULL
     with conn.cursor() as cur:
-        cur.execute("""
+        cur.execute("TRUNCATE names;")
+        cur.execute(f"""
             INSERT INTO names (nconst, primary_name, known_for_titles)
-            SELECT nconst, primary_name, known_for_titles FROM {stg}
-            ON CONFLICT (nconst) DO UPDATE SET
-              primary_name = EXCLUDED.primary_name,
-              known_for_titles = COALESCE(EXCLUDED.known_for_titles, names.known_for_titles);
-        """.replace("{stg}", staging))
+            SELECT nconst, primary_name, known_for_titles
+            FROM {staging};
+        """)
         conn.commit()
+
 
     conn.close()
     print(f"✅ names import klaar — {count} records verwerkt.")
