@@ -1,7 +1,13 @@
 import postgres from 'postgres'
 
-const connectionString = process.env.DATABASE_URL
-const sql = postgres(connectionString)
+let sql;
+if (!global.sql) {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is not defined');
+  }
+  global.sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
+}
+sql = global.sql;
 
 export default async function handler(req, res) {
   const {
