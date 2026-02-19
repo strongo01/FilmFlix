@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     output_language = 'en',
 
     title,
-    show_type = 'movie',
+    show_type,
     id,
 
     rating_min = 0,
