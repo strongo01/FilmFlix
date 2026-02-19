@@ -1,5 +1,6 @@
 //BURAK
 import 'package:flutter/material.dart';
+import 'foodscreen.dart';
 
 void main() {
   runApp(const FilmFlixApp());
@@ -203,6 +204,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   icon: Icons.bookmark_rounded,
                   color: Colors.white70,
                   onPressed: () => print('Mijn lijst openen'),
+                ),
+
+                const SizedBox(height: 20),
+                _ActionButton(
+                  label: 'Eten',
+                  icon: Icons.fastfood_rounded,
+                  color: Colors.white,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const FoodScreen()),
+                  ),
                 ),
 
                 const Spacer(flex: 4),
