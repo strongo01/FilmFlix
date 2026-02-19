@@ -1,12 +1,7 @@
-import postgres from 'postgres';
+import postgres from 'postgres'
 
-const connectionString = process.env.DATABASE_URL;
-
-// Shared / transaction pooler → perfect voor serverless
-const sql = postgres(connectionString, {
-  ssl: 'require',
-});
-
+const connectionString = process.env.DATABASE_URL
+const sql = postgres(connectionString)
 
 export default async function handler(req, res) {
   const {
@@ -46,6 +41,11 @@ export default async function handler(req, res) {
     omdb_type,
     r = 'json',
     page = 1,
+
+    // ======================
+    // Supabase
+    // ======================
+    tconst, // filter per tconst als gewenst
   } = req.query;
 
   const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
@@ -157,18 +157,47 @@ export default async function handler(req, res) {
       });
   }
 
+  // ======================
+  // SUPABASE — FETCH TITLES + RATINGS
+  // ======================
+  else if (type === 'supabase-titles') {
+    try {
+      // Optioneel filteren op tconst
+      const titlesQuery = tconst
+        ? sql`SELECT * FROM titles WHERE tconst = ${tconst}`
+        : sql`SELECT * FROM titles`;
+
+      const ratingsQuery = tconst
+        ? sql`SELECT * FROM title_ratings WHERE tconst = ${tconst}`
+        : sql`SELECT * FROM title_ratings`;
+
+      const titles = await titlesQuery;
+      const ratings = await ratingsQuery;
+
+      return res.status(200).json({ titles, ratings });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Supabase query failed' });
+    }
+  }
+
   else {
     return res.status(400).json({
       error: 'Invalid type',
     });
   }
 
-  try {
-    const response = await fetch(url, { headers });
-    const data = await response.json();
-    res.status(200).json(data);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'External API request failed' });
+  // ======================
+  // FETCH EXTERNAL API (RapidAPI / OMDb)
+  // ======================
+  if (url) {
+    try {
+      const response = await fetch(url, { headers });
+      const data = await response.json();
+      res.status(200).json(data);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'External API request failed' });
+    }
   }
 }
