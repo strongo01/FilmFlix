@@ -1,4 +1,21 @@
-//STEVEN
+import 'package:flutter/material.dart';
 
-//thuisbezorgd: https://www.thuisbezorgd.nl/bestellen/eten/leidsche-rijn-3543?q=hotdog
-// q={XXXXX} die XXXXX is de zoekterm, in dit geval hotdog. Je kan hier ook meerdere woorden gebruiken, bijvoorbeeld: hotdog met friet, dan wordt het q=hotdog+met+friet.
+class FoodScreen extends StatelessWidget {
+	const FoodScreen({super.key});
+
+	@override
+	Widget build(BuildContext context) {
+		return Scaffold(
+			appBar: AppBar(
+				title: const Text('Food'),
+			),
+			body: const Center(
+				child: Text(
+					'Welkom op het Food scherm. Simpele tekst hier.',
+					style: TextStyle(fontSize: 20),
+					textAlign: TextAlign.center,
+				),
+			),
+		);
+	}
+}
