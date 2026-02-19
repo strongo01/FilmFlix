@@ -19,7 +19,7 @@ IMDB = "https://datasets.imdbws.com"
 URLS = {
     "titles": f"{IMDB}/title.basics.tsv.gz",
     "ratings": f"{IMDB}/title.ratings.tsv.gz",
-    "names": f"{IMDB}/name.basics.tsv.gz",
+    #"names": f"{IMDB}/name.basics.tsv.gz",
 }
 
 # ======================================================
@@ -115,91 +115,6 @@ def insert_titles_batch(conn, rows):
     q = f"INSERT INTO titles ({', '.join(cols)}) VALUES %s ON CONFLICT DO NOTHING"
     with conn.cursor() as cur:
         execute_values(cur, q, rows, page_size=1000)
-
-## NOTE: Removed get_needed_nconsts usage — we no longer import crew/principals
-def import_names(allowed_tconsts):
-    conn = connect_db()
-    staging = f"names_staging_{os.getpid()}"
-
-    with conn.cursor() as cur:
-        cur.execute(f"CREATE TEMP TABLE IF NOT EXISTS {staging} (nconst text, primary_name text, known_for_titles text[]);")
-        
-        # Migration: rename column, change types if old version exists
-        cur.execute("""
-            DO $$
-            BEGIN
-                -- Fix column name and type for known_for_titles
-                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='names' AND column_name='known_for_title') THEN
-                    ALTER TABLE names RENAME COLUMN known_for_title TO known_for_titles;
-                    ALTER TABLE names ALTER COLUMN known_for_titles TYPE text[] USING string_to_array(known_for_titles, ',');
-                END IF;
-                
-                -- Fix nconst type if it was created as char(9)
-                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='names' AND column_name='nconst' AND data_type='character') THEN
-                    ALTER TABLE names ALTER COLUMN nconst TYPE text;
-                END IF;
-            END $$;
-        """)
-
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS names (
-            nconst text PRIMARY KEY,
-            primary_name text,
-            known_for_titles text[]
-        );
-        """)
-
-
-        conn.commit()
-
-    # import only names that are "known for" titles we kept in `titles`
-    buffer = []
-    count = 0
-    allowed = set(allowed_tconsts) if allowed_tconsts is not None else None
-
-    for r in imdb_reader(URLS["names"]):
-        nconst = r["nconst"]
-
-        kft_raw = r.get("knownForTitles")
-        if kft_raw == "\\N" or not kft_raw:
-            continue
-
-        kft_list = kft_raw.split(",")
-        if allowed is not None:
-            kft_filtered = [t for t in kft_list if t in allowed][:2]
-            if not kft_filtered:
-                continue
-            kft = kft_filtered
-        else:
-            kft = kft_list[:2]
-
-        buffer.append((nconst, clean_text(r["primaryName"]), kft))
-        count += 1
-
-        if len(buffer) >= BATCH_SIZE:
-            copy_to_table(conn, staging, ["nconst","primary_name","known_for_titles"], buffer)
-            buffer.clear()
-
-        if TEST_LIMIT and count >= TEST_LIMIT:
-            break
-
-    if buffer:
-        copy_to_table(conn, staging, ["nconst","primary_name","known_for_titles"], buffer)
-
-    # upsert to final names table; keep previous known_for_titles if new is NULL
-    with conn.cursor() as cur:
-        cur.execute("TRUNCATE names;")
-        cur.execute(f"""
-            INSERT INTO names (nconst, primary_name, known_for_titles)
-            SELECT nconst, primary_name, known_for_titles
-            FROM {staging};
-        """)
-        conn.commit()
-
-
-    conn.close()
-    print(f"✅ names import klaar — {count} records verwerkt.")
-
 
 
 
@@ -383,9 +298,6 @@ if __name__ == "__main__":
     conn = connect_db()
     allowed_tconsts = get_allowed_tconsts(conn)
     conn.close()
-
-    # names (filter based on knownForTitles in `titles`)
-    import_names(allowed_tconsts)
     # 4️⃣ Ratings
     import_ratings()
 
