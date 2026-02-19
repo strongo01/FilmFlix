@@ -67,7 +67,7 @@ export default async function handler(req, res) {
         addParam(params, 'title', title);
         addParam(params, 'series_granularity', series_granularity);
         addParam(params, 'output_language', output_language);
-        addParam(params, 'show_type', show_type); // voeg alleen toe als expliciet
+        addParam(params, 'show_type', show_type); 
 
         url = `https://${RAPID_HOST}/shows/search/title?` + new URLSearchParams(params);
 
