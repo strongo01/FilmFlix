@@ -1,6 +1,5 @@
 import postgres from 'postgres';
 
-// Singleton pattern voor serverless Vercel
 let sql;
 if (!global.sql) {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not defined');
@@ -12,9 +11,7 @@ export default async function handler(req, res) {
   const {
     type,
 
-    // ======================
-    // RAPIDAPI (existing)
-    // ======================
+    // RAPIDAPI 
     country = 'nl',
     series_granularity = 'show',
     output_language = 'en',
@@ -35,9 +32,7 @@ export default async function handler(req, res) {
     order_by,
     order_direction = 'asc',
 
-    // ======================
     // OMDB
-    // ======================
     i,        // IMDb ID
     t,        // title
     s,        // search title
@@ -47,10 +42,8 @@ export default async function handler(req, res) {
     r = 'json',
     page = 1,
 
-    // ======================
     // Supabase
-    // ======================
-    tconst, // filter per tconst als gewenst
+    tconst, 
   } = req.query;
 
   const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
@@ -59,9 +52,7 @@ export default async function handler(req, res) {
   let url;
   let headers = {};
 
-  // ======================
   // RAPIDAPI
-  // ======================
   const RAPID_HOST = 'streaming-availability.p.rapidapi.com';
 
   if (type === 'search') {
@@ -94,34 +85,35 @@ export default async function handler(req, res) {
   }
 
   else if (type === 'filter') {
-    url = `https://${RAPID_HOST}/shows/search/filters?` +
-      new URLSearchParams({
-        country,
-        series_granularity,
-        output_language,
-        show_type,
-        rating_min,
-        rating_max,
-        catalogs,
-        genres,
-        genres_relation,
-        keyword,
-        show_original_language,
-        year_min,
-        year_max,
-        order_by,
-        order_direction,
-      });
+  const queryParams = {
+    country: country || 'nl',
+    series_granularity: series_granularity || 'show',
+    output_language: output_language || 'en',
+    show_type: show_type || 'movie',
+    rating_min: rating_min || 0,
+    rating_max: rating_max || 100,
+    catalogs: catalogs || '',
+    genres: genres || '',
+    genres_relation: genres_relation || 'and',
+    keyword: keyword || '',
+    show_original_language: show_original_language || '',
+    year_min: year_min || '',
+    year_max: year_max || '',
+    order_by: order_by || 'original_title',
+    order_direction: order_direction || 'asc',
+  };
 
-    headers = {
-      'x-rapidapi-key': RAPIDAPI_KEY,
-      'x-rapidapi-host': RAPID_HOST,
-    };
-  }
+  url = `https://${RAPID_HOST}/shows/search/filters?` +
+    new URLSearchParams(queryParams);
 
-  // ======================
+  headers = {
+    'x-rapidapi-key': RAPIDAPI_KEY,
+    'x-rapidapi-host': RAPID_HOST,
+  };
+}
+
+
   // OMDB — GET BY ID OR TITLE
-  // ======================
   else if (type === 'omdb-get') {
     if (!i && !t) {
       return res.status(400).json({
@@ -141,9 +133,7 @@ export default async function handler(req, res) {
       });
   }
 
-  // ======================
   // OMDB — SEARCH
-  // ======================
   else if (type === 'omdb-search') {
     if (!s) {
       return res.status(400).json({
@@ -162,12 +152,9 @@ export default async function handler(req, res) {
       });
   }
 
-  // ======================
   // SUPABASE — FETCH TITLES + RATINGS
-  // ======================
   else if (type === 'supabase-titles') {
     try {
-      // Optioneel filteren op tconst
       const titlesQuery = tconst
         ? sql`SELECT * FROM titles WHERE tconst = ${tconst}`
         : sql`SELECT * FROM titles`;
@@ -192,9 +179,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // ======================
   // FETCH EXTERNAL API (RapidAPI / OMDb)
-  // ======================
   if (url) {
     try {
       const response = await fetch(url, { headers });
