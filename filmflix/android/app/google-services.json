@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "937930146429",
+    "project_id": "assistant-434717",
+    "storage_bucket": "assistant-434717.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937930146429:android:0523280c28d960923fe714",
+        "android_client_info": {
+          "package_name": "com.example.filmflix"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "937930146429-hp8c2dh1airkgopvc0u1clh26qhdusjo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMxeFR3KK385QnKRCCgg3u7YEX9FIofWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "937930146429-hp8c2dh1airkgopvc0u1clh26qhdusjo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
