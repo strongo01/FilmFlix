@@ -44,10 +44,14 @@ export default async function handler(req, res) {
 
         // Supabase
         tconst,
+
+        // TMDB
+        movie_id,
     } = req.query;
 
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     const OMDB_API_KEY = process.env.OMDB_API_KEY;
+    const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
     let url;
     let headers = {};
@@ -67,7 +71,7 @@ export default async function handler(req, res) {
         addParam(params, 'title', title);
         addParam(params, 'series_granularity', series_granularity);
         addParam(params, 'output_language', output_language);
-        addParam(params, 'show_type', show_type); 
+        addParam(params, 'show_type', show_type);
 
         url = `https://${RAPID_HOST}/shows/search/title?` + new URLSearchParams(params);
 
@@ -176,6 +180,21 @@ export default async function handler(req, res) {
             console.error(err);
             return res.status(500).json({ error: 'Supabase query failed' });
         }
+    }
+
+    // TMDB — GET IMAGES
+    else if (type === 'tmdb-images') {
+        if (!movie_id) {
+            return res.status(400).json({
+                error: 'TMDB requires movie_id',
+            });
+        }
+
+        url = `https://api.themoviedb.org/3/movie/${movie_id}/images`;
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
     }
 
     else {
