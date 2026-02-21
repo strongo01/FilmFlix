@@ -18,11 +18,28 @@ class _SearchScreenState extends State<SearchScreen> {
   List<MovieSearchItem> results = [];
   bool loading = false;
 
-  Future<void> search() async {
-    setState(() => loading = true);
-    results = await MovieRepository.search(controller.text);
+Future<void> search() async {
+  final query = controller.text.trim();
+  
+  // Als zoekveld leeg is, geen API call en scherm leeg
+  if (query.isEmpty) {
+    setState(() {
+      results = [];
+      loading = false;
+    });
+    return;
+  }
+
+  setState(() => loading = true);
+  try {
+    results = await MovieRepository.search(query);
+  } catch (e) {
+    debugPrint('Error searching movies: $e');
+    results = [];
+  } finally {
     setState(() => loading = false);
   }
+}
 
   /// Haalt TMDb poster op via backend fallback
   Future<String?> _fetchTmdbPoster(String? tmdbIdRaw) async {

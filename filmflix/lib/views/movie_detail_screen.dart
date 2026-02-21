@@ -51,6 +51,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   List<dynamic> _streaming = [];
   bool _loadingMovie = true;
   String? _error;
+  String? _rated;
+
+  Map<String, String> _translatedTexts = {};
+  Map<String, bool> _isTranslating = {};
 
   String _formatStreamingType(Map<String, dynamic> option) {
     final type = option['type']?.toString();
@@ -222,6 +226,36 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  Future<void> _translateText(String key, String originalText) async {
+    setState(() => _isTranslating[key] = true);
+
+    try {
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+          .replace(
+            queryParameters: {
+              'type': 'translate',
+              'text': originalText,
+              'target': 'nl',
+            },
+          );
+
+      final resp = await http.get(uri);
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        final translated = data['translation'] ?? data['translatedText'] ?? '';
+        setState(() {
+          _translatedTexts[key] = translated.toString();
+        });
+      } else {
+        debugPrint('Translation failed: ${resp.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Translation error: $e');
+    } finally {
+      setState(() => _isTranslating[key] = false);
+    }
+  }
+
   Widget _posterWithFallback(
     BuildContext context,
     String? initialPoster,
@@ -366,12 +400,25 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         _overview = (rapid['overview'] ?? omdb?['Plot'] ?? '').toString();
         _rating = (omdb?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
             .toString();
-        _genres = _toList(rapid['genres'])
+
+        _rated = omdb?['Rated']?.toString();
+
+        final rapidGenres = _toList(rapid['genres'])
             .map(
               (g) => (g is Map && g.containsKey('name') ? g['name'] : g)
                   .toString(),
             )
-            .toList();
+            .toSet();
+
+        final omdbGenresRaw = omdb?['Genre']?.toString() ?? '';
+        final omdbGenres = omdbGenresRaw
+            .split(',')
+            .map((g) => g.trim())
+            .where((g) => g.isNotEmpty)
+            .toSet();
+
+        _genres = {...rapidGenres, ...omdbGenres}.toList();
+
         _creators = _toList(
           rapid['creators'],
         ).map((c) => c.toString()).toList();
@@ -422,19 +469,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       // 1. Probeer platte keys (mocht Firestore het als één veld hebben opgeslagen)
       final flatKey = 'seenEpisodes.${widget.imdbId}';
       final flatKeyLower = 'seenEpisodes.${widget.imdbId.toLowerCase()}';
-      
+
       if (data.containsKey(flatKey) && data[flatKey] is List) {
         rawSeen = data[flatKey];
       } else if (data.containsKey(flatKeyLower) && data[flatKeyLower] is List) {
         rawSeen = data[flatKeyLower];
-      } 
+      }
       // 2. Probeer geneste structuur (Map)
       else if (seenMap is Map) {
-        final entry = seenMap[widget.imdbId] ?? 
-                      seenMap[widget.imdbId.toLowerCase()] ?? 
-                      seenMap[widget.imdbId.toUpperCase()];
-        if (entry is List) rawSeen = entry;
-        else if (entry is Map) rawSeen = entry.values.toList();
+        final entry =
+            seenMap[widget.imdbId] ??
+            seenMap[widget.imdbId.toLowerCase()] ??
+            seenMap[widget.imdbId.toUpperCase()];
+        if (entry is List)
+          rawSeen = entry;
+        else if (entry is Map)
+          rawSeen = entry.values.toList();
       }
 
       final imdbSeenList = rawSeen.map((e) => e.toString().trim()).toList();
@@ -735,7 +785,35 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           subtitle: epOverview.isNotEmpty
-              ? Text(epOverview, maxLines: 3, overflow: TextOverflow.ellipsis)
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _translatedTexts[epKey] ?? epOverview,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      icon: _isTranslating[epKey] == true
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.translate, size: 16),
+                      label: const Text(
+                        'Vertalen',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      onPressed: _isTranslating[epKey] == true
+                          ? null
+                          : () {
+                              _translateText(epKey, epOverview);
+                            },
+                    ),
+                  ],
+                )
               : null,
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -812,23 +890,58 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     context: context,
                     builder: (ctx) {
                       final maxHeight = MediaQuery.of(ctx).size.height * 0.7;
-                      return AlertDialog(
-                        title: Text(epTitle),
-                        content: ConstrainedBox(
-                          constraints: BoxConstraints(maxHeight: maxHeight),
-                          child: SingleChildScrollView(
-                            child: Text(
-                              epOverview,
-                              style: const TextStyle(height: 1.4),
+                      return StatefulBuilder(
+                        builder: (ctx, setDialogState) {
+                          return AlertDialog(
+                            title: Text(epTitle),
+                            content: ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: maxHeight),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _translatedTexts[epKey] ?? epOverview,
+                                      style: const TextStyle(height: 1.4),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextButton.icon(
+                                      icon: _isTranslating[epKey] == true
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.translate,
+                                              size: 16,
+                                            ),
+                                      label: const Text('Vertalen'),
+                                      onPressed: _isTranslating[epKey] == true
+                                          ? null
+                                          : () async {
+                                              await _translateText(
+                                                epKey,
+                                                epOverview,
+                                              );
+                                              // Zorg dat de dialog herbouwt
+                                              setDialogState(() {});
+                                            },
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            child: const Text('Sluiten'),
-                          ),
-                        ],
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('Sluiten'),
+                              ),
+                            ],
+                          );
+                        },
                       );
                     },
                   );
@@ -880,13 +993,39 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(_overview ?? ''),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_translatedTexts['overview'] ?? _overview ?? ''),
+                        const SizedBox(height: 6),
+                        TextButton.icon(
+                          icon: _isTranslating['overview'] == true
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.translate, size: 18),
+                          label: const Text('Vertalen'),
+                          onPressed: _isTranslating['overview'] == true
+                              ? null
+                              : () {
+                                  if (_overview != null) {
+                                    _translateText('overview', _overview!);
+                                  }
+                                },
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         const Icon(Icons.star, color: Colors.amber),
                         const SizedBox(width: 6),
                         Text(_rating ?? ''),
+
                         const Spacer(),
                         // watchlist button
                         _loadingUserData
@@ -922,6 +1061,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               ),
                       ],
                     ),
+                    if (_rated != null && _rated!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.family_restroom_rounded, size: 18),
+                            const SizedBox(width: 6),
+                            Text('Leeftijdsclassificatie: $_rated'),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 12),
 
                     if (_genres.isNotEmpty)
@@ -1006,8 +1156,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ],
                       ),
                     const SizedBox(height: 12),
-                    Text('Seasons: ${rapid['seasonCount'] ?? '-'}'),
-                    Text('Episodes: ${rapid['episodeCount'] ?? '-'}'),
+                    Text('Seizoenen: ${rapid['seasonCount'] ?? '-'}'),
+                    Text('Afleveringen: ${rapid['episodeCount'] ?? '-'}'),
                   ],
                 ),
               ),
@@ -1042,7 +1192,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               Card(
                 child: ExpansionTile(
                   title: Text(
-                    'Seasons & Episodes (${_seasons.length})',
+                    'Seizoenen & Afleveringen (${_seasons.length})',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   children: [

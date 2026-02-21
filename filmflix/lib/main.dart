@@ -81,8 +81,8 @@ class FilmFlixApp extends StatelessWidget {
           //if (snapshot.hasData) {
           //return const HomeScreen();
           //}
-          //return const SearchScreen();
-          return const MovieDetailScreen(imdbId: "tt1632701");
+          return const SearchScreen();
+          //return const MovieDetailScreen(imdbId: "tt1632701");
         },
       ),
     );
