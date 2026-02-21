@@ -10,14 +10,15 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final bool returnAfterLogin;
+
+  const LoginScreen({super.key, this.returnAfterLogin = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -44,8 +45,16 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user != null && mounted && ModalRoute.of(context)?.isCurrent == true) {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      if (user != null &&
+          mounted &&
+          ModalRoute.of(context)?.isCurrent == true) {
+        if (widget.returnAfterLogin) {
+          Navigator.of(context).pop(true); // terug naar MovieDetailScreen
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
       }
     });
   }
@@ -79,21 +88,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-    Future<UserCredential> _signInWithGoogle() async {
+  Future<UserCredential> _signInWithGoogle() async {
     if (kIsWeb) {
       final googleProvider = GoogleAuthProvider(); //maak google provider aan
       googleProvider.addScope('email'); //vraag email scope aan
-      googleProvider.setCustomParameters({'prompt': 'select_account'}); //vraag account selectie
-      return await FirebaseAuth.instance.signInWithPopup(googleProvider); //inloggen met popup
-    } 
+      googleProvider.setCustomParameters({
+        'prompt': 'select_account',
+      }); //vraag account selectie
+      return await FirebaseAuth.instance.signInWithPopup(
+        googleProvider,
+      ); //inloggen met popup
+    }
 
     try {
       final googleSignIn = GoogleSignIn.instance;
 
       final googleUser = await googleSignIn.authenticate(); //vraag om inloggen
 
-      final googleAuth = await googleUser.authentication; //haal authenticatie tokens op
-      final idToken = googleAuth.idToken; //haal id token op 
+      final googleAuth =
+          await googleUser.authentication; //haal authenticatie tokens op
+      final idToken = googleAuth.idToken; //haal id token op
       if (idToken == null) {
         throw FirebaseAuthException(
           code: 'missing_id_token',
@@ -104,14 +118,11 @@ class _LoginScreenState extends State<LoginScreen> {
       // Optioneel: als je een accessToken nodig hebt voor Firebase/platforms:
       String? accessToken;
       try {
-
         // Als er geen autorisatie bestaat, vraag het aan met authorizeScopes.
-        final scopes = <String>[
-          'openid',
-          'email',
-          'profile',
-        ]; /// scopes die we willen
-        var authorization = await googleUser.authorizationClient 
+        final scopes = <String>['openid', 'email', 'profile'];
+
+        /// scopes die we willen
+        var authorization = await googleUser.authorizationClient
             .authorizationForScopes(scopes); // check bestaande autorisatie
         authorization ??= await googleUser.authorizationClient.authorizeScopes(
           scopes, // vraag autorisatie aan
@@ -122,13 +133,17 @@ class _LoginScreenState extends State<LoginScreen> {
         accessToken = null;
       }
 
-      final credential = GoogleAuthProvider.credential( //maak firebase credential aan
+      final credential = GoogleAuthProvider.credential(
+        //maak firebase credential aan
         idToken: idToken,
         accessToken: accessToken,
       );
 
-      return await FirebaseAuth.instance.signInWithCredential(credential); //log in met credential
-    } on PlatformException catch (e, s) { //specifieke foutafhandeling voor platform exceptions
+      return await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      ); //log in met credential
+    } on PlatformException catch (e, s) {
+      //specifieke foutafhandeling voor platform exceptions
       if (e.code.toLowerCase().contains('cancel')) {
         throw FirebaseAuthException(
           code: 'sign_in_cancelled',
@@ -355,7 +370,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         SignInButton(
                           Buttons.Google,
                           text: 'Inloggen met Google',
-                          onPressed: _isLoading ? null : () => _signInWithGoogle(),
+                          onPressed: _isLoading
+                              ? null
+                              : () => _signInWithGoogle(),
                         ),
 
                         const SizedBox(height: 10),
@@ -363,7 +380,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         SignInButton(
                           Buttons.GitHub,
                           text: 'Inloggen met GitHub',
-                          onPressed: _isLoading ? null : () => _signInWithGitHub(),
+                          onPressed: _isLoading
+                              ? null
+                              : () => _signInWithGitHub(),
                         ),
 
                         const SizedBox(height: 10),
@@ -374,7 +393,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           SignInButton(
                             Buttons.Apple,
                             text: 'Inloggen met Apple',
-                            onPressed: _isLoading ? null : () => _signInWithApple(),
+                            onPressed: _isLoading
+                                ? null
+                                : () => _signInWithApple(),
                           ),
                       ],
                     ),

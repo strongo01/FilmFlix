@@ -1,16 +1,25 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:filmflix/views/loginscreen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:filmflix/services/movie_repository.dart';
 import 'package:http/http.dart' as http;
 
-class MovieDetailScreen extends StatelessWidget {
+class MovieDetailScreen extends StatefulWidget {
   final String imdbId;
 
   const MovieDetailScreen({super.key, required this.imdbId});
 
+  @override
+  State<MovieDetailScreen> createState() => _MovieDetailScreenState();
+}
+
+class _MovieDetailScreenState extends State<MovieDetailScreen> {
   static const Map<String, String> _serviceAssetMap = {
     'Netflix': 'netflix',
     'Amazon Prime Video': 'prime_video',
@@ -29,6 +38,80 @@ class MovieDetailScreen extends StatelessWidget {
     'Zee5': 'zee5',
   };
 
+  Map<String, dynamic>? _rapidData;
+  Map<String, dynamic>? _omdbData;
+  String? _poster;
+  String? _title;
+  String? _overview;
+  String? _rating;
+  List<String> _genres = [];
+  List<String> _creators = [];
+  List<String> _cast = [];
+  List<dynamic> _seasons = [];
+  List<dynamic> _streaming = [];
+  bool _loadingMovie = true;
+  String? _error;
+
+  String _formatStreamingType(Map<String, dynamic> option) {
+    final type = option['type']?.toString();
+
+    switch (type) {
+      case 'subscription':
+        return 'Included with subscription';
+      case 'buy':
+        final price = option['price']?['formatted'];
+        return price != null ? 'Buy • $price' : 'Buy';
+      case 'rent':
+        final price = option['price']?['formatted'];
+        return price != null ? 'Rent • $price' : 'Rent';
+      default:
+        return type ?? '';
+    }
+  }
+
+  // Sorteer volgorde
+  int _typePriority(String? type) {
+    switch (type) {
+      case 'subscription':
+        return 0;
+      case 'rent':
+        return 1;
+      case 'buy':
+        return 2;
+      default:
+        return 3;
+    }
+  }
+
+  // Badge met kleur
+  Widget _buildTypeChip(Map<String, dynamic> option) {
+    final type = option['type']?.toString();
+    final price = option['price']?['formatted'];
+
+    Color bg;
+    String label;
+
+    switch (type) {
+      case 'subscription':
+        bg = Colors.green.shade100;
+        label = 'Inbegrepen';
+        break;
+      case 'rent':
+        bg = Colors.blue.shade100;
+        label = price != null ? 'Huren • $price' : 'Huren';
+        break;
+      case 'buy':
+        bg = Colors.orange.shade100;
+        label = price != null ? 'Kopen • $price' : 'Kopen';
+        break;
+      default:
+        bg = Colors.grey.shade200;
+        label = type ?? '';
+    }
+
+    return Chip(label: Text(label), backgroundColor: bg);
+  }
+
   Future<void> _openLink(String? url) async {
     if (url == null) return;
     final uri = Uri.tryParse(url);
@@ -40,16 +123,12 @@ class MovieDetailScreen extends StatelessWidget {
     }
   }
 
-  /// Normaliseer input (Map met numeric keys of List) naar List<dynamic>
   List<dynamic> _toList(dynamic maybeListOrMap) {
     if (maybeListOrMap == null) return [];
     if (maybeListOrMap is List) return maybeListOrMap;
     if (maybeListOrMap is Map) {
-      // Map might have numeric keys like { "0": {...}, "1": {...} }
-      // or arbitrary string keys. We convert to list of values.
       return maybeListOrMap.entries.map((e) => e.value).toList();
     }
-    // Unexpected type
     return [];
   }
 
@@ -77,9 +156,6 @@ class MovieDetailScreen extends StatelessWidget {
     return Image.asset(path, height: height);
   }
 
-  /// Haalt TMDb images op via jouw backend endpoint:
-  /// https://film-flix-olive.vercel.app/api/movies?type=tmdb-images&movie_id=XXXX
-  /// movieId moet zonder "movie/" prefix (dus 1321624)
   Future<String?> _fetchTmdbPosterFromRapid(Map<String, dynamic> rapid) async {
     try {
       final tmdbIdRaw = rapid['tmdbId']?.toString();
@@ -146,8 +222,6 @@ class MovieDetailScreen extends StatelessWidget {
     }
   }
 
-  /// Widget that tries to display poster. If the provided poster URL fails to load
-  /// we call _fetchTmdbPosterFromRapid(...) and try that URL.
   Widget _posterWithFallback(
     BuildContext context,
     String? initialPoster,
@@ -244,356 +318,752 @@ class MovieDetailScreen extends StatelessWidget {
     );
   }
 
+  User? _user;
+  StreamSubscription<User?>? _authSub;
+  bool _isInWatchlist = false;
+  final Set<String> _seenSet = {}; // holds episode keys like 's0_e1'
+  bool _loadingUserData = false;
+
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Details')),
-      body: FutureBuilder(
-        future: MovieRepository.getFullMovie(imdbId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          final movie = snapshot.data!;
-          final rapid = movie.rapid as Map<String, dynamic>;
-          final omdb = movie.omdb as Map<String, dynamic>?;
+  void initState() {
+    super.initState();
+    _user = FirebaseAuth.instance.currentUser;
 
-          // poster fallback: rapid imageSet -> omdb Poster
-          final poster =
-              (rapid['imageSet']?['verticalPoster']?['w480'] ??
-                      rapid['imageSet']?['verticalPoster']?['w300'] ??
-                      omdb?['Poster'])
-                  ?.toString();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
+      setState(() {
+        _user = u;
+      });
+      if (u != null)
+        _loadUserData();
+      else {
+        setState(() {
+          _isInWatchlist = false;
+          _seenSet.clear();
+        });
+      }
+    });
+    if (_user != null) _loadUserData();
 
-          final title = (rapid['title'] ?? omdb?['Title'] ?? '').toString();
-          final overview = (rapid['overview'] ?? omdb?['Plot'] ?? '')
-              .toString();
-          final rating =
-              (omdb?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
-                  .toString();
+    _loadMovie();
+  }
 
-          // Normalize lists (robust for Map-with-numeric-keys)
-          final genres = _toList(rapid['genres']).map((g) {
-            if (g is Map && g.containsKey('name')) return g['name'].toString();
-            return g.toString();
-          }).toList();
+  Future<void> _loadMovie() async {
+    try {
+      final movie = await MovieRepository.getFullMovie(widget.imdbId);
+      final rapid = movie.rapid as Map<String, dynamic>;
+      final omdb = movie.omdb as Map<String, dynamic>?;
+      final poster =
+          (rapid['imageSet']?['verticalPoster']?['w480'] ??
+                  rapid['imageSet']?['verticalPoster']?['w300'] ??
+                  omdb?['Poster'])
+              ?.toString();
 
-          final creators = _toList(
-            rapid['creators'],
-          ).map((c) => c.toString()).toList();
-          final cast = _toList(rapid['cast']).map((c) => c.toString()).toList();
+      setState(() {
+        _rapidData = rapid;
+        _omdbData = omdb;
+        _poster = poster;
+        _title = (rapid['title'] ?? omdb?['Title'] ?? '').toString();
+        _overview = (rapid['overview'] ?? omdb?['Plot'] ?? '').toString();
+        _rating = (omdb?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
+            .toString();
+        _genres = _toList(rapid['genres'])
+            .map(
+              (g) => (g is Map && g.containsKey('name') ? g['name'] : g)
+                  .toString(),
+            )
+            .toList();
+        _creators = _toList(
+          rapid['creators'],
+        ).map((c) => c.toString()).toList();
+        _cast = _toList(rapid['cast']).map((c) => c.toString()).toList();
+        _seasons = _toList(rapid['seasons']);
+        _streaming = _toList(rapid['streamingOptions']?['nl']);
+        _loadingMovie = false;
+      });
+    } catch (e, s) {
+      debugPrint('Error loading movie: $e\n$s');
+      setState(() {
+        _error = e.toString();
+        _loadingMovie = false;
+      });
+    }
+  }
 
-          // seasons and global streaming
-          final seasonsRaw = rapid['seasons'];
-          final seasons = _toList(seasonsRaw);
-          //final streamingRaw = rapid['streamingOptions']?['nl'];
-          final streaming = _toList(rapid['streamingOptions']?['nl']);
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
 
-          // DEBUG prints so you can inspect the exact structure in console
-          debugPrint('IMDB ID: $imdbId');
-          debugPrint('Poster: $poster');
-          debugPrint(
-            'Seasons (raw type): ${seasonsRaw?.runtimeType}, normalized length = ${seasons.length}',
-          );
-          for (var i = 0; i < seasons.length; i++) {
-            final s = seasons[i];
-            final sTitle = s is Map
-                ? (s['title'] ?? s['itemType'] ?? 'season#$i')
-                : 'season#$i';
-            final epRaw = s is Map ? s['episodes'] : null;
-            final eps = _toList(epRaw);
-            debugPrint(
-              '  Season $i: $sTitle, episodes count (normalized) = ${eps.length}',
-            );
-          }
-          debugPrint('Streaming options normalized: ${streaming.length}');
-          for (var i = 0; i < streaming.length; i++) {
-            final opt = streaming[i];
-            final service = opt is Map ? opt['service'] : null;
-            debugPrint(
-              '  stream[$i] service=${service?['name']} icon=${service?['imageSet']?['lightThemeImage']} link=${opt['link']}',
-            );
-          }
+  Future<void> _loadUserData() async {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) return;
+    setState(() {
+      _loadingUserData = true;
+    });
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Poster
-                // REPLACED: now uses poster fallback helper so we can try TMDb when invalid image data occurs
-                _posterWithFallback(context, poster, rapid),
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(u.uid)
+          .get();
+      final data = doc.data() ?? {};
+      debugPrint('--- DEBUG USER DATA FOR ${widget.imdbId} ---');
+      debugPrint('Firestore keys: ${data.keys.toList()}');
 
-                const SizedBox(height: 12),
+      final watchlist = (data['watchlist'] is List)
+          ? List<String>.from(data['watchlist'])
+          : <String>[];
 
-                // Main Info card
-                Card(
-                  elevation: 3,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(overview),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.star, color: Colors.amber),
-                            const SizedBox(width: 6),
-                            Text(rating),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
+      // Robuuste check voor seenEpisodes (genest of plat veld)
+      final seenMap = data['seenEpisodes'];
+      List<dynamic> rawSeen = [];
 
-                        if (genres.isNotEmpty)
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: genres
-                                .map(
-                                  (g) => Chip(
-                                    label: Text(g),
-                                    backgroundColor: Colors.blue.shade50,
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        const SizedBox(height: 8),
-                        if (creators.isNotEmpty)
-                          Wrap(
-                            spacing: 8,
-                            children: creators
-                                .map(
-                                  (c) => Chip(
-                                    label: Text(c),
-                                    backgroundColor: Colors.green.shade50,
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        const SizedBox(height: 8),
-                        if (cast.isNotEmpty)
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: cast
-                                .take(8)
-                                .map(
-                                  (c) => Chip(
-                                    label: Text(c),
-                                    backgroundColor: Colors.grey.shade200,
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        const SizedBox(height: 12),
-                        Text('Seasons: ${rapid['seasonCount'] ?? '-'}'),
-                        Text('Episodes: ${rapid['episodeCount'] ?? '-'}'),
-                      ],
+      // 1. Probeer platte keys (mocht Firestore het als één veld hebben opgeslagen)
+      final flatKey = 'seenEpisodes.${widget.imdbId}';
+      final flatKeyLower = 'seenEpisodes.${widget.imdbId.toLowerCase()}';
+      
+      if (data.containsKey(flatKey) && data[flatKey] is List) {
+        rawSeen = data[flatKey];
+      } else if (data.containsKey(flatKeyLower) && data[flatKeyLower] is List) {
+        rawSeen = data[flatKeyLower];
+      } 
+      // 2. Probeer geneste structuur (Map)
+      else if (seenMap is Map) {
+        final entry = seenMap[widget.imdbId] ?? 
+                      seenMap[widget.imdbId.toLowerCase()] ?? 
+                      seenMap[widget.imdbId.toUpperCase()];
+        if (entry is List) rawSeen = entry;
+        else if (entry is Map) rawSeen = entry.values.toList();
+      }
+
+      final imdbSeenList = rawSeen.map((e) => e.toString().trim()).toList();
+      debugPrint('Found seen items: $imdbSeenList');
+
+      setState(() {
+        _isInWatchlist = watchlist.contains(widget.imdbId);
+        _seenSet.clear();
+        _seenSet.addAll(imdbSeenList);
+      });
+    } catch (e, s) {
+      debugPrint('Error loading user data: $e\n$s');
+    } finally {
+      setState(() {
+        _loadingUserData = false;
+      });
+    }
+  }
+
+  Future<bool> _ensureLoggedInWithPrompt(BuildContext context) async {
+    if (_user != null) return true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Inloggen vereist'),
+          content: const Text(
+            'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Annuleren'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Naar login'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != true || !mounted) return false;
+
+    // Navigeer naar login als fullscreen dialog
+    final loggedIn = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const LoginScreen(returnAfterLogin: true),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (loggedIn == true && mounted) {
+      _user = FirebaseAuth.instance.currentUser;
+      if (_user != null) await _loadUserData();
+      return _user != null;
+    }
+
+    return false;
+  }
+
+  Future<void> _toggleWatchlist() async {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) return;
+
+    final newState = !_isInWatchlist;
+
+    // Optimistic update
+    setState(() => _isInWatchlist = newState);
+
+    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    try {
+      if (newState) {
+        await docRef.set({
+          'watchlist': FieldValue.arrayUnion([widget.imdbId]),
+        }, SetOptions(merge: true));
+      } else {
+        await docRef.set({
+          'watchlist': FieldValue.arrayRemove([widget.imdbId]),
+        }, SetOptions(merge: true));
+      }
+    } catch (e, s) {
+      debugPrint('Error toggling watchlist: $e\n$s');
+      // rollback UI if firestore fails
+      setState(() => _isInWatchlist = !newState);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kon watchlist niet bijwerken.')),
+      );
+    }
+  }
+
+  Future<void> _toggleEpisodeSeen(String epKey, bool seen) async {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) return;
+
+    // Optimistic update
+    setState(() {
+      if (seen) {
+        _seenSet.add(epKey);
+      } else {
+        _seenSet.remove(epKey);
+      }
+    });
+
+    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    try {
+      if (seen) {
+        await docRef.set({
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
+        }, SetOptions(merge: true));
+      } else {
+        await docRef.set({
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayRemove([epKey]),
+        }, SetOptions(merge: true));
+      }
+    } catch (e, s) {
+      debugPrint('Error toggling episode seen: $e\n$s');
+      // rollback UI
+      setState(() {
+        if (seen) {
+          _seenSet.remove(epKey);
+        } else {
+          _seenSet.add(epKey);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kon afleveringstatus niet bijwerken.')),
+      );
+    }
+  }
+
+  List<Widget> _buildGroupedStreaming(
+    List<dynamic> streaming,
+    BuildContext context,
+  ) {
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+
+    for (final item in streaming) {
+      if (item is! Map) continue;
+      final typedItem = item as Map<String, dynamic>;
+      final service = typedItem['service'] as Map<String, dynamic>?;
+      final name = service?['name']?.toString() ?? 'Service';
+
+      grouped.putIfAbsent(name, () => []);
+      grouped[name]!.add(typedItem);
+    }
+
+    final List<Widget> widgets = [];
+
+    grouped.forEach((serviceName, options) {
+      // Sorteer types: subscription → rent → buy
+      options.sort(
+        (a, b) => _typePriority(a['type']) - _typePriority(b['type']),
+      );
+
+      // Per type unieke opties
+      final Map<String, Map<String, dynamic>> uniqueOptions = {};
+      for (var option in options) {
+        final type = option['type']?.toString() ?? 'other';
+        uniqueOptions.putIfAbsent(type, () => option);
+      }
+
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Service naam + icoon
+              Row(
+                children: [
+                  _buildServiceIconAsset(
+                    serviceName,
+                    context: context,
+                    height: 26,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    serviceName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              // Per type unieke opties
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: uniqueOptions.values.map((option) {
+                  final link = option['link'] ?? option['service']?['homePage'];
+                  final chip = _buildTypeChip(option);
+
+                  // Chip zelf is klikbaar, maar geen URL-tekst ernaast
+                  return GestureDetector(
+                    onTap: () => _openLink(link?.toString()),
+                    child: chip,
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+
+    return widgets;
+  }
+
+  Widget _buildSeasonTile(
+    BuildContext context,
+    dynamic seasonRaw,
+    int seasonIndex,
+    List seasons,
+  ) {
+    final season = (seasonRaw is Map)
+        ? seasonRaw
+        : {'title': seasonRaw.toString()};
+    final seasonTitle = (season['title'] ?? season['itemType'] ?? 'Season')
+        .toString();
+    final firstYear = season['firstAirYear']?.toString() ?? '';
+    final lastYear = season['lastAirYear']?.toString() ?? '';
+    final epRaw = season['episodes'];
+    final episodes = _toList(epRaw);
+
+    return ExpansionTile(
+      title: Text(seasonTitle),
+      subtitle: Text('$firstYear${lastYear.isNotEmpty ? ' - $lastYear' : ''}'),
+      children: episodes.isEmpty
+          ? [
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text(
+                  'Geen afleveringen gevonden',
+                  style: TextStyle(color: Colors.grey),
                 ),
+              ),
+            ]
+          : [
+              for (var ei = 0; ei < episodes.length; ei++)
+                _buildEpisodeRow(context, episodes[ei], seasonIndex, ei),
+            ],
+    );
+  }
 
-                const SizedBox(height: 12),
+  Widget _buildEpisodeRow(
+    BuildContext context,
+    dynamic epRaw,
+    int seasonIndex,
+    int episodeIndex,
+  ) {
+    final ep = (epRaw is Map) ? epRaw : {'title': epRaw.toString()};
+    final epTitle = (ep['title'] ?? ep['itemType'] ?? 'Episode').toString();
+    final epOverview = (ep['overview'] ?? '').toString();
 
-                // Streaming card
-                if (streaming.isNotEmpty)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Streaming',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          ...streaming.map((option) {
-                            final service = (option is Map)
-                                ? option['service'] as Map<String, dynamic>?
-                                : null;
-                            // link is often on the option root (option['link'])
-                            final link = (option is Map)
-                                ? (option['link'] ??
-                                      option['service']?['homePage'])
-                                : null;
+    // stream options for episode
+    final epStreamRaw = ep['streamingOptions']?['nl'] ?? ep['streamingOptions'];
+    final epStreams = _toList(epStreamRaw);
+    String? epLink;
+    if (epStreams.isNotEmpty) {
+      final first = epStreams[0];
+      if (first is Map) {
+        epLink = first['link'] ?? first['service']?['homePage']?.toString();
+      }
+    }
+
+    // thumbnail
+    final epThumb =
+        ep['imageSet']?['verticalPoster']?['w160'] ?? ep['image'] ?? null;
+
+    // stable episode key for storage
+    final epKey = 's${seasonIndex}_e${episodeIndex}';
+    final isSeen = _seenSet.contains(epKey);
+
+    return Column(
+      children: [
+        ListTile(
+          leading: epThumb != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.network(
+                    epThumb.toString(),
+                    width: 84,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(Icons.broken_image),
+                  ),
+                )
+              : null,
+          title: Text(
+            epTitle,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: epOverview.isNotEmpty
+              ? Text(epOverview, maxLines: 3, overflow: TextOverflow.ellipsis)
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // play button (if streams available)
+              if (epStreams.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.play_arrow),
+                  onPressed: () async {
+                    // dedupe per service+type
+                    final Map<String, Map<String, dynamic>> deduped = {};
+                    for (var option in epStreams) {
+                      if (option is! Map) continue;
+                      final typedOption = option as Map<String, dynamic>;
+                      final serviceName =
+                          typedOption['service']?['name']?.toString() ??
+                          'Unknown';
+                      final type = typedOption['type']?.toString() ?? 'other';
+                      final key = '${serviceName.toLowerCase()}_$type';
+                      deduped.putIfAbsent(key, () => typedOption);
+                    }
+                    final mergedStreams = deduped.values.toList();
+
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (ctx) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: mergedStreams.map<Widget>((option) {
+                            final service =
+                                option['service']?['name']?.toString() ??
+                                'Unknown';
+                            final link =
+                                option['link'] ??
+                                option['service']?['homePage']?.toString();
                             return ListTile(
                               leading: _buildServiceIconAsset(
-                                service?['name'],
-                                height: 28,
+                                service,
                                 context: context,
+                                height: 28,
                               ),
-                              title: Text(
-                                service?['name']?.toString() ?? 'Service',
-                              ),
-                              subtitle: link != null
-                                  ? Text(
-                                      link.toString(),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                    )
-                                  : null,
-                              onTap: () => _openLink(link?.toString()),
+                              title: Text(service),
+                              subtitle: Text(_formatStreamingType(option)),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _openLink(link?.toString());
+                              },
                             );
                           }).toList(),
+                        );
+                      },
+                    );
+                  },
+                ),
+
+              // seen checkbox (always shown)
+              Checkbox(
+                value: _seenSet.contains(epKey),
+                onChanged: (val) async {
+                  if (_user == null) {
+                    final go = await _ensureLoggedInWithPrompt(context);
+                    if (!go) return;
+                  }
+                  await _toggleEpisodeSeen(epKey, val ?? false);
+                  // Trigger rebuild zodat checkbox update
+                  setState(() {});
+                },
+              ),
+            ],
+          ),
+          onTap: epOverview.isNotEmpty
+              ? () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) {
+                      final maxHeight = MediaQuery.of(ctx).size.height * 0.7;
+                      return AlertDialog(
+                        title: Text(epTitle),
+                        content: ConstrainedBox(
+                          constraints: BoxConstraints(maxHeight: maxHeight),
+                          child: SingleChildScrollView(
+                            child: Text(
+                              epOverview,
+                              style: const TextStyle(height: 1.4),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Sluiten'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                }
+              : null,
+        ),
+        const Divider(height: 1),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadingMovie) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_error != null) {
+      return Scaffold(body: Center(child: Text('Error: $_error')));
+    }
+
+    final rapid = _rapidData!;
+    final omdb = _omdbData;
+    final poster = _poster;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Details')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _posterWithFallback(context, poster, rapid),
+
+            const SizedBox(height: 12),
+
+            // Main Info card
+            Card(
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title ?? '',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(_overview ?? ''),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber),
+                        const SizedBox(width: 6),
+                        Text(_rating ?? ''),
+                        const Spacer(),
+                        // watchlist button
+                        _loadingUserData
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : ElevatedButton.icon(
+                                icon: Icon(
+                                  _isInWatchlist
+                                      ? Icons.bookmark
+                                      : Icons.bookmark_add_outlined,
+                                ),
+                                label: Text(
+                                  _isInWatchlist ? 'Verwijder' : 'Opslaan',
+                                ),
+                                onPressed: () async {
+                                  // controleer login
+                                  if (_user == null) {
+                                    final goToLogin =
+                                        await _ensureLoggedInWithPrompt(
+                                          context,
+                                        );
+                                    if (!goToLogin) return;
+                                    // gebruiker navigeert naar login -> wachten op auth listener om data te laden
+                                    return;
+                                  }
+                                  await _toggleWatchlist();
+                                },
+                              ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    if (_genres.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _genres
+                            .map(
+                              (g) => Chip(
+                                label: Text(g),
+                                backgroundColor: Colors.blue.shade50,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    const SizedBox(height: 8),
+                    // Creators
+                    // Creators
+                    if (_creators.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              'Producers / Creators',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Wrap(
+                            spacing: 8,
+                            children: _creators.map((c) {
+                              final searchUrl =
+                                  'https://www.imdb.com/find?q=${Uri.encodeComponent(c)}&s=nm';
+                              return GestureDetector(
+                                onTap: () => _openLink(searchUrl),
+                                child: Chip(
+                                  label: Text(c),
+                                  backgroundColor: Colors.green.shade50,
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ],
                       ),
-                    ),
-                  ),
 
-                const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
-                // Seasons & Episodes expansion
-                if (seasons.isNotEmpty)
-                  Card(
-                    child: ExpansionTile(
-                      title: Text(
-                        'Seasons & Episodes (${seasons.length})',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      children: seasons.map((seasonRaw) {
-                        final season = (seasonRaw is Map)
-                            ? seasonRaw
-                            : {'title': seasonRaw.toString()};
-                        final seasonTitle =
-                            (season['title'] ?? season['itemType'] ?? 'Season')
-                                .toString();
-                        final firstYear =
-                            season['firstAirYear']?.toString() ?? '';
-                        final lastYear =
-                            season['lastAirYear']?.toString() ?? '';
-                        final epRaw = season['episodes'];
-                        final episodes = _toList(epRaw);
-
-                        return ExpansionTile(
-                          title: Text(seasonTitle),
-                          subtitle: Text(
-                            '$firstYear${lastYear.isNotEmpty ? ' - $lastYear' : ''}',
+                    // Cast
+                    if (_cast.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              'Actors',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                          children: episodes.isEmpty
-                              ? [
-                                  const Padding(
-                                    padding: EdgeInsets.all(12),
-                                    child: Text(
-                                      'Geen afleveringen gevonden',
-                                      style: TextStyle(color: Colors.grey),
-                                    ),
-                                  ),
-                                ]
-                              : episodes.map((epRaw) {
-                                  final ep = (epRaw is Map)
-                                      ? epRaw
-                                      : {'title': epRaw.toString()};
-                                  final epTitle =
-                                      (ep['title'] ??
-                                              ep['itemType'] ??
-                                              'Episode')
-                                          .toString();
-                                  final epOverview = (ep['overview'] ?? '')
-                                      .toString();
-
-                                  // episode-level streaming may be nested similar to series streaming
-                                  final epStreamRaw =
-                                      ep['streamingOptions']?['nl'] ??
-                                      ep['streamingOptions'];
-                                  final epStreams = _toList(epStreamRaw);
-                                  String? epLink;
-                                  if (epStreams.isNotEmpty) {
-                                    final first = epStreams[0];
-                                    if (first is Map) {
-                                      epLink =
-                                          first['link'] ??
-                                          first['service']?['homePage']
-                                              ?.toString();
-                                    }
-                                  }
-
-                                  // optional small thumbnail (if available)
-                                  final epThumb =
-                                      ep['imageSet']?['verticalPoster']?['w160'] ??
-                                      ep['image'] ??
-                                      null;
-
-                                  return Column(
-                                    children: [
-                                      ListTile(
-                                        leading: epThumb != null
-                                            ? ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                child: Image.network(
-                                                  epThumb.toString(),
-                                                  width: 84,
-                                                  height: 48,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (_, __, ___) =>
-                                                      const Icon(
-                                                        Icons.broken_image,
-                                                      ),
-                                                ),
-                                              )
-                                            : null,
-                                        title: Text(
-                                          epTitle,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        subtitle: epOverview.isNotEmpty
-                                            ? Text(
-                                                epOverview,
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                              )
-                                            : null,
-                                        trailing: epLink != null
-                                            ? IconButton(
-                                                icon: const Icon(
-                                                  Icons.play_arrow,
-                                                ),
-                                                onPressed: () => _openLink(
-                                                  epLink.toString(),
-                                                ),
-                                              )
-                                            : null,
-                                      ),
-                                      const Divider(height: 1),
-                                    ],
-                                  );
-                                }).toList(),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
-                if (seasons.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child: Center(
-                      child: Text(
-                        'Geen seizoenen gevonden',
-                        style: TextStyle(color: Colors.grey.shade600),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _cast.take(8).map((c) {
+                              final searchUrl =
+                                  'https://www.imdb.com/find?q=${Uri.encodeComponent(c)}&s=nm';
+                              return GestureDetector(
+                                onTap: () => _openLink(searchUrl),
+                                child: Chip(
+                                  label: Text(c),
+                                  backgroundColor: Colors.grey.shade200,
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-              ],
+                    const SizedBox(height: 12),
+                    Text('Seasons: ${rapid['seasonCount'] ?? '-'}'),
+                    Text('Episodes: ${rapid['episodeCount'] ?? '-'}'),
+                  ],
+                ),
+              ),
             ),
-          );
-        },
+
+            const SizedBox(height: 12),
+
+            // Streaming card
+            if (_streaming.isNotEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Streaming',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+
+                      ..._buildGroupedStreaming(_streaming, context),
+                    ],
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            // Seasons & Episodes expansion
+            if (_seasons.isNotEmpty)
+              Card(
+                child: ExpansionTile(
+                  title: Text(
+                    'Seasons & Episodes (${_seasons.length})',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  children: [
+                    for (var si = 0; si < _seasons.length; si++)
+                      _buildSeasonTile(context, _seasons[si], si, _seasons),
+                  ],
+                ),
+              ),
+
+            if (_seasons.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Text(
+                    'Geen seizoenen gevonden',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

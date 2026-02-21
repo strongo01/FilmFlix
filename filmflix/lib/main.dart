@@ -1,4 +1,5 @@
 import 'package:filmflix/firebase_options.dart';
+import 'package:filmflix/views/movie_detail_screen.dart';
 import 'package:filmflix/views/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -63,6 +64,12 @@ class FilmFlixApp extends StatelessWidget {
           ),
         ),
       ),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/search': (context) => const SearchScreen(),
+        // eventueel andere routes
+      },
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -74,7 +81,8 @@ class FilmFlixApp extends StatelessWidget {
           //if (snapshot.hasData) {
           //return const HomeScreen();
           //}
-          return const SearchScreen();
+          //return const SearchScreen();
+          return const MovieDetailScreen(imdbId: "tt1632701");
         },
       ),
     );

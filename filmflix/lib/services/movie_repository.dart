@@ -7,7 +7,7 @@ class MovieRepository {
   static Future<List<MovieSearchItem>> search(String query) async {
     final data = await MovieApi.search(title: query);
 
-    final results = data['result'] as List<dynamic>? ?? [];
+    final results = data['results'] as List<dynamic>? ?? [];
 
     return results
         .map((e) => MovieSearchItem.fromJson(e))
