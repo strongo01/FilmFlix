@@ -1,11 +1,4 @@
-import postgres from 'postgres';
-
-let sql;
-if (!global.sql) {
-    if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not defined');
-    global.sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
-}
-sql = global.sql;
+// Database-backed endpoints removed — this backend no longer exposes DB access.
 
 export default async function handler(req, res) {
     const {
@@ -42,8 +35,7 @@ export default async function handler(req, res) {
         r = 'json',
         page = 1,
 
-        // Supabase
-        tconst,
+        // (no database params)
 
         // TMDB
         movie_id,
@@ -161,26 +153,7 @@ export default async function handler(req, res) {
             });
     }
 
-    // SUPABASE — FETCH TITLES + RATINGS
-    else if (type === 'supabase-titles') {
-        try {
-            const titlesQuery = tconst
-                ? sql`SELECT * FROM titles WHERE tconst = ${tconst}`
-                : sql`SELECT * FROM titles`;
-
-            const ratingsQuery = tconst
-                ? sql`SELECT * FROM title_ratings WHERE tconst = ${tconst}`
-                : sql`SELECT * FROM title_ratings`;
-
-            const titles = await titlesQuery;
-            const ratings = await ratingsQuery;
-
-            return res.status(200).json({ titles, ratings });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Supabase query failed' });
-        }
-    }
+    // (database-backed endpoints have been removed)
 
     // TMDB — GET IMAGES
     else if (type === 'tmdb-images') {
@@ -208,7 +181,116 @@ export default async function handler(req, res) {
         try {
             const response = await fetch(url, { headers });
             const data = await response.json();
-            res.status(200).json(data);
+
+            // Alleen filtering toepassen bij search
+            if (type !== 'search') {
+                return res.status(200).json(data);
+            }
+            // ===== NETFLIX-ACHTIGE AUTO MATCHING =====
+
+            if (!title) {
+                return res.status(400).json({ error: 'Search requires title parameter' });
+            }
+
+            function normalize(str) {
+                if (!str) return '';
+                return str
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            // Levenshtein
+            function levenshtein(a, b) {
+                const m = a.length, n = b.length;
+                if (!m) return n;
+                if (!n) return m;
+                const v0 = new Array(n + 1);
+                const v1 = new Array(n + 1);
+                for (let j = 0; j <= n; j++) v0[j] = j;
+                for (let i = 0; i < m; i++) {
+                    v1[0] = i + 1;
+                    for (let j = 0; j < n; j++) {
+                        const cost = a[i] === b[j] ? 0 : 1;
+                        v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+                    }
+                    for (let j = 0; j <= n; j++) v0[j] = v1[j];
+                }
+                return v1[n];
+            }
+
+            function similarityScore(a, b) {
+                const dist = levenshtein(a, b);
+                return 1 - dist / Math.max(a.length, b.length);
+            }
+
+            // Hits ophalen
+            let hits = [];
+            if (Array.isArray(data)) hits = data;
+            else if (Array.isArray(data?.results)) hits = data.results;
+            else if (Array.isArray(data?.titles)) hits = data.titles;
+
+            const queryNorm = normalize(title);
+            const queryTokens = queryNorm.split(' ');
+
+            function titleOf(item) {
+                return item.title || item.name || item.show_title || item.original_title || '';
+            }
+
+            function hasExact(itemNorm) {
+                return itemNorm === queryNorm;
+            }
+            function hasPhrase(itemNorm) {
+                return itemNorm.includes(queryNorm);
+            }
+            function hasAllWords(itemNorm) {
+                return queryTokens.every(tok => itemNorm.includes(tok));
+            }
+            function hasFuzzy(itemNorm) {
+                return similarityScore(itemNorm, queryNorm) >= 0.6;
+            }
+
+            const scored = hits.map(hit => {
+    const rawTitle = titleOf(hit);
+    const itemNorm = normalize(rawTitle);
+
+    let score = 0;
+
+    if (hasExact(itemNorm)) {
+        score = 100;
+    }
+    else if (hasPhrase(itemNorm)) {
+        score = 80;
+    }
+    else if (hasAllWords(itemNorm)) {
+        score = 60;
+    }
+    else {
+        const similarity = similarityScore(itemNorm, queryNorm);
+        if (similarity >= 0.6) {
+            score = similarity * 50;
+        }
+    }
+
+    return {
+        ...hit,
+        _score: score
+    };
+});
+
+// Alleen resultaten met score > 0
+const filtered = scored
+    .filter(item => item._score > 0)
+    .sort((a, b) => b._score - a._score);
+
+res.status(200).json({
+    original_count: hits.length,
+    filtered_count: filtered.length,
+    results: filtered
+});
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: 'External API request failed' });

@@ -22,9 +22,7 @@ static Future<MovieDetail> getFullMovie(String imdbId) async {
     imdbId: imdbId,
     plot: 'full',
   );
-  final supabase = await MovieApi.supabaseTitles(
-    tconst: imdbId,
-  );
+
 
   print("IMDB ID: $imdbId");
   print("OMDB RESPONSE: $omdb");
@@ -32,7 +30,6 @@ static Future<MovieDetail> getFullMovie(String imdbId) async {
   return MovieDetail(
     rapid: rapid,
     omdb: omdb,
-    supabase: supabase,
   );
 }
 }

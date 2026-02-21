@@ -109,14 +109,4 @@ class MovieApi {
       'page': page,
     });
   }
-
-  // 🗄 SUPABASE
-  static Future<Map<String, dynamic>> supabaseTitles({
-    String? tconst,
-  }) {
-    return _get({
-      'type': 'supabase-titles',
-      'tconst': tconst,
-    });
-  }
 }

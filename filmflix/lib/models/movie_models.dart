@@ -32,12 +32,9 @@ final String? tmdbId;
 class MovieDetail {
   final Map<String, dynamic> rapid;
   final Map<String, dynamic>? omdb;
-  final Map<String, dynamic>? supabase;
-
   MovieDetail({
     required this.rapid,
     this.omdb,
-    this.supabase,
     
   });
 }
