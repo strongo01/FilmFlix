@@ -21,28 +21,28 @@ class FilmFlixApp extends StatelessWidget {
     return MaterialApp(
       title: 'FilmFlix',
       debugShowCheckedModeBanner: false,
-  darkTheme: ThemeData.dark().copyWith(
-    scaffoldBackgroundColor: Colors.black,
-    colorScheme: const ColorScheme.dark(
-      primary: Color(0xFFD4AF37), // goud accent
-      secondary: Color(0xFFB22222), // diep rood
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFD4AF37),
-        foregroundColor: Colors.white,
+      darkTheme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: Colors.black,
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFD4AF37), // goud accent
+          secondary: Color(0xFFB22222), // diep rood
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD4AF37),
+            foregroundColor: Colors.white,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.grey[850],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+        ),
       ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.grey[850],
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide.none,
-      ),
-    ),
-  ),
-  themeMode: ThemeMode.system,
+      themeMode: ThemeMode.system,
       theme: ThemeData.light().copyWith(
         scaffoldBackgroundColor: Colors.white,
         colorScheme: const ColorScheme.light(
@@ -64,7 +64,7 @@ class FilmFlixApp extends StatelessWidget {
           ),
         ),
       ),
-      routes: {
+      routes: { // We definiëren de routes van de app, waarbij we elke route koppelen aan een specifieke widget die moet worden weergegeven wanneer die route wordt genavigeerd. In dit geval hebben we routes voor de login pagina, de home pagina, en de zoekpagina. Door deze routes te definiëren, kunnen we gemakkelijk navigeren tussen verschillende schermen in de app door gebruik te maken van Navigator.pushNamed(context, '/routeName').
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/search': (context) => const SearchScreen(),

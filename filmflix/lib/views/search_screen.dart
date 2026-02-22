@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key}); // super.key betekent dat we de key parameter doorgeven aan de constructor van de parent class (StatefulWidget). Dit is belangrijk voor het correct functioneren van de widget in de widget tree van Flutter, vooral als we later willen optimaliseren of bepaalde widgets willen identificeren. Door super.key te gebruiken, zorgen we ervoor dat de SearchScreen widget correct kan worden herbouwd en beheerd door Flutter's widget systeem.
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -18,28 +18,28 @@ class _SearchScreenState extends State<SearchScreen> {
   List<MovieSearchItem> results = [];
   bool loading = false;
 
-Future<void> search() async {
-  final query = controller.text.trim();
-  
-  // Als zoekveld leeg is, geen API call en scherm leeg
-  if (query.isEmpty) {
-    setState(() {
-      results = [];
-      loading = false;
-    });
-    return;
-  }
+  Future<void> search() async {
+    final query = controller.text.trim();
 
-  setState(() => loading = true);
-  try {
-    results = await MovieRepository.search(query);
-  } catch (e) {
-    debugPrint('Error searching movies: $e');
-    results = [];
-  } finally {
-    setState(() => loading = false);
+    // Als zoekveld leeg is, geen API call en scherm leeg
+    if (query.isEmpty) {
+      setState(() {
+        results = [];
+        loading = false;
+      });
+      return;
+    }
+
+    setState(() => loading = true);
+    try {
+      results = await MovieRepository.search(query); // we roepen de search functie van MovieRepository aan, die op zijn beurt de search functie van MovieApi aanroept. Deze functie voert een API call uit naar de backend met de zoekopdracht, en ontvangt een lijst van zoekresultaten in de vorm van MovieSearchItem objecten. We slaan deze resultaten op in de state van de widget, zodat we ze kunnen weergeven in de UI. Als er een fout optreedt tijdens het zoeken, vangen we deze op en loggen we een foutmelding, en zorgen we ervoor dat de resultatenlijst leeg blijft.
+    } catch (e) {
+      debugPrint('Error searching movies: $e');
+      results = [];
+    } finally {
+      setState(() => loading = false);
+    }
   }
-}
 
   /// Haalt TMDb poster op via backend fallback
   Future<String?> _fetchTmdbPoster(String? tmdbIdRaw) async {

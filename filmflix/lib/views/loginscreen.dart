@@ -16,16 +16,23 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
 
 class LoginScreen extends StatefulWidget {
+  // statefulwidget betekent dat deze pagina kan veranderen, zoals de inhoud van de tekstvelden, of of er een foutmelding is. De LoginScreen heeft ook een optionele parameter returnAfterLogin, die bepaalt of we na het inloggen terug willen gaan naar het vorige scherm (zoals MovieDetailScreen) in plaats van naar de HomeScreen. Dit is handig als we willen dat gebruikers kunnen inloggen vanuit een detailpagina zonder dat ze eerst naar de homepagina hoeven te gaan.
   final bool returnAfterLogin;
 
-  const LoginScreen({super.key, this.returnAfterLogin = false});
+  const LoginScreen({
+    super.key,
+    this.returnAfterLogin = false,
+  }); //deze constructor maakt een LoginScreen aan, waarbij je kunt aangeven of je na het inloggen terug wilt gaan naar het vorige scherm (zoals MovieDetailScreen) in plaats van naar de HomeScreen. Standaard is dit false, wat betekent dat we na het inloggen naar de HomeScreen gaan.
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
+  // De createState functie maakt de state aan voor deze pagina, wat betekent dat we een _LoginScreenState klasse hebben die alle logica en UI van deze pagina bevat.
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  StreamSubscription<User?>? _authSub;
+  //deze klasse bevat alle logica en UI van de LoginScreen. Hierin hebben we onder andere tekstcontrollers voor het e-mail en wachtwoord veld, een boolean om bij te houden of we aan het inloggen zijn, een boolean om bij te houden of het wachtwoord zichtbaar is, en een boolean om bij te houden of we in de login modus zijn (of registratie modus). We hebben ook een StreamSubscription om te luisteren naar veranderingen in de authenticatiestatus van de gebruiker, zodat we automatisch kunnen navigeren als de gebruiker succesvol inlogt.
+  StreamSubscription<User?>?
+  _authSub; // voor de auth state listener dat is om automatisch te navigeren als de gebruiker succesvol inlogt
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
@@ -35,6 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    // dispose is een functie die wordt aangeroepen wanneer deze pagina wordt gesloten. Hierin zorgen we ervoor dat we de auth state listener annuleren, en dat we de tekstcontrollers opruimen om geheugen
     _authSub?.cancel();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
@@ -43,11 +51,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void initState() {
+    // initState is een functie die wordt aangeroepen wanneer deze pagina voor het eerst wordt gemaakt. Hierin zetten we een listener op de auth state van FirebaseAuth, zodat we kunnen reageren wanneer de gebruiker inlogt of uitlogt. Als er een gebruiker is (dus als user != null), en deze pagina is nog steeds zichtbaar (mounted en isCurrent), dan navigeren we automatisch naar de HomeScreen of poppen we terug naar het vorige scherm, afhankelijk van de returnAfterLogin parameter.
     super.initState();
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null &&
           mounted &&
           ModalRoute.of(context)?.isCurrent == true) {
+        //als er een gebruiker is (dus als user != null), en deze pagina is nog steeds zichtbaar (mounted en isCurrent), dan navigeren we automatisch naar de HomeScreen of poppen we terug naar het vorige scherm, afhankelijk van de returnAfterLogin parameter.
         if (widget.returnAfterLogin) {
           Navigator.of(context).pop(true); // terug naar MovieDetailScreen
         } else {
@@ -60,6 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    // deze functie wordt aangeroepen wanneer de gebruiker op de inloggen/registreren knop drukt. Hierin valideren we eerst het formulier, en als dat goed is, zetten we _isLoading op true om aan te geven dat we bezig zijn. Vervolgens proberen we in te loggen of te registreren met FirebaseAuth, afhankelijk van of we in login modus of registratie modus zijn. Als dat succesvol is, navigeren we naar de HomeScreen (of poppen we terug naar het vorige scherm). Als er een fout is, tonen we een toast met de foutmelding. Ten slotte zetten we _isLoading weer op false.
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
@@ -76,9 +87,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      ); //na succesvol inloggen of registreren, navigeren we naar de HomeScreen. Als returnAfterLogin true is, zal de auth state listener in initState automatisch terug poppen naar het vorige scherm (zoals MovieDetailScreen) in plaats van naar de HomeScreen.
     } on FirebaseAuthException catch (e) {
       Fluttertoast.showToast(msg: e.message ?? 'Authenticatie mislukt');
     } catch (e) {
@@ -89,7 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<UserCredential> _signInWithGoogle() async {
+    // deze functie wordt aangeroepen wanneer de gebruiker op de "Inloggen met Google" knop drukt. Hierin controleren we eerst of we op het web zitten, omdat Google Sign-In op het web een andere flow heeft (met een popup) dan op mobiele platforms. Als we op het web zitten, maken we een GoogleAuthProvider aan, vragen we om de email scope, en loggen we in met signInWithPopup. Als we niet op het web zitten, gebruiken we de google_sign_in package om de gebruiker te laten inloggen, halen we de idToken en accessToken op, maken we een Firebase credential aan, en loggen we in met signInWithCredential. We hebben ook foutafhandeling voor platform exceptions, zoals wanneer de gebruiker het inloggen annuleert.
     if (kIsWeb) {
+      // Google Sign-In op het web
       final googleProvider = GoogleAuthProvider(); //maak google provider aan
       googleProvider.addScope('email'); //vraag email scope aan
       googleProvider.setCustomParameters({
@@ -101,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
+      // Google Sign-In op mobiele platforms
       final googleSignIn = GoogleSignIn.instance;
 
       final googleUser = await googleSignIn.authenticate(); //vraag om inloggen
@@ -115,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // Optioneel: als je een accessToken nodig hebt voor Firebase/platforms:
+      // Sommige implementaties van Google Sign-In geven geen access token terug, en dat is prima. We proberen het op te halen, maar als het niet lukt, gaan we gewoon verder zonder access token.
       String? accessToken;
       try {
         // Als er geen autorisatie bestaat, vraag het aan met authorizeScopes.
@@ -159,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGitHub() async {
     setState(() => _isLoading = true);
     try {
-      final provider = GithubAuthProvider();
+      final provider = GithubAuthProvider(); //maak github provider aan
       provider.addScope('read:user');
       provider.addScope('user:email');
 
@@ -180,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  String generateNonce([int length = 32]) {
+  String generateNonce([int length = 32]) { // Deze functie genereert een cryptografisch veilige random string (nonce) die we gebruiken in het Apple Sign-In proces. We maken een charset van toegestane tekens, en gebruiken Random.secure() om willekeurige tekens te selecteren uit dit charset. De gegenereerde nonce wordt later gehashed met SHA-256 en meegegeven aan Apple, zodat we kunnen verifiëren dat de response van Apple overeenkomt met onze oorspronkelijke nonce.
     const charset =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final rand = Random.secure();
@@ -190,13 +204,13 @@ class _LoginScreenState extends State<LoginScreen> {
     ).join();
   }
 
-  String sha256ofString(String input) {
+  String sha256ofString(String input) { // Deze functie neemt een string (zoals de nonce) en berekent de SHA-256 hash ervan. Dit is nodig voor het Apple Sign-In proces, omdat Apple vereist dat we een gehashte nonce meesturen in de authenticatie-aanvraag. We gebruiken de crypto package om de hash te berekenen, en geven het resultaat terug als een hex-string.
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
 
-  Future<void> _signInWithApple() async {
+  Future<void> _signInWithApple() async { // Deze functie wordt aangeroepen wanneer de gebruiker op de "Inloggen met Apple" knop drukt. Hierin genereren we eerst een nonce en de bijbehorende SHA-256 hash, en vragen we de gebruiker om in te loggen met Apple. We vragen om de email en full name scopes, en sturen de gehashte nonce mee. Als de gebruiker succesvol inlogt, krijgen we een identity token terug van Apple, die we gebruiken om een Firebase credential aan te maken. Vervolgens loggen we in met deze credential. We hebben ook foutafhandeling voor FirebaseAuthException, waarbij we een toast tonen met de foutmelding.
     setState(() => _isLoading = true);
     try {
       final rawNonce = generateNonce();
@@ -233,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { // deze functie bouwt de UI van de LoginScreen. We gebruiken een Scaffold met een witte achtergrond, en in het midden van het scherm hebben we een Card met een formulier. Het formulier bevat tekstvelden voor e-mail en wachtwoord, een knop om in te loggen of registreren, en knoppen voor Google, GitHub, en Apple Sign-In. We hebben ook validatie op de tekstvelden, en tonen een CircularProgressIndicator wanneer we aan het inloggen zijn. De UI is responsive en ziet er netjes uit.
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.white,
@@ -409,8 +423,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> _resetPassword() async {
-    final email = _emailCtrl.text.trim();
+  Future<void> _resetPassword() async { // deze functie wordt aangeroepen wanneer de gebruiker op "Wachtwoord vergeten?" klikt. Hierin vragen we om het e-mailadres, valideren we het, en als het geldig is, sturen we een wachtwoord-reset e-mail via FirebaseAuth. We tonen ook feedback aan de gebruiker via SnackBar, afhankelijk van of het succesvol was of dat er een fout optrad.
+    final email = _emailCtrl.text.trim(); //haal e-mailadres op uit het tekstveld en trim spaties
     if (email.isEmpty || !EmailValidator.validate(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vul een geldig e-mailadres in')),
@@ -418,7 +432,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email); //stuur wachtwoord-reset e-mail via FirebaseAuth
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Wachtwoord-reset e-mail verzonden')),
       );
