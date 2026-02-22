@@ -1,6 +1,6 @@
-import 'package:filmflix/firebase_options.dart';
-import 'package:filmflix/views/movie_detail_screen.dart';
-import 'package:filmflix/views/search_screen.dart';
+import 'package:cinetrackr/firebase_options.dart';
+import 'package:cinetrackr/views/movie_detail_screen.dart';
+import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,16 +10,16 @@ import 'views/loginscreen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const FilmFlixApp());
+  runApp(const CineTrackrApp());
 }
 
-class FilmFlixApp extends StatelessWidget {
-  const FilmFlixApp({super.key});
+class CineTrackrApp extends StatelessWidget {
+  const CineTrackrApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FilmFlix',
+      title: 'CineTrackr',
       debugShowCheckedModeBanner: false,
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
@@ -81,7 +81,7 @@ class FilmFlixApp extends StatelessWidget {
           //if (snapshot.hasData) {
           //return const HomeScreen();
           //}
-          return const SearchScreen();
+          return const LoginScreen();
           //return const MovieDetailScreen(imdbId: "tt1632701");
         },
       ),

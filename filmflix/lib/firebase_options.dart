@@ -25,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -48,17 +42,17 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyBczBH1EjcxC5DK6W9v4dwjLnrW0KaAeTg',
-    appId: '1:937930146429:web:5f50e64e14dc19913fe714',
+    appId: '1:937930146429:web:3885ad915a8960683fe714',
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     authDomain: 'assistant-434717.firebaseapp.com',
     storageBucket: 'assistant-434717.firebasestorage.app',
-    measurementId: 'G-G6933TC69G',
+    measurementId: 'G-JBXM882WEE',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAMxeFR3KK385QnKRCCgg3u7YEX9FIofWg',
-    appId: '1:937930146429:android:0523280c28d960923fe714',
+    appId: '1:937930146429:android:0a79d93f98220dcd3fe714',
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
@@ -66,10 +60,32 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA295HZ1bg4_S9nJLzb1sFl1IH8jRWfgx8',
-    appId: '1:937930146429:ios:29aaba15d90e0f9d3fe714',
+    appId: '1:937930146429:ios:3b7db3aaa3eafa923fe714',
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
-    iosBundleId: 'com.example.filmflix',
+    iosClientId: '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
+    iosBundleId: 'com.MBS.CineTrackr',
   );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyA295HZ1bg4_S9nJLzb1sFl1IH8jRWfgx8',
+    appId: '1:937930146429:ios:3b7db3aaa3eafa923fe714',
+    messagingSenderId: '937930146429',
+    projectId: 'assistant-434717',
+    storageBucket: 'assistant-434717.firebasestorage.app',
+    iosClientId: '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
+    iosBundleId: 'com.MBS.CineTrackr',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyBczBH1EjcxC5DK6W9v4dwjLnrW0KaAeTg',
+    appId: '1:937930146429:web:86cbadfbeaf41a763fe714',
+    messagingSenderId: '937930146429',
+    projectId: 'assistant-434717',
+    authDomain: 'assistant-434717.firebaseapp.com',
+    storageBucket: 'assistant-434717.firebasestorage.app',
+    measurementId: 'G-HS0E4MF25W',
+  );
+
 }

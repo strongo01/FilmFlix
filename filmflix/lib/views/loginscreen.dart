@@ -171,79 +171,127 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGitHub() async {
+    debugPrint('GitHubSignIn: Starting GitHub Sign-In...');
     setState(() => _isLoading = true);
     try {
-      final provider = GithubAuthProvider(); //maak github provider aan
+      final provider = GithubAuthProvider();
       provider.addScope('read:user');
       provider.addScope('user:email');
 
+      debugPrint('GitHubSignIn: Requesting sign-in from Firebase...');
       if (kIsWeb) {
         await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
         await FirebaseAuth.instance.signInWithProvider(provider);
       }
 
+      debugPrint('GitHubSignIn: Sign-in successful');
       if (!mounted) return;
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } on FirebaseAuthException catch (e) {
+      debugPrint('GitHubSignIn: FirebaseAuthException: ${e.code} - ${e.message}');
       Fluttertoast.showToast(msg: e.message ?? 'GitHub login mislukt');
+    } catch (e) {
+      debugPrint('GitHubSignIn: Unexpected error: $e');
+      Fluttertoast.showToast(msg: 'GitHub login mislukt');
     } finally {
+      debugPrint('GitHubSignIn: Process finished');
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String generateNonce([int length = 32]) { // Deze functie genereert een cryptografisch veilige random string (nonce) die we gebruiken in het Apple Sign-In proces. We maken een charset van toegestane tekens, en gebruiken Random.secure() om willekeurige tekens te selecteren uit dit charset. De gegenereerde nonce wordt later gehashed met SHA-256 en meegegeven aan Apple, zodat we kunnen verifiëren dat de response van Apple overeenkomt met onze oorspronkelijke nonce.
+  String generateNonce([int length = 32]) {
+    debugPrint('AppleSignIn: Generating nonce...');
     const charset =
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final rand = Random.secure();
-    return List.generate(
+    final nonce = List.generate(
       length,
       (_) => charset[rand.nextInt(charset.length)],
     ).join();
+    debugPrint('AppleSignIn: Raw nonce generated');
+    return nonce;
   }
 
-  String sha256ofString(String input) { // Deze functie neemt een string (zoals de nonce) en berekent de SHA-256 hash ervan. Dit is nodig voor het Apple Sign-In proces, omdat Apple vereist dat we een gehashte nonce meesturen in de authenticatie-aanvraag. We gebruiken de crypto package om de hash te berekenen, en geven het resultaat terug als een hex-string.
+  String sha256ofString(String input) {
+    debugPrint('AppleSignIn: Hashing nonce...');
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
-    return digest.toString();
+    final hash = digest.toString();
+    debugPrint('AppleSignIn: Nonce hashed successfully');
+    return hash;
   }
 
-  Future<void> _signInWithApple() async { // Deze functie wordt aangeroepen wanneer de gebruiker op de "Inloggen met Apple" knop drukt. Hierin genereren we eerst een nonce en de bijbehorende SHA-256 hash, en vragen we de gebruiker om in te loggen met Apple. We vragen om de email en full name scopes, en sturen de gehashte nonce mee. Als de gebruiker succesvol inlogt, krijgen we een identity token terug van Apple, die we gebruiken om een Firebase credential aan te maken. Vervolgens loggen we in met deze credential. We hebben ook foutafhandeling voor FirebaseAuthException, waarbij we een toast tonen met de foutmelding.
-    setState(() => _isLoading = true);
-    try {
-      final rawNonce = generateNonce();
-      final nonce = sha256ofString(rawNonce);
+Future<UserCredential> signInWithApple() async {
+    final rawNonce = generateNonce(); // genereer nonce
+    final nonce = sha256ofString(rawNonce); // maak sha256 van nonce
+    // vraag om apple id credential
+    final appleCredential = await SignInWithApple.getAppleIDCredential( // vraag apple id credential aan
+      scopes: [ // de scopes die we willen
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: nonce,
+    );
 
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        nonce: nonce,
+    debugPrint(
+      'AppleSignIn: appleCredential identityToken: ${appleCredential.identityToken != null}',
+    );
+    debugPrint(
+      'AppleSignIn: givenName=${appleCredential.givenName}, familyName=${appleCredential.familyName}, email=${appleCredential.email}',
+    );
+
+    if (appleCredential.identityToken == null) { 
+      //als er geen identity token is
+      throw FirebaseAuthException(
+        code: 'null_identity_token',
+        message: "Apple Sign-In failed: no identity token returned",
       );
-
-      if (appleCredential.identityToken == null) {
-        Fluttertoast.showToast(msg: 'Apple login mislukt');
-        return;
-      }
-
-      final oauthCredential = OAuthProvider(
-        "apple.com",
-      ).credential(idToken: appleCredential.identityToken, rawNonce: rawNonce);
-
-      await FirebaseAuth.instance.signInWithCredential(oauthCredential);
-
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
-    } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? 'Apple login mislukt');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
+    //maakt een oauth credential aan voor firebase
+    final oauthCredential = OAuthProvider("apple.com").credential(
+      idToken: appleCredential.identityToken!,
+      rawNonce: rawNonce,
+      accessToken: appleCredential.authorizationCode,
+    );
+    //logt in met firebase
+    final userCredential = await FirebaseAuth.instance.signInWithCredential(
+      oauthCredential,
+    );
+
+    // Log wat Firebase teruggeeft
+    final userBefore = FirebaseAuth.instance.currentUser;
+    debugPrint(
+      'AppleSignIn: currentUser before update: uid=${userBefore?.uid}, displayName=${userBefore?.displayName}',
+    );
+
+    // Als Apple returned givenName, bewaar die als displayName in Firebase Auth
+    try {
+      final given = appleCredential.givenName;
+      if (userBefore != null &&
+          given != null &&
+          given.trim().isNotEmpty &&
+          (userBefore.displayName == null ||
+              userBefore.displayName!.trim().isEmpty)) {
+        debugPrint('AppleSignIn: updating displayName to: $given');
+        await userBefore.updateDisplayName(given.trim());
+        await userBefore.reload();
+      }
+    } catch (e) {
+      debugPrint('Apple sign-in: kon displayName niet updaten: $e');
+    }
+
+    final userAfter = FirebaseAuth.instance.currentUser;
+    debugPrint(
+      'AppleSignIn: currentUser after update: uid=${userAfter?.uid}, displayName=${userAfter?.displayName}',
+    );
+    debugPrint(
+      'AppleSignIn: providerData=${userAfter?.providerData.map((p) => "${p.providerId}:${p.displayName}").toList()}',
+    );
+
+    return userCredential;
   }
 
   @override
@@ -409,7 +457,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             text: 'Inloggen met Apple',
                             onPressed: _isLoading
                                 ? null
-                                : () => _signInWithApple(),
+                                : () => signInWithApple(),
                           ),
                       ],
                     ),

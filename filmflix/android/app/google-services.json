@@ -7,14 +7,14 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:937930146429:android:0523280c28d960923fe714",
+        "mobilesdk_app_id": "1:937930146429:android:0a79d93f98220dcd3fe714",
         "android_client_info": {
-          "package_name": "com.example.filmflix"
+          "package_name": "com.MBS.CineTrackr"
         }
       },
       "oauth_client": [
         {
-          "client_id": "937930146429-hp8c2dh1airkgopvc0u1clh26qhdusjo.apps.googleusercontent.com",
+          "client_id": "937930146429-f6kt803ottldsfitk1rn3k726gav4j53.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -27,8 +27,15 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "937930146429-hp8c2dh1airkgopvc0u1clh26qhdusjo.apps.googleusercontent.com",
+              "client_id": "937930146429-f6kt803ottldsfitk1rn3k726gav4j53.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "937930146429-dht3dgjpk5h1cn56qhk2qor0s5ui7bt2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.MBS.CineTrackr"
+              }
             }
           ]
         }

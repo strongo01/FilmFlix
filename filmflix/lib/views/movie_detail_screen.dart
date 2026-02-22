@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:filmflix/views/loginscreen.dart';
+import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:filmflix/services/movie_repository.dart';
+import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:http/http.dart' as http;
 
 class MovieDetailScreen extends StatefulWidget {

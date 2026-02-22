@@ -1,4 +1,4 @@
-# filmflix
+# cinetrackr
 
 A new Flutter project.
 

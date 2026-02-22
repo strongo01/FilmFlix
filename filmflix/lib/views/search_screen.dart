@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:filmflix/models/movie_models.dart';
-import 'package:filmflix/services/movie_repository.dart';
-import 'package:filmflix/views/movie_detail_screen.dart';
+import 'package:cinetrackr/models/movie_models.dart';
+import 'package:cinetrackr/services/movie_repository.dart';
+import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
