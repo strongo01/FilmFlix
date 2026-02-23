@@ -182,6 +182,54 @@ export default async function handler(req, res) {
         };
     }
 
+    else if (type === 'image-proxy') {
+        const { imageUrl } = req.query;
+
+        if (!imageUrl) {
+            return res.status(400).json({ error: 'Missing imageUrl' });
+        }
+
+        try {
+            const parsed = new URL(imageUrl);
+
+            // 🔒 Alleen https toestaan
+            if (parsed.protocol !== 'https:') {
+                return res.status(400).json({ error: 'Only HTTPS allowed' });
+            }
+
+            // 🔒 Alleen bekende image hosts toestaan
+            const allowedHosts = [
+                'cdn.movieofthenight.com',
+                'image.tmdb.org',
+                'm.media-amazon.com'
+            ];
+
+            if (!allowedHosts.includes(parsed.hostname)) {
+                return res.status(403).json({ error: 'Host not allowed' });
+            }
+
+            const response = await fetch(imageUrl);
+
+            if (!response.ok) {
+                return res.status(response.status).end();
+            }
+
+            const buffer = await response.arrayBuffer();
+
+            res.setHeader(
+                'Content-Type',
+                response.headers.get('content-type') || 'image/jpeg'
+            );
+
+            // optional cache (sneller + goedkoper)
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+
+            return res.status(200).send(Buffer.from(buffer));
+        } catch (err) {
+            return res.status(500).json({ error: 'Image fetch failed' });
+        }
+    }
+
     else if (type === 'translate') {
         const { text, target = 'nl', source = 'auto' } = req.query;
 
@@ -238,6 +286,9 @@ export default async function handler(req, res) {
     if (url) {
         try {
             const response = await fetch(url, { headers });
+            if (!response.ok) {
+                return res.status(response.status).json({ error: 'Upstream API failed' });
+            }
             const data = await response.json();
 
             // Alleen filtering toepassen bij search
