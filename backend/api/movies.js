@@ -1,6 +1,18 @@
 // Database-backed endpoints removed — this backend no longer exposes DB access.
-
+const https = require('https');
 export default async function handler(req, res) {
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization'
+    );
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     const {
         type,
 
@@ -170,6 +182,52 @@ export default async function handler(req, res) {
         };
     }
 
+    else if (type === 'translate') {
+        const { text, target = 'nl', source = 'auto' } = req.query;
+
+        if (!text) {
+            return res.status(400).json({ error: 'Missing text parameter' });
+        }
+
+        const options = {
+            method: 'POST',
+            hostname: 'free-google-translator.p.rapidapi.com',
+            path: `/external-api/free-google-translator?from=${encodeURIComponent(source)}&to=${encodeURIComponent(target)}&query=${encodeURIComponent(text)}`,
+            headers: {
+                'x-rapidapi-key': RAPIDAPI_KEY,
+                'x-rapidapi-host': 'free-google-translator.p.rapidapi.com',
+                'Content-Type': 'application/json',
+            },
+        };
+
+        try {
+            const translated = await new Promise((resolve, reject) => {
+                const req = https.request(options, (res2) => {
+                    const chunks = [];
+                    res2.on('data', (chunk) => chunks.push(chunk));
+                    res2.on('end', () => {
+                        const body = Buffer.concat(chunks).toString();
+                        try {
+                            const json = JSON.parse(body);
+                            resolve(json);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                });
+
+                req.on('error', (err) => reject(err));
+                req.write(JSON.stringify({ translate: 'rapidapi' }));
+                req.end();
+            });
+
+            return res.status(200).json(translated);
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Translation failed' });
+        }
+    }
+
     else {
         return res.status(400).json({
             error: 'Invalid type',
@@ -254,43 +312,43 @@ export default async function handler(req, res) {
             }
 
             const scored = hits.map(hit => {
-    const rawTitle = titleOf(hit);
-    const itemNorm = normalize(rawTitle);
+                const rawTitle = titleOf(hit);
+                const itemNorm = normalize(rawTitle);
 
-    let score = 0;
+                let score = 0;
 
-    if (hasExact(itemNorm)) {
-        score = 100;
-    }
-    else if (hasPhrase(itemNorm)) {
-        score = 80;
-    }
-    else if (hasAllWords(itemNorm)) {
-        score = 60;
-    }
-    else {
-        const similarity = similarityScore(itemNorm, queryNorm);
-        if (similarity >= 0.6) {
-            score = similarity * 50;
-        }
-    }
+                if (hasExact(itemNorm)) {
+                    score = 100;
+                }
+                else if (hasPhrase(itemNorm)) {
+                    score = 80;
+                }
+                else if (hasAllWords(itemNorm)) {
+                    score = 60;
+                }
+                else {
+                    const similarity = similarityScore(itemNorm, queryNorm);
+                    if (similarity >= 0.6) {
+                        score = similarity * 50;
+                    }
+                }
 
-    return {
-        ...hit,
-        _score: score
-    };
-});
+                return {
+                    ...hit,
+                    _score: score
+                };
+            });
 
-// Alleen resultaten met score > 0
-const filtered = scored
-    .filter(item => item._score > 0)
-    .sort((a, b) => b._score - a._score);
+            // Alleen resultaten met score > 0
+            const filtered = scored
+                .filter(item => item._score > 0)
+                .sort((a, b) => b._score - a._score);
 
-res.status(200).json({
-    original_count: hits.length,
-    filtered_count: filtered.length,
-    results: filtered
-});
+            res.status(200).json({
+                original_count: hits.length,
+                filtered_count: filtered.length,
+                results: filtered
+            });
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: 'External API request failed' });
