@@ -289,6 +289,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  String proxiedUrl(String url) {
+    return 'https://film-flix-olive.vercel.app/api/movies'
+        '?type=image-proxy'
+        '&imageUrl=${Uri.encodeComponent(url)}';
+  }
+
   Widget _posterWithFallback(
     // Deze functie bouwt een widget die de poster van de film toont, met een fallback naar de TMDb poster als de originele poster niet beschikbaar is of niet geladen kan worden. We proberen eerst de originele poster te laden, en als dat mislukt (bijvoorbeeld vanwege een fout in de URL of een probleem met het laden van de afbeelding), gebruiken we een FutureBuilder om asynchroon de TMDb poster op te halen via onze backend. Als ook dat mislukt, tonen we een standaard "broken image" icoon. Dit zorgt
     BuildContext context,
@@ -314,7 +320,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             return ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                url,
+                proxiedUrl(url),
                 fit: BoxFit.cover,
                 errorBuilder: (c, e, s) {
                   debugPrint('TMDb poster load error: $e');
@@ -342,7 +348,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Image.network(
-        initialPoster,
+        proxiedUrl(initialPoster),
         fit: BoxFit.cover,
         // We proberen eerst de originele poster te laden. Als er een fout optreedt bij het laden van deze afbeelding (bijvoorbeeld vanwege een ongeldige URL of netwerkfout), gebruiken we de errorBuilder om een fallback te implementeren. In de errorBuilder maken we een FutureBuilder die asynchroon de TMDb poster ophaalt via onze backend. Terwijl we wachten op het resultaat, tonen we een loading indicator. Zodra we de TMDb poster URL hebben, proberen we deze te laden. Als dat ook mislukt, tonen we een "broken image" icoon. Op deze manier zorgen we ervoor dat we altijd ons best doen om een poster te tonen, zelfs als de originele bron niet beschikbaar is.
         errorBuilder: (context, error, stackTrace) {
@@ -363,7 +369,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               if (url != null && url.isNotEmpty) {
                 // Als we een geldige TMDb poster URL hebben ontvangen, proberen we deze te laden. We gebruiken ook hier een errorBuilder om eventuele fouten bij het laden van de TMDb poster af te handelen, en tonen een "broken image" icoon als dat gebeurt.
                 return Image.network(
-                  url,
+                  proxiedUrl(url),
                   fit: BoxFit.cover,
                   errorBuilder: (c, e, s) {
                     debugPrint('TMDb fallback load error: $e');
@@ -798,7 +804,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     int seasonIndex,
     List seasons,
   ) {
-    final season = (seasonRaw is Map) // We controleren of seasonRaw een Map is, omdat we verwachten dat de seizoenen in de RapidAPI data als maps worden weergegeven. Als seasonRaw inderdaad een Map is, gebruiken we het direct. Als het geen Map is (bijvoorbeeld als het gewoon een string is), maken we een nieuwe Map aan met een 'title' key die de string waarde van seasonRaw bevat. Dit zorgt ervoor dat we altijd een consistente structuur hebben om mee te werken, ongeacht het oorspronkelijke formaat van de data.
+    final season =
+        (seasonRaw
+            is Map) // We controleren of seasonRaw een Map is, omdat we verwachten dat de seizoenen in de RapidAPI data als maps worden weergegeven. Als seasonRaw inderdaad een Map is, gebruiken we het direct. Als het geen Map is (bijvoorbeeld als het gewoon een string is), maken we een nieuwe Map aan met een 'title' key die de string waarde van seasonRaw bevat. Dit zorgt ervoor dat we altijd een consistente structuur hebben om mee te werken, ongeacht het oorspronkelijke formaat van de data.
         ? seasonRaw
         : {'title': seasonRaw.toString()};
     final seasonTitle = (season['title'] ?? season['itemType'] ?? 'Season')
@@ -828,7 +836,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
-  Widget _buildEpisodeRow( // Deze functie bouwt een widget die een enkele aflevering binnen een seizoen weergeeft. We nemen de BuildContext, de ruwe data van de aflevering (die in verschillende formaten kan voorkomen), de index van het seizoen en de index van de aflevering als parameters. We extraheren de relevante informatie uit de ruwe data van de aflevering, zoals de titel, het overzicht, streaming opties, thumbnail en een unieke sleutel voor opslag. We controleren ook of deze aflevering als gezien is gemarkeerd door de gebruiker. We bouwen vervolgens een ListTile die deze informatie weergeeft: we tonen de thumbnail (indien beschikbaar), de titel van de aflevering, en een deel van het overzicht met een optie om het volledige overzicht te vertalen. We tonen ook een play knop als er streaming opties beschikbaar zijn, en een checkbox om aan te geven of de aflevering als gezien is gemarkeerd. Wanneer de gebruiker op het overzicht klikt, tonen we een dialog met het volledige overzicht van de aflevering.
+  Widget _buildEpisodeRow(
+    // Deze functie bouwt een widget die een enkele aflevering binnen een seizoen weergeeft. We nemen de BuildContext, de ruwe data van de aflevering (die in verschillende formaten kan voorkomen), de index van het seizoen en de index van de aflevering als parameters. We extraheren de relevante informatie uit de ruwe data van de aflevering, zoals de titel, het overzicht, streaming opties, thumbnail en een unieke sleutel voor opslag. We controleren ook of deze aflevering als gezien is gemarkeerd door de gebruiker. We bouwen vervolgens een ListTile die deze informatie weergeeft: we tonen de thumbnail (indien beschikbaar), de titel van de aflevering, en een deel van het overzicht met een optie om het volledige overzicht te vertalen. We tonen ook een play knop als er streaming opties beschikbaar zijn, en een checkbox om aan te geven of de aflevering als gezien is gemarkeerd. Wanneer de gebruiker op het overzicht klikt, tonen we een dialog met het volledige overzicht van de aflevering.
     BuildContext context,
     dynamic epRaw,
     int seasonIndex,
@@ -841,10 +850,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // stream options for episode
     final epStreamRaw = ep['streamingOptions']?['nl'] ?? ep['streamingOptions'];
     final epStreams = _toList(epStreamRaw);
-    if (epStreams.isNotEmpty) { // We controleren of er streaming opties beschikbaar zijn voor deze aflevering. We proberen eerst de Nederlandse streaming opties te extraheren (aangegeven door 'nl'), en als die er niet zijn, gebruiken we de algemene 'streamingOptions'. We gebruiken de _toList helper om ervoor te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. Als er streaming opties beschikbaar zijn, kunnen we deze later gebruiken om een play knop weer te geven waarmee de gebruiker naar de beschikbare streaming services kan navigeren.
+    if (epStreams.isNotEmpty) {
+      // We controleren of er streaming opties beschikbaar zijn voor deze aflevering. We proberen eerst de Nederlandse streaming opties te extraheren (aangegeven door 'nl'), en als die er niet zijn, gebruiken we de algemene 'streamingOptions'. We gebruiken de _toList helper om ervoor te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. Als er streaming opties beschikbaar zijn, kunnen we deze later gebruiken om een play knop weer te geven waarmee de gebruiker naar de beschikbare streaming services kan navigeren.
       final first = epStreams[0];
-      if (first is Map) {
-      }
+      if (first is Map) {}
     }
 
     // thumbnail
@@ -852,7 +861,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         ep['imageSet']?['verticalPoster']?['w160'] ?? ep['image'] ?? null;
 
     // stable episode key for storage
-    final epKey = 's${seasonIndex}_e${episodeIndex}'; // We genereren een unieke sleutel voor deze aflevering op basis van de index van het seizoen en de index van de aflevering. Deze sleutel gebruiken we later om bij te houden welke afleveringen als gezien zijn gemarkeerd door de gebruiker. Door deze sleutel te gebruiken, kunnen we gemakkelijk controleren of een specifieke aflevering in de _seenSet zit, wat ons vertelt of de gebruiker deze aflevering als gezien heeft gemarkeerd.
+    final epKey =
+        's${seasonIndex}_e${episodeIndex}'; // We genereren een unieke sleutel voor deze aflevering op basis van de index van het seizoen en de index van de aflevering. Deze sleutel gebruiken we later om bij te houden welke afleveringen als gezien zijn gemarkeerd door de gebruiker. Door deze sleutel te gebruiken, kunnen we gemakkelijk controleren of een specifieke aflevering in de _seenSet zit, wat ons vertelt of de gebruiker deze aflevering als gezien heeft gemarkeerd.
     final isSeen = _seenSet.contains(epKey);
 
     return Column(
@@ -860,9 +870,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         ListTile(
           leading: epThumb != null
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(6), // We gebruiken ClipRRect om de thumbnail van de aflevering weer te geven met afgeronde hoeken. We controleren eerst of er een thumbnail beschikbaar is (epThumb is niet null), en als dat het geval is, tonen we deze in de leading positie van de ListTile. We stellen de breedte en hoogte van de afbeelding in op 84x48 pixels, en we gebruiken BoxFit.cover om ervoor te zorgen dat de afbeelding goed past binnen deze afmetingen. We voegen ook een errorBuilder toe om een fallback icoon weer te geven als er een fout optreedt bij het laden van de afbeelding, zoals wanneer de URL ongeldig is of wanneer er netwerkproblemen zijn.
+                  borderRadius: BorderRadius.circular(
+                    6,
+                  ), // We gebruiken ClipRRect om de thumbnail van de aflevering weer te geven met afgeronde hoeken. We controleren eerst of er een thumbnail beschikbaar is (epThumb is niet null), en als dat het geval is, tonen we deze in de leading positie van de ListTile. We stellen de breedte en hoogte van de afbeelding in op 84x48 pixels, en we gebruiken BoxFit.cover om ervoor te zorgen dat de afbeelding goed past binnen deze afmetingen. We voegen ook een errorBuilder toe om een fallback icoon weer te geven als er een fout optreedt bij het laden van de afbeelding, zoals wanneer de URL ongeldig is of wanneer er netwerkproblemen zijn.
                   child: Image.network(
-                    epThumb.toString(),
+                    proxiedUrl(epThumb.toString()),
                     width: 84,
                     height: 48,
                     fit: BoxFit.cover,
@@ -910,7 +922,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // play button (if streams available)
-              if (epStreams.isNotEmpty) // We controleren of er streaming opties beschikbaar zijn voor deze aflevering. Als dat het geval is, tonen we een play knop in de trailing positie van de ListTile. Wanneer de gebruiker op deze knop klikt, willen we een modal bottom sheet tonen met de beschikbare streaming opties voor deze aflevering, zodat de gebruiker kan kiezen waar ze deze aflevering willen bekijken. We zullen de streaming opties die we eerder hebben geëxtraheerd gebruiken om deze informatie in de modal te tonen.
+              if (epStreams
+                  .isNotEmpty) // We controleren of er streaming opties beschikbaar zijn voor deze aflevering. Als dat het geval is, tonen we een play knop in de trailing positie van de ListTile. Wanneer de gebruiker op deze knop klikt, willen we een modal bottom sheet tonen met de beschikbare streaming opties voor deze aflevering, zodat de gebruiker kan kiezen waar ze deze aflevering willen bekijken. We zullen de streaming opties die we eerder hebben geëxtraheerd gebruiken om deze informatie in de modal te tonen.
                 IconButton(
                   icon: const Icon(Icons.play_arrow),
                   onPressed: () async {
@@ -933,7 +946,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       builder: (ctx) {
                         return Column(
                           mainAxisSize: MainAxisSize.min,
-                          children: mergedStreams.map<Widget>((option) { // We itereren door de gededupede lijst van streaming opties en bouwen een ListTile voor elke optie. We extraheren de naam van de service en de link van de optie, en tonen deze informatie in de ListTile. Wanneer de gebruiker op een ListTile klikt, sluiten we de modal bottom sheet en navigeren we naar de link van die streaming optie, zodat de gebruiker direct naar de juiste pagina kan gaan om deze aflevering te bekijken.
+                          children: mergedStreams.map<Widget>((option) {
+                            // We itereren door de gededupede lijst van streaming opties en bouwen een ListTile voor elke optie. We extraheren de naam van de service en de link van de optie, en tonen deze informatie in de ListTile. Wanneer de gebruiker op een ListTile klikt, sluiten we de modal bottom sheet en navigeren we naar de link van die streaming optie, zodat de gebruiker direct naar de juiste pagina kan gaan om deze aflevering te bekijken.
                             final service =
                                 option['service']?['name']?.toString() ??
                                 'Unknown';
@@ -969,7 +983,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     if (!go) return;
                   }
                   await _toggleEpisodeSeen(epKey, val ?? false);
-                 // Na het toggelen van de seen status van de aflevering, willen we ervoor zorgen dat de UI wordt bijgewerkt om de nieuwe status weer te geven. We roepen setState aan om de widget te laten herbouwen, zodat de checkbox en andere relevante delen van de UI worden bijgewerkt op basis van de nieuwe staat van _seenSet. Dit zorgt ervoor dat wanneer een gebruiker een aflevering markeert als gezien of niet gezien, deze verandering direct zichtbaar is in de interface.
+                  // Na het toggelen van de seen status van de aflevering, willen we ervoor zorgen dat de UI wordt bijgewerkt om de nieuwe status weer te geven. We roepen setState aan om de widget te laten herbouwen, zodat de checkbox en andere relevante delen van de UI worden bijgewerkt op basis van de nieuwe staat van _seenSet. Dit zorgt ervoor dat wanneer een gebruiker een aflevering markeert als gezien of niet gezien, deze verandering direct zichtbaar is in de interface.
                   setState(() {});
                 },
               ),

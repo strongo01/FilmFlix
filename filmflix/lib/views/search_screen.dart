@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key}); // super.key betekent dat we de key parameter doorgeven aan de constructor van de parent class (StatefulWidget). Dit is belangrijk voor het correct functioneren van de widget in de widget tree van Flutter, vooral als we later willen optimaliseren of bepaalde widgets willen identificeren. Door super.key te gebruiken, zorgen we ervoor dat de SearchScreen widget correct kan worden herbouwd en beheerd door Flutter's widget systeem.
+  const SearchScreen({
+    super.key,
+  }); // super.key betekent dat we de key parameter doorgeven aan de constructor van de parent class (StatefulWidget). Dit is belangrijk voor het correct functioneren van de widget in de widget tree van Flutter, vooral als we later willen optimaliseren of bepaalde widgets willen identificeren. Door super.key te gebruiken, zorgen we ervoor dat de SearchScreen widget correct kan worden herbouwd en beheerd door Flutter's widget systeem.
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -32,7 +34,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
     setState(() => loading = true);
     try {
-      results = await MovieRepository.search(query); // we roepen de search functie van MovieRepository aan, die op zijn beurt de search functie van MovieApi aanroept. Deze functie voert een API call uit naar de backend met de zoekopdracht, en ontvangt een lijst van zoekresultaten in de vorm van MovieSearchItem objecten. We slaan deze resultaten op in de state van de widget, zodat we ze kunnen weergeven in de UI. Als er een fout optreedt tijdens het zoeken, vangen we deze op en loggen we een foutmelding, en zorgen we ervoor dat de resultatenlijst leeg blijft.
+      results = await MovieRepository.search(
+        query,
+      ); // we roepen de search functie van MovieRepository aan, die op zijn beurt de search functie van MovieApi aanroept. Deze functie voert een API call uit naar de backend met de zoekopdracht, en ontvangt een lijst van zoekresultaten in de vorm van MovieSearchItem objecten. We slaan deze resultaten op in de state van de widget, zodat we ze kunnen weergeven in de UI. Als er een fout optreedt tijdens het zoeken, vangen we deze op en loggen we een foutmelding, en zorgen we ervoor dat de resultatenlijst leeg blijft.
     } catch (e) {
       debugPrint('Error searching movies: $e');
       results = [];
@@ -84,6 +88,12 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  String proxiedUrl(String url) {
+    return 'https://film-flix-olive.vercel.app/api/movies'
+        '?type=image-proxy'
+        '&imageUrl=${Uri.encodeComponent(url)}';
+  }
+
   Widget _posterWithFallback(MovieSearchItem movie) {
     if (movie.poster == null || movie.poster!.isEmpty) {
       // Geen originele poster, direct TMDb fallback
@@ -96,7 +106,7 @@ class _SearchScreenState extends State<SearchScreen> {
           final url = snap.data;
           if (url != null && url.isNotEmpty) {
             return Image.network(
-              url,
+              proxiedUrl(url),
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
             );
@@ -108,7 +118,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Er is een originele poster
     return Image.network(
-      movie.poster!,
+      proxiedUrl(movie.poster!),
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         // fallback naar TMDb
@@ -120,7 +130,7 @@ class _SearchScreenState extends State<SearchScreen> {
             final url = snap.data;
             if (url != null && url.isNotEmpty)
               return Image.network(
-                url,
+                proxiedUrl(url),
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) =>
                     Container(color: Colors.grey[300]),
@@ -148,6 +158,8 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.all(12),
             child: TextField(
               controller: controller,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => search(),
               style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
                 hintText: "Zoek film...",
