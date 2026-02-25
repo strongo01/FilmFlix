@@ -5,38 +5,33 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     final backgroundGradient = isDarkMode
         ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F2027),
-              Color(0xFF203A43),
-              Color(0xFF2C5364),
-            ],
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
           )
         : const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFE0E0E0),
-              Color(0xFFF5F5F5),
-              Color(0xFFFFFFFF),
-            ],
+            colors: [Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFFFFFFF)],
           );
 
     final textColor = isDarkMode ? Colors.white : Colors.black;
 
-    final itemBackgroundColor = isDarkMode ? Colors.white : Colors.white; // Keep white for items, or adjust if needed
-    final shadowColor = isDarkMode ? Colors.black.withOpacity(0.25) : Colors.grey.withOpacity(0.4);
+    final itemBackgroundColor = isDarkMode
+        ? Colors.white
+        : Colors.white; // Keep white for items, or adjust if needed
+    final shadowColor = isDarkMode
+        ? Colors.black.withOpacity(0.25)
+        : Colors.grey.withOpacity(0.4);
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: backgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -69,15 +64,51 @@ class HomeScreen extends StatelessWidget {
                     mainAxisSpacing: 28,
                     childAspectRatio: 0.82,
                     children: [
-                      _buildItem("assets/images/afbeelding filmagenda.png", "Filmagenda", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding eten drinken.png", "Eten & Dranken", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding thuisbio.jpg", "Thuisbioscoop", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding bestelling.jpg", "Bestellingen", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding vragen.jpg", "Klantenservice", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding kaart.jpg", "Bioscooppas", itemBackgroundColor, textColor, shadowColor),
+                      _buildItem(
+                        "assets/images/afbeelding filmagenda.png",
+                        "Filmagenda",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding eten drinken.png",
+                        "Eten & Dranken",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding thuisbio.jpg",
+                        "Thuisbioscoop",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding bestelling.jpg",
+                        "Bestellingen",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding vragen.jpg",
+                        "Klantenservice",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding kaart.jpg",
+                        "Bioscooppas",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                      ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -86,7 +117,13 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(String imagePath, String title, Color itemBgColor, Color textColor, Color shadowColor) {
+  Widget _buildItem(
+    String imagePath,
+    String title,
+    Color itemBgColor,
+    Color textColor,
+    Color shadowColor,
+  ) {
     return Column(
       children: [
         Container(
@@ -106,10 +143,7 @@ class HomeScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
-              ),
+              child: Image.asset(imagePath, fit: BoxFit.contain),
             ),
           ),
         ),
@@ -123,7 +157,7 @@ class HomeScreen extends StatelessWidget {
             color: textColor,
             letterSpacing: 0.3,
           ),
-        )
+        ),
       ],
     );
   }
