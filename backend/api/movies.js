@@ -1,13 +1,18 @@
-import postgres from 'postgres';
-
-let sql;
-if (!global.sql) {
-    if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not defined');
-    global.sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
-}
-sql = global.sql;
-
+// Database-backed endpoints removed — this backend no longer exposes DB access.
+const https = require('https');
 export default async function handler(req, res) {
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization'
+    );
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     const {
         type,
 
@@ -42,12 +47,15 @@ export default async function handler(req, res) {
         r = 'json',
         page = 1,
 
-        // Supabase
-        tconst,
+        // (no database params)
+
+        // TMDB
+        movie_id,
     } = req.query;
 
     const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
     const OMDB_API_KEY = process.env.OMDB_API_KEY;
+    const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
     let url;
     let headers = {};
@@ -67,7 +75,7 @@ export default async function handler(req, res) {
         addParam(params, 'title', title);
         addParam(params, 'series_granularity', series_granularity);
         addParam(params, 'output_language', output_language);
-        addParam(params, 'show_type', show_type); 
+        addParam(params, 'show_type', show_type);
 
         url = `https://${RAPID_HOST}/shows/search/title?` + new URLSearchParams(params);
 
@@ -157,24 +165,114 @@ export default async function handler(req, res) {
             });
     }
 
-    // SUPABASE — FETCH TITLES + RATINGS
-    else if (type === 'supabase-titles') {
+    // (database-backed endpoints have been removed)
+
+    // TMDB — GET IMAGES
+    else if (type === 'tmdb-images') {
+        if (!movie_id) {
+            return res.status(400).json({
+                error: 'TMDB requires movie_id',
+            });
+        }
+
+        url = `https://api.themoviedb.org/3/movie/${movie_id}/images`;
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    else if (type === 'image-proxy') {
+        const { imageUrl } = req.query;
+
+        if (!imageUrl) {
+            return res.status(400).json({ error: 'Missing imageUrl' });
+        }
+
         try {
-            const titlesQuery = tconst
-                ? sql`SELECT * FROM titles WHERE tconst = ${tconst}`
-                : sql`SELECT * FROM titles`;
+            const parsed = new URL(imageUrl);
 
-            const ratingsQuery = tconst
-                ? sql`SELECT * FROM title_ratings WHERE tconst = ${tconst}`
-                : sql`SELECT * FROM title_ratings`;
+            // 🔒 Alleen https toestaan
+            if (parsed.protocol !== 'https:') {
+                return res.status(400).json({ error: 'Only HTTPS allowed' });
+            }
 
-            const titles = await titlesQuery;
-            const ratings = await ratingsQuery;
+            // 🔒 Alleen bekende image hosts toestaan
+            const allowedHosts = [
+                'cdn.movieofthenight.com',
+                'image.tmdb.org',
+                'm.media-amazon.com'
+            ];
 
-            return res.status(200).json({ titles, ratings });
+            if (!allowedHosts.includes(parsed.hostname)) {
+                return res.status(403).json({ error: 'Host not allowed' });
+            }
+
+            const response = await fetch(imageUrl);
+
+            if (!response.ok) {
+                return res.status(response.status).end();
+            }
+
+            const buffer = await response.arrayBuffer();
+
+            res.setHeader(
+                'Content-Type',
+                response.headers.get('content-type') || 'image/jpeg'
+            );
+
+            // optional cache (sneller + goedkoper)
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+
+            return res.status(200).send(Buffer.from(buffer));
+        } catch (err) {
+            return res.status(500).json({ error: 'Image fetch failed' });
+        }
+    }
+
+    else if (type === 'translate') {
+        const { text, target = 'nl', source = 'auto' } = req.query;
+
+        if (!text) {
+            return res.status(400).json({ error: 'Missing text parameter' });
+        }
+
+        const options = {
+            method: 'POST',
+            hostname: 'free-google-translator.p.rapidapi.com',
+            path: `/external-api/free-google-translator?from=${encodeURIComponent(source)}&to=${encodeURIComponent(target)}&query=${encodeURIComponent(text)}`,
+            headers: {
+                'x-rapidapi-key': RAPIDAPI_KEY,
+                'x-rapidapi-host': 'free-google-translator.p.rapidapi.com',
+                'Content-Type': 'application/json',
+            },
+        };
+
+        try {
+            const translated = await new Promise((resolve, reject) => {
+                const req = https.request(options, (res2) => {
+                    const chunks = [];
+                    res2.on('data', (chunk) => chunks.push(chunk));
+                    res2.on('end', () => {
+                        const body = Buffer.concat(chunks).toString();
+                        try {
+                            const json = JSON.parse(body);
+                            resolve(json);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                });
+
+                req.on('error', (err) => reject(err));
+                req.write(JSON.stringify({ translate: 'rapidapi' }));
+                req.end();
+            });
+
+            return res.status(200).json(translated);
         } catch (err) {
             console.error(err);
-            return res.status(500).json({ error: 'Supabase query failed' });
+            return res.status(500).json({ error: 'Translation failed' });
         }
     }
 
@@ -188,8 +286,120 @@ export default async function handler(req, res) {
     if (url) {
         try {
             const response = await fetch(url, { headers });
+            if (!response.ok) {
+                return res.status(response.status).json({ error: 'Upstream API failed' });
+            }
             const data = await response.json();
-            res.status(200).json(data);
+
+            // Alleen filtering toepassen bij search
+            if (type !== 'search') {
+                return res.status(200).json(data);
+            }
+            // ===== NETFLIX-ACHTIGE AUTO MATCHING =====
+
+            if (!title) {
+                return res.status(400).json({ error: 'Search requires title parameter' });
+            }
+
+            function normalize(str) {
+                if (!str) return '';
+                return str
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            // Levenshtein
+            function levenshtein(a, b) {
+                const m = a.length, n = b.length;
+                if (!m) return n;
+                if (!n) return m;
+                const v0 = new Array(n + 1);
+                const v1 = new Array(n + 1);
+                for (let j = 0; j <= n; j++) v0[j] = j;
+                for (let i = 0; i < m; i++) {
+                    v1[0] = i + 1;
+                    for (let j = 0; j < n; j++) {
+                        const cost = a[i] === b[j] ? 0 : 1;
+                        v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+                    }
+                    for (let j = 0; j <= n; j++) v0[j] = v1[j];
+                }
+                return v1[n];
+            }
+
+            function similarityScore(a, b) {
+                const dist = levenshtein(a, b);
+                return 1 - dist / Math.max(a.length, b.length);
+            }
+
+            // Hits ophalen
+            let hits = [];
+            if (Array.isArray(data)) hits = data;
+            else if (Array.isArray(data?.results)) hits = data.results;
+            else if (Array.isArray(data?.titles)) hits = data.titles;
+
+            const queryNorm = normalize(title);
+            const queryTokens = queryNorm.split(' ');
+
+            function titleOf(item) {
+                return item.title || item.name || item.show_title || item.original_title || '';
+            }
+
+            function hasExact(itemNorm) {
+                return itemNorm === queryNorm;
+            }
+            function hasPhrase(itemNorm) {
+                return itemNorm.includes(queryNorm);
+            }
+            function hasAllWords(itemNorm) {
+                return queryTokens.every(tok => itemNorm.includes(tok));
+            }
+            function hasFuzzy(itemNorm) {
+                return similarityScore(itemNorm, queryNorm) >= 0.6;
+            }
+
+            const scored = hits.map(hit => {
+                const rawTitle = titleOf(hit);
+                const itemNorm = normalize(rawTitle);
+
+                let score = 0;
+
+                if (hasExact(itemNorm)) {
+                    score = 100;
+                }
+                else if (hasPhrase(itemNorm)) {
+                    score = 80;
+                }
+                else if (hasAllWords(itemNorm)) {
+                    score = 60;
+                }
+                else {
+                    const similarity = similarityScore(itemNorm, queryNorm);
+                    if (similarity >= 0.6) {
+                        score = similarity * 50;
+                    }
+                }
+
+                return {
+                    ...hit,
+                    _score: score
+                };
+            });
+
+            // Alleen resultaten met score > 0
+            const filtered = scored
+                .filter(item => item._score > 0)
+                .sort((a, b) => b._score - a._score);
+
+            res.status(200).json({
+                original_count: hits.length,
+                filtered_count: filtered.length,
+                results: filtered
+            });
         } catch (err) {
             console.error(err);
             res.status(500).json({ error: 'External API request failed' });

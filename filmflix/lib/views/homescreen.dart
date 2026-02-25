@@ -1,3 +1,5 @@
+import 'package:cinetrackr/views/foodscreen.dart';
+import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -69,12 +71,90 @@ class HomeScreen extends StatelessWidget {
                     mainAxisSpacing: 28,
                     childAspectRatio: 0.82,
                     children: [
-                      _buildItem("assets/images/afbeelding filmagenda.png", "Filmagenda", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding eten drinken.png", "Eten & Dranken", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding thuisbio.jpg", "Thuisbioscoop", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding bestelling.jpg", "Bestellingen", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding vragen.jpg", "Klantenservice", itemBackgroundColor, textColor, shadowColor),
-                      _buildItem("assets/images/afbeelding kaart.jpg", "Bioscooppas", itemBackgroundColor, textColor, shadowColor),
+                      _buildItem(
+                        "assets/images/afbeelding filmagenda.png",
+                        "Filmagenda",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const FilmagendaScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding eten drinken.png",
+                        "Eten & Dranken",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const FoodScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding thuisbio.jpg",
+                        "Thuisbioscoop",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const HomeCinemaScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding bestelling.jpg",
+                        "Bestellingen",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const OrdersScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding vragen.jpg",
+                        "Klantenservice",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const CustomerServiceScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildItem(
+                        "assets/images/afbeelding kaart.jpg",
+                        "Bioscooppas",
+                        itemBackgroundColor,
+                        textColor,
+                        shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SearchScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 )
@@ -86,45 +166,104 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildItem(String imagePath, String title, Color itemBgColor, Color textColor, Color shadowColor) {
-    return Column(
-      children: [
-        Container(
-          height: 135,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            color: itemBgColor,
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor,
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
+  Widget _buildItem(
+    String imagePath,
+    String title,
+    Color itemBgColor,
+    Color textColor,
+    Color shadowColor,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            height: 135,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: itemBgColor,
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-            letterSpacing: 0.3,
-          ),
-        )
-      ],
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+              letterSpacing: 0.3,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class FilmagendaScreen extends StatelessWidget {
+  const FilmagendaScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Filmagenda')),
+      body: const Center(child: Text('Filmagenda Content Here')),
+    );
+  }
+}
+
+
+class HomeCinemaScreen extends StatelessWidget {
+  const HomeCinemaScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Thuisbioscoop')),
+      body: const Center(child: Text('Thuisbioscoop Content Here')),
+    );
+  }
+}
+
+class OrdersScreen extends StatelessWidget {
+  const OrdersScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bestellingen')),
+      body: const Center(child: Text('Bestellingen Content Here')),
+    );
+  }
+}
+
+class CustomerServiceScreen extends StatelessWidget {
+  const CustomerServiceScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Klantenservice')),
+      body: const Center(child: Text('Klantenservice Content Here')),
     );
   }
 }
