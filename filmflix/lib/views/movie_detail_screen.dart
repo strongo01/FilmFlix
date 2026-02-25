@@ -702,47 +702,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   List<Widget> _buildGroupedStreaming(
-    // Deze functie bouwt een lijst van widgets die de streaming opties voor de film tonen, gegroepeerd op service. We nemen een lijst van streaming opties (zoals opgehaald uit de RapidAPI data) en de BuildContext als parameters. We groeperen de streaming opties eerst op basis van de naam van de service die ze aanbieden, zodat we alle opties van dezelfde service bij elkaar kunnen tonen. Binnen elke service groep sorteren we de opties op type (bijvoorbeeld abonnement, huur, koop) in een specifieke volgorde. We zorgen er ook voor dat we per type maar één optie tonen, om te voorkomen dat we meerdere chips tonen voor dezelfde service en type. Voor elke service groep bouwen we een widget die de naam van de service toont samen met een icoon, en daaronder de unieke streaming opties als chips die klikbaar zijn om naar de betreffende link te navigeren.
-    List<dynamic>
-    streaming, // doen we omdat de streaming opties in de RapidAPI data soms in verschillende formaten kunnen voorkomen (soms als een lijst, soms als een enkele map), dus we gebruiken List<dynamic> om flexibel te zijn in het omgaan met deze data. We zullen deze data later verwerken en omzetten in de juiste formaten binnen de functie.
-    BuildContext
-    context, // doen we omdat we de BuildContext nodig hebben om widgets te bouwen en om navigatie acties uit te voeren wanneer de gebruiker op een streaming optie klikt. We zullen deze context gebruiken om bijvoorbeeld een SnackBar te tonen of om naar een webpagina te navigeren wanneer een streaming optie wordt geselecteerd.
+    List<dynamic> streaming,
+    BuildContext context,
   ) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
 
     for (final item in streaming) {
-      // We itereren door de lijst van streaming opties en proberen deze te groeperen op basis van de naam van de service. We controleren eerst of elk item een Map is, omdat we verwachten dat de streaming opties in de RapidAPI data als maps worden weergegeven. Als een item geen Map is, slaan we het over. Voor elk item dat wel een Map is, proberen we de naam van de service te extraheren (die zich meestal bevindt in 'service.name' binnen het item). We gebruiken deze naam als sleutel in onze 'grouped' map, waarbij we een lijst van opties bijhouden voor elke service. Op deze manier kunnen we later alle opties van dezelfde service bij elkaar tonen in de UI.
-      if (item is! Map)
-        continue; // We controleren of het item een Map is, omdat we verwachten dat de streaming opties in de RapidAPI data als maps worden weergegeven. Als een item geen Map is, slaan we het over, omdat we niet de benodigde informatie kunnen extraheren om het correct te groeperen en weer te geven.
+      if (item is! Map) continue;
       final typedItem = item as Map<String, dynamic>;
       final service = typedItem['service'] as Map<String, dynamic>?;
       final name = service?['name']?.toString() ?? 'Service';
 
-      grouped.putIfAbsent(
-        name,
-        () => [],
-      ); // We gebruiken putIfAbsent om ervoor te zorgen dat we een lege lijst hebben voor deze service naam als we deze nog niet eerder zijn tegengekomen. Dit voorkomt dat we een null waarde krijgen wanneer we proberen opties toe te voegen aan deze service groep.
+      grouped.putIfAbsent(name, () => []);
       grouped[name]!.add(typedItem);
     }
 
     final List<Widget> widgets = [];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     grouped.forEach((serviceName, options) {
-      // Nadat we de streaming opties hebben gegroepeerd op service, itereren we door elke groep om de widgets te bouwen die deze opties zullen weergeven. Voor elke service groep sorteren we de opties eerst op type in een specifieke volgorde (abonnement, huur, koop), zodat we een consistente en logische volgorde hebben bij het tonen van de opties aan de gebruiker. We zorgen er ook voor dat we per type maar één optie tonen, om te voorkomen dat we meerdere chips tonen voor dezelfde service en type. We bouwen vervolgens een widget die de naam van de service toont samen met een icoon, en daaronder de unieke streaming opties als chips die klikbaar zijn om naar de betreffende link te navigeren.
-      // Sorteer types: subscription → rent → buy
       options.sort(
-        // We sorteren de opties binnen elke service groep op type, zodat we een consistente volgorde hebben bij het tonen van de opties aan de gebruiker. We geven abonnementen (subscription) de hoogste prioriteit, gevolgd door huur (rent) en dan koop (buy). Opties zonder een van deze types krijgen de laagste prioriteit en worden onderaan weergegeven. Deze sortering helpt gebruikers snel te zien welke opties beschikbaar zijn op basis van hun voorkeuren (bijvoorbeeld eerst kijken of het beschikbaar is via een abonnement voordat ze naar huur- of koopopties kijken).
-        (a, b) =>
-            _typePriority(a['type']) -
-            _typePriority(
-              b['type'],
-            ), // We gebruiken een helper functie _typePriority om een numerieke waarde toe te kennen aan elk type, zodat we eenvoudig kunnen sorteren. Deze functie geeft abonnementen de hoogste waarde, gevolgd door huur en koop, en andere types krijgen de laagste waarde. Door deze waarden van elkaar af te trekken in de sorteerfunctie, zorgen we ervoor dat de opties in de gewenste volgorde worden weergegeven.
+        (a, b) => _typePriority(a['type']) - _typePriority(b['type']),
       );
 
-      // Per type unieke opties
       final Map<String, Map<String, dynamic>> uniqueOptions = {};
       for (var option in options) {
-        // We itereren door de gesorteerde opties en zorgen ervoor dat we per type maar één optie tonen. We extraheren het type van elke optie (zoals abonnement, huur, koop) en gebruiken dit als sleutel in een nieuwe map 'uniqueOptions' om ervoor te zorgen dat we maar één optie per type hebben. Als er meerdere opties van hetzelfde type zijn, zal alleen de eerste worden toegevoegd aan 'uniqueOptions', en de rest zal worden genegeerd. Dit helpt om de UI overzichtelijk te houden en voorkomt dat we meerdere chips tonen voor dezelfde service en type.
         final type = option['type']?.toString() ?? 'other';
         uniqueOptions.putIfAbsent(type, () => option);
       }
@@ -753,7 +737,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Service naam + icoon
               Row(
                 children: [
                   _buildServiceIconAsset(
@@ -764,25 +747,23 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   const SizedBox(width: 8),
                   Text(
                     serviceName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
 
-              // Per type unieke opties
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: uniqueOptions.values.map((option) {
-                  // We itereren door de unieke opties voor deze service en bouwen een chip voor elke optie. We extraheren de link van de optie, die zich meestal bevindt in 'link' of 'service.homePage' binnen de optie. We bouwen vervolgens een chip die het type van de optie toont (zoals abonnement, huur, koop) en maken deze klikbaar zodat de gebruiker naar de betreffende link kan navigeren wanneer ze erop klikken. We gebruiken een GestureDetector om de klikbaarheid van de chip te implementeren, en we roepen een helper functie _openLink aan wanneer de chip wordt aangetikt, waarbij we de link als parameter doorgeven.
                   final link = option['link'] ?? option['service']?['homePage'];
                   final chip = _buildTypeChip(option);
 
-                  // Chip zelf is klikbaar, maar geen URL-tekst ernaast
                   return GestureDetector(
                     onTap: () => _openLink(link?.toString()),
                     child: chip,
@@ -1068,8 +1049,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
 
     final rapid = _rapidData!;
-    final omdb = _omdbData;
     final poster = _poster;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Details')),
@@ -1085,6 +1066,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             // Main Info card
             Card(
               elevation: 3,
+              color: isDark ? Colors.grey.shade900 : Colors.white,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -1092,16 +1074,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   children: [
                     Text(
                       _title ?? '',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_translatedTexts['overview'] ?? _overview ?? ''),
+                        Text(
+                          _translatedTexts['overview'] ?? _overview ?? '',
+                          style: TextStyle(
+                            color: isDark
+                                ? Colors.grey.shade300
+                                : Colors.black87,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         TextButton.icon(
                           icon: _isTranslating['overview'] == true
@@ -1129,7 +1119,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       children: [
                         const Icon(Icons.star, color: Colors.amber),
                         const SizedBox(width: 6),
-                        Text(_rating ?? ''),
+                        Text(
+                          _rating ?? '',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
 
                         const Spacer(),
                         // watchlist button
@@ -1168,12 +1163,19 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     ),
                     if (_rated != null && _rated!.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.only(top: 8),
                         child: Row(
                           children: [
                             const Icon(Icons.family_restroom_rounded, size: 18),
                             const SizedBox(width: 6),
-                            Text('Leeftijdsclassificatie: $_rated'),
+                            Text(
+                              'Leeftijdsclassificatie: $_rated',
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.grey.shade300
+                                    : Colors.black87,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1187,7 +1189,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             .map(
                               (g) => Chip(
                                 label: Text(g),
-                                backgroundColor: Colors.blue.shade50,
+                                backgroundColor: isDark
+                                    ? Colors.blue.shade900
+                                    : Colors.blue.shade50,
+                                labelStyle: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
                               ),
                             )
                             .toList(),
@@ -1199,13 +1206,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
                               'Producers / Creators',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                           ),
@@ -1218,7 +1226,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 onTap: () => _openLink(searchUrl),
                                 child: Chip(
                                   label: Text(c),
-                                  backgroundColor: Colors.green.shade50,
+                                  backgroundColor: isDark
+                                      ? Colors.green.shade900
+                                      : Colors.green.shade50,
+                                  labelStyle: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -1233,13 +1248,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
                               'Actors',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                           ),
@@ -1253,7 +1269,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 onTap: () => _openLink(searchUrl),
                                 child: Chip(
                                   label: Text(c),
-                                  backgroundColor: Colors.grey.shade200,
+                                  backgroundColor: isDark
+                                      ? Colors.grey.shade700
+                                      : Colors.grey.shade200,
+                                  labelStyle: TextStyle(
+                                    color: isDark
+                                        ? Colors.white
+                                        : Colors.black87,
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -1261,8 +1284,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ],
                       ),
                     const SizedBox(height: 12),
-                    Text('Seizoenen: ${rapid['seasonCount'] ?? '-'}'),
-                    Text('Afleveringen: ${rapid['episodeCount'] ?? '-'}'),
+                    Text(
+                      'Seizoenen: ${rapid['seasonCount'] ?? '-'}',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    Text(
+                      'Afleveringen: ${rapid['episodeCount'] ?? '-'}',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1273,14 +1306,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             // Streaming card
             if (_streaming.isNotEmpty)
               Card(
+                color: isDark ? Colors.grey.shade900 : Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Streaming',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
                       const SizedBox(height: 12),
 
@@ -1295,10 +1332,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             // Seasons & Episodes expansion
             if (_seasons.isNotEmpty)
               Card(
+                color: isDark ? Colors.grey.shade900 : Colors.white,
                 child: ExpansionTile(
                   title: Text(
                     'Seizoenen & Afleveringen (${_seasons.length})',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
                   ),
                   children: [
                     for (var si = 0; si < _seasons.length; si++)
@@ -1313,7 +1354,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 child: Center(
                   child: Text(
                     'Geen seizoenen gevonden',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ),
