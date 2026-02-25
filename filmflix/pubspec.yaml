@@ -74,6 +74,12 @@ flutter:
   assets:
     - assets/logos/light/
     - assets/logos/dark/
+    - assets/images/afbeelding filmagenda.png
+    - assets/images/afbeelding eten drinken.png
+    - assets/images/afbeelding thuisbio.jpg
+    - assets/images/afbeelding bestelling.jpg
+    - assets/images/afbeelding vragen.jpg
+    - assets/images/afbeelding kaart.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
