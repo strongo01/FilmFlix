@@ -5,33 +5,38 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode =
-        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     final backgroundGradient = isDarkMode
         ? const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+            colors: [
+              Color(0xFF0F2027),
+              Color(0xFF203A43),
+              Color(0xFF2C5364),
+            ],
           )
         : const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFE0E0E0), Color(0xFFF5F5F5), Color(0xFFFFFFFF)],
+            colors: [
+              Color(0xFFE0E0E0),
+              Color(0xFFF5F5F5),
+              Color(0xFFFFFFFF),
+            ],
           );
 
     final textColor = isDarkMode ? Colors.white : Colors.black;
 
-    final itemBackgroundColor = isDarkMode
-        ? Colors.white
-        : Colors.white; // Keep white for items, or adjust if needed
-    final shadowColor = isDarkMode
-        ? Colors.black.withOpacity(0.25)
-        : Colors.grey.withOpacity(0.4);
+    final itemBackgroundColor = isDarkMode ? Colors.white : Colors.white; // Keep white for items, or adjust if needed
+    final shadowColor = isDarkMode ? Colors.black.withOpacity(0.25) : Colors.grey.withOpacity(0.4);
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(gradient: backgroundGradient),
+        decoration: BoxDecoration(
+          gradient: backgroundGradient,
+        ),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -70,6 +75,13 @@ class HomeScreen extends StatelessWidget {
                         itemBackgroundColor,
                         textColor,
                         shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const FilmagendaScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildItem(
                         "assets/images/afbeelding eten drinken.png",
@@ -77,6 +89,13 @@ class HomeScreen extends StatelessWidget {
                         itemBackgroundColor,
                         textColor,
                         shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const FoodDrinksScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildItem(
                         "assets/images/afbeelding thuisbio.jpg",
@@ -84,6 +103,13 @@ class HomeScreen extends StatelessWidget {
                         itemBackgroundColor,
                         textColor,
                         shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const HomeCinemaScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildItem(
                         "assets/images/afbeelding bestelling.jpg",
@@ -91,6 +117,13 @@ class HomeScreen extends StatelessWidget {
                         itemBackgroundColor,
                         textColor,
                         shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const OrdersScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildItem(
                         "assets/images/afbeelding vragen.jpg",
@@ -98,6 +131,13 @@ class HomeScreen extends StatelessWidget {
                         itemBackgroundColor,
                         textColor,
                         shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const CustomerServiceScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildItem(
                         "assets/images/afbeelding kaart.jpg",
@@ -105,10 +145,17 @@ class HomeScreen extends StatelessWidget {
                         itemBackgroundColor,
                         textColor,
                         shadowColor,
+                        () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SearchScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
-                ),
+                )
               ],
             ),
           ),
@@ -123,42 +170,121 @@ class HomeScreen extends StatelessWidget {
     Color itemBgColor,
     Color textColor,
     Color shadowColor,
+    VoidCallback onTap,
   ) {
-    return Column(
-      children: [
-        Container(
-          height: 135,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            color: itemBgColor,
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor,
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            height: 135,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: itemBgColor,
+              boxShadow: [
+                BoxShadow(
+                  color: shadowColor,
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Image.asset(imagePath, fit: BoxFit.contain),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-            letterSpacing: 0.3,
-          ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+              letterSpacing: 0.3,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class FilmagendaScreen extends StatelessWidget {
+  const FilmagendaScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Filmagenda')),
+      body: const Center(child: Text('Filmagenda Content Here')),
+    );
+  }
+}
+
+class FoodDrinksScreen extends StatelessWidget {
+  const FoodDrinksScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Eten & Dranken')),
+      body: const Center(child: Text('Eten & Dranken Content Here')),
+    );
+  }
+}
+
+class HomeCinemaScreen extends StatelessWidget {
+  const HomeCinemaScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Thuisbioscoop')),
+      body: const Center(child: Text('Thuisbioscoop Content Here')),
+    );
+  }
+}
+
+class OrdersScreen extends StatelessWidget {
+  const OrdersScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bestellingen')),
+      body: const Center(child: Text('Bestellingen Content Here')),
+    );
+  }
+}
+
+class CustomerServiceScreen extends StatelessWidget {
+  const CustomerServiceScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Klantenservice')),
+      body: const Center(child: Text('Klantenservice Content Here')),
+    );
+  }
+}
+
+class SearchScreen extends StatelessWidget {
+  const SearchScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bioscooppas')),
+      body: const Center(child: Text('Bioscooppas Content Here')),
     );
   }
 }
