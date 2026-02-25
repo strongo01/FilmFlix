@@ -1,6 +1,6 @@
 {
-    "name": "filmflix",
-    "short_name": "filmflix",
+    "name": "CineTrackr",
+    "short_name": "CineTrackr",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,0 +1,17 @@
+{
+  "name": "film-flix-backend",
+  "version": "1.0.0",
+  "description": "Serverless API for RapidAPI and OMDb",
+  "main": "api/movies.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "node api/movies.js"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+    
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
