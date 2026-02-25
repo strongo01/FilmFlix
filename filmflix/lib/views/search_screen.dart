@@ -144,12 +144,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text("Search", style: TextStyle(color: Colors.black87)),
+        backgroundColor: isDark ? Colors.black : Colors.white,
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
+        title: Text(
+          "Search",
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+        ),
         elevation: 0.5,
       ),
       body: Column(
@@ -160,16 +165,21 @@ class _SearchScreenState extends State<SearchScreen> {
               controller: controller,
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => search(),
-              style: const TextStyle(color: Colors.black87),
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
                 hintText: "Zoek film...",
-                hintStyle: const TextStyle(color: Colors.black45),
+                hintStyle: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.search, color: Colors.black54),
+                  icon: Icon(
+                    Icons.search,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
                   onPressed: search,
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide.none,
@@ -217,8 +227,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           movie.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.black87,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
                             fontSize: 12,
                           ),
                         ),
