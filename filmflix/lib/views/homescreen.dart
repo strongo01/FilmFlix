@@ -1,3 +1,5 @@
+import 'package:cinetrackr/views/foodscreen.dart';
+import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -92,7 +94,7 @@ class HomeScreen extends StatelessWidget {
                         () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => const FoodDrinksScreen(),
+                              builder: (context) => const FoodScreen(),
                             ),
                           );
                         },
@@ -229,17 +231,6 @@ class FilmagendaScreen extends StatelessWidget {
   }
 }
 
-class FoodDrinksScreen extends StatelessWidget {
-  const FoodDrinksScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Eten & Dranken')),
-      body: const Center(child: Text('Eten & Dranken Content Here')),
-    );
-  }
-}
 
 class HomeCinemaScreen extends StatelessWidget {
   const HomeCinemaScreen({super.key});
@@ -273,18 +264,6 @@ class CustomerServiceScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Klantenservice')),
       body: const Center(child: Text('Klantenservice Content Here')),
-    );
-  }
-}
-
-class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Bioscooppas')),
-      body: const Center(child: Text('Bioscooppas Content Here')),
     );
   }
 }
