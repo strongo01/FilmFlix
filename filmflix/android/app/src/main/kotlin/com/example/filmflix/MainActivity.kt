@@ -1,4 +1,4 @@
-package com.example.filmflix
+package com.MBS.CineTrackr
 
 import io.flutter.embedding.android.FlutterActivity
 
