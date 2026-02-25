@@ -1,39 +1,39 @@
-name: IMDb import
+#name: IMDb import
 
-on:
-  schedule:
-    # Run daily at 03:00 Netherlands time.
-    # DST-aware approximation using two cron entries:
-    # - During CEST (Apr-Oct) 03:00 CEST = 01:00 UTC
-    - cron: '0 1 * 4-10 *'
-    # - During CET (Nov-Mar) 03:00 CET = 02:00 UTC
-    - cron: '0 2 * 11,12,1,2,3 *'
-  workflow_dispatch: {}
+# on:
+#   schedule:
+#     # Run daily at 03:00 Netherlands time.
+#     # DST-aware approximation using two cron entries:
+#     # - During CEST (Apr-Oct) 03:00 CEST = 01:00 UTC
+#     - cron: '0 1 * 4-10 *'
+#     # - During CET (Nov-Mar) 03:00 CET = 02:00 UTC
+#     - cron: '0 2 * 11,12,1,2,3 *'
+#   workflow_dispatch: {}
 
-jobs:
-  import:
-    name: Run IMDb import
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+# jobs:
+#   import:
+#     name: Run IMDb import
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Run import script
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-        run: |
-          python scripts/import_imdb.py
+#       - name: Run import script
+#         env:
+#           DB_HOST: ${{ secrets.DB_HOST }}
+#           DB_NAME: ${{ secrets.DB_NAME }}
+#           DB_USER: ${{ secrets.DB_USER }}
+#           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+#           DB_PORT: ${{ secrets.DB_PORT }}
+#         run: |
+#           python scripts/import_imdb.py
