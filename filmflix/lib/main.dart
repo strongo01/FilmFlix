@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'views/homescreen.dart';
 import 'views/loginscreen.dart';
+import 'views/foodscreen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,6 +87,31 @@ class CineTrackrApp extends StatelessWidget {
           //return const MovieDetailScreen(imdbId: "tt1632701");
         },
       ),
+    );
+  }
+}
+
+import 'package:flutter/material.dart';
+// Vergeet niet je foodscreen te importeren!
+import 'food_screen.dart'; 
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Movie Food App',
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
+      ),
+      // Hier zet je FoodScreen als het eerste scherm
+      home: const FoodScreen(), 
     );
   }
 }
