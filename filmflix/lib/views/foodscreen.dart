@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Nodig voor FilteringTextInputFormatter
 import 'package:url_launcher/url_launcher.dart';
 
 class FoodScreen extends StatefulWidget {
@@ -9,10 +10,9 @@ class FoodScreen extends StatefulWidget {
 }
 
 class _FoodScreenState extends State<FoodScreen> {
-  // Controller om de tekst uit het invoerveld te lezen
   final TextEditingController _foodController = TextEditingController();
+  final TextEditingController _zipCodeController = TextEditingController();
 
-  // Lijstje voor de snelle icoontjes boven de zoekbalk
   final List<Map<String, String>> _quickChoices = [
     {'name': 'Pizza', 'emoji': '🍕'},
     {'name': 'Sushi', 'emoji': '🍣'},
@@ -20,23 +20,30 @@ class _FoodScreenState extends State<FoodScreen> {
     {'name': 'Kapsalon', 'emoji': '🍟'},
   ];
 
-  // De functie die Thuisbezorgd opent
-  // We voegen 'String? manualFood' toe zodat we zowel de knop als de icoontjes kunnen gebruiken
   Future<void> _orderFood([String? manualFood]) async {
-    // Pak of de tekst uit het tekstveld, of de tekst van het icoontje waar je op klikte
     final String food = manualFood ?? _foodController.text.trim();
     
-    if (food.isEmpty) {
+    // We pakken de postcode en verwijderen voor de zekerheid alles wat geen cijfer is
+    final String zipDigits = _zipCodeController.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (zipDigits.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vul eerst in wat je wilt eten!')),
+        const SnackBar(content: Text('Vul de 4 getallen van je postcode in!')),
       );
       return;
     }
 
-    // Update het tekstveld visueel
+    if (food.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Wat wil je eten?')),
+      );
+      return;
+    }
+
     _foodController.text = food;
 
-    final Uri url = Uri.parse('https://www.thuisbezorgd.nl/zoeken?q=$food');
+    // De URL gebruikt nu alleen de cijfers (bijv. 3543)
+    final Uri url = Uri.parse('https://www.thuisbezorgd.nl/bestellen/eten/$zipDigits?q=$food');
 
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
@@ -52,25 +59,38 @@ class _FoodScreenState extends State<FoodScreen> {
         title: const Text('Food & Movies'),
         backgroundColor: Colors.orangeAccent,
       ),
-      body: SingleChildScrollView( // Zorgt dat het op kleine schermen ook past
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(
-              Icons.fastfood,
-              size: 60,
-              color: Colors.orange,
+            const Text(
+              'Waar woon je?',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Honger voordat de film begint?',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            
+            // --- Postcodeveld met Blokkade ---
+            TextField(
+              controller: _zipCodeController,
+              decoration: InputDecoration(
+                labelText: 'Postcode (alleen cijfers)',
+                hintText: 'Bijv. 3543',
+                prefixIcon: const Icon(Icons.location_on),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+              ),
+              // Hier blokkeren we letters en tekens:
+              keyboardType: TextInputType.number, 
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly, // Alleen 0-9 toegestaan
+                LengthLimitingTextInputFormatter(4),    // Maximaal 4 cijfers
+              ],
             ),
-            const SizedBox(height: 25),
-
-            // --- NIEUW: De Rij met Snelle Keuzes ---
+            
+            const SizedBox(height: 30),
+            const Divider(),
+            // ... rest van je UI (Quick Choices en Zoekveld) ...
+            const SizedBox(height: 15),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: _quickChoices.map((item) {
@@ -90,41 +110,18 @@ class _FoodScreenState extends State<FoodScreen> {
                 );
               }).toList(),
             ),
-            // ---------------------------------------
-
             const SizedBox(height: 30),
-            const Divider(),
-            const SizedBox(height: 20),
-            
-            // Invoerveld voor handmatig zoeken
             TextField(
               controller: _foodController,
               decoration: InputDecoration(
                 labelText: 'Wat wil je eten?',
-                hintText: 'Bijv. Chinees, Pasta...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
               ),
             ),
             const SizedBox(height: 20),
-            
-            // De Bestelknop (werkt nog steeds hetzelfde)
             ElevatedButton(
               onPressed: () => _orderFood(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                'BESTELLEN BIJ THUISBEZORGD',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              child: const Text('ZOEK OP THUISBEZORGD'),
             ),
           ],
         ),
