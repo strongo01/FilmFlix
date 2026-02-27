@@ -1136,24 +1136,40 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : ElevatedButton.icon(
+                            : OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
+                                  foregroundColor:
+                                      isDark ? Colors.white : Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  backgroundColor: Colors.transparent,
+                                ),
                                 icon: Icon(
                                   _isInWatchlist
                                       ? Icons.bookmark
                                       : Icons.bookmark_add_outlined,
+                                  size: 20,
                                 ),
                                 label: Text(
                                   _isInWatchlist ? 'Verwijder' : 'Opslaan',
+                                  style: const TextStyle(fontSize: 14),
                                 ),
                                 onPressed: () async {
-                                  // controleer login
                                   if (_user == null) {
                                     final goToLogin =
                                         await _ensureLoggedInWithPrompt(
-                                          context,
-                                        );
+                                      context,
+                                    );
                                     if (!goToLogin) return;
-                                    // gebruiker navigeert naar login -> wachten op auth listener om data te laden
                                     return;
                                   }
                                   await _toggleWatchlist();
