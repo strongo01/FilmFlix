@@ -1,3 +1,4 @@
+import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
@@ -92,7 +93,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           _buildItem(
                             "assets/images/AfbeeldingEtenDrinken.png",
-                            "Eten & Dranken",
+                            "Eten & Drinken",
                             itemBackgroundColor,
                             textColor,
                             shadowColor,
@@ -113,22 +114,21 @@ class HomeScreen extends StatelessWidget {
                             () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const HomeCinemaScreen(),
+                                  builder: (context) => const SearchScreen(),
                                 ),
                               );
                             },
                           ),
                           _buildItem(
-                            "assets/images/AfbeeldingBestelling.png",
-                            "Bestellingen",
+                            "assets/images/AfbeeldingWatchlist.png",
+                            "Watchlist",
                             itemBackgroundColor,
                             textColor,
                             shadowColor,
                             () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => const OrdersScreen(),
+                                  builder: (context) => const WatchlistScreen(),
                                 ),
                               );
                             },
@@ -150,14 +150,14 @@ class HomeScreen extends StatelessWidget {
                           ),
                           _buildItem(
                             "assets/images/AfbeeldingKaart.png",
-                            "Bioscooppas",
+                            "Bioscoopkaart",
                             itemBackgroundColor,
                             textColor,
                             shadowColor,
                             () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => const SearchScreen(),
+                                  builder: (context) => const BiosKaartScreen(),
                                 ),
                               );
                             },
@@ -176,97 +176,82 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildItem(
-  String imagePath,
-  String title,
-  Color itemBgColor,
-  Color textColor,
-  Color shadowColor,
-  VoidCallback onTap,
-) {
-  return GestureDetector(
-    onTap: onTap,
-    child: Column(
-      children: [
-        /// IMAGE neemt ALLE resterende ruimte
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              color: itemBgColor,
-              boxShadow: [
-                BoxShadow(
-                  color: shadowColor,
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
+    String imagePath,
+    String title,
+    Color itemBgColor,
+    Color textColor,
+    Color shadowColor,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          /// IMAGE neemt ALLE resterende ruimte
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                color: itemBgColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: shadowColor,
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Image.asset(imagePath, fit: BoxFit.contain),
                 ),
               ),
             ),
           ),
-        ),
 
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
 
-        /// TEXT krijgt minimale ruimte
-        Text(
-          title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-            letterSpacing: 0.3,
+          /// TEXT krijgt minimale ruimte
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+              letterSpacing: 0.3,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-}
-
-class FilmNowScreen extends StatelessWidget {
-  const FilmNowScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Filmagenda')),
-      body: const Center(child: Text('Filmagenda Content Here')),
+        ],
+      ),
     );
   }
 }
 
-class HomeCinemaScreen extends StatelessWidget {
-  const HomeCinemaScreen({super.key});
+class BiosKaartScreen extends StatelessWidget {
+  const BiosKaartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Thuisbioscoop')),
-      body: const Center(child: Text('Thuisbioscoop Content Here')),
+      appBar: AppBar(title: const Text('BiosKaart')),
+      body: const Center(child: Text('BiosKaart Content Here')),
     );
   }
 }
 
-class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({super.key});
+class WatchlistScreen extends StatelessWidget {
+  const WatchlistScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bestellingen')),
-      body: const Center(child: Text('Bestellingen Content Here')),
+      appBar: AppBar(title: const Text('Watchlist')),
+      body: const Center(child: Text('Watchlist Content Here')),
     );
   }
 }
