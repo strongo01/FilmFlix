@@ -47,6 +47,8 @@ dependencies:
   flutter_svg: ^2.2.3
   url_launcher: ^6.3.2
   cloud_firestore: ^6.1.2
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
@@ -93,12 +95,12 @@ flutter:
   assets:
     - assets/logos/light/
     - assets/logos/dark/
-    - assets/images/afbeelding filmagenda.png
-    - assets/images/afbeelding eten drinken.png
-    - assets/images/afbeelding thuisbio.jpg
-    - assets/images/afbeelding bestelling.jpg
-    - assets/images/afbeelding vragen.jpg
-    - assets/images/afbeelding kaart.jpg
+    - assets/images/AfbeeldingThuisbio.png
+    - assets/images/AfbeeldingVragen.png
+    - assets/images/AfbeeldingKaart.png
+    - assets/images/AfbeeldingFilmagenda.png
+    - assets/images/AfbeeldingEtenDrinken.png
+    - assets/images/AfbeeldingBestelling.png
 
 
 
