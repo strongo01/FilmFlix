@@ -1,5 +1,6 @@
 import 'package:cinetrackr/firebase_options.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
+import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
