@@ -120,13 +120,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         bg = Colors.orange.shade100;
         label = price != null ? 'Kopen • $price' : 'Kopen';
         break;
+      case 'addon':
+        bg = Colors.grey.shade100;
+        label = price != null ? 'Uitbreiding • $price' : 'Uitbreiding';
+        break;
       default:
         bg = Colors.grey.shade200;
         label = type ?? '';
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Chip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(color: isDark ? Colors.black : Colors.black),
+      ),
       backgroundColor: bg,
     ); // Deze functie bouwt een Chip widget die het type van de streaming optie weergeeft met een bijpassende achtergrondkleur. Abonnementen krijgen een groene achtergrond, huur opties krijgen blauw, koopopties krijgen oranje, en andere types krijgen grijs. De chip toont ook de prijs als deze beschikbaar is. Dit maakt het visueel gemakkelijk te onderscheiden welke opties inbegrepen zijn bij een abonnement en welke extra kosten met zich meebrengen.
   }
@@ -486,6 +495,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         _streaming = _toList(
           rapid['streamingOptions']?['nl'],
         ); // We halen de streaming opties op uit de RapidAPI data, specifiek voor de Nederlandse markt (aangegeven door 'nl'). We gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. Deze streaming opties bevatten informatie over waar en hoe de film gestreamd kan worden, zoals welke services het aanbieden, of het inbegrepen is bij een abonnement, of het gekocht of gehuurd kan worden, en eventuele prijzen.
+        _streaming = _toList(rapid['streamingOptions']?['nl']);
+
+        if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
+          final biosLink = {
+            'type': 'Bioscoop',
+            'link':
+                'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}',
+            'service': {'name': 'Bioscoop'},
+          };
+          _streaming.add(biosLink);
+        }
         _loadingMovie = false;
       });
     } catch (e, s) {
@@ -717,6 +737,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       grouped[name]!.add(typedItem);
     }
 
+    // Check OMDb type: voeg biosagenda link toe als het een movie is
+    if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
+      final biosLink =
+          'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
+      grouped.putIfAbsent(
+        'Bioscoop',
+        () => [
+          {'type': 'bios', 'link': biosLink},
+        ],
+      );
+    }
+
     final List<Widget> widgets = [];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -728,8 +760,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       final Map<String, Map<String, dynamic>> uniqueOptions = {};
       for (var option in options) {
         final type = option['type']?.toString() ?? 'other';
+
+        if (serviceName == 'Bioscoop' &&
+            (option['link'] == null || option['link'].toString().isEmpty)) {
+          continue;
+        }
+
         uniqueOptions.putIfAbsent(type, () => option);
       }
+
+      if (uniqueOptions.isEmpty) return; // skip services zonder opties
 
       widgets.add(
         Padding(
@@ -745,6 +785,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     height: 26,
                   ),
                   const SizedBox(width: 8),
+
                   Text(
                     serviceName,
                     style: TextStyle(
@@ -756,13 +797,25 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: uniqueOptions.values.map((option) {
                   final link = option['link'] ?? option['service']?['homePage'];
-                  final chip = _buildTypeChip(option);
+
+                  final chip = serviceName == 'Bioscoop'
+                      ? Chip(
+                          label: Text(
+                            'Bioscoop',
+                            style: TextStyle(
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          backgroundColor: isDark
+                              ? Colors.grey[800]
+                              : Colors.grey[200],
+                        )
+                      : _buildTypeChip(option);
 
                   return GestureDetector(
                     onTap: () => _openLink(link?.toString()),
@@ -1136,24 +1189,40 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : ElevatedButton.icon(
+                            : OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
+                                  foregroundColor:
+                                      isDark ? Colors.white : Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  backgroundColor: Colors.transparent,
+                                ),
                                 icon: Icon(
                                   _isInWatchlist
                                       ? Icons.bookmark
                                       : Icons.bookmark_add_outlined,
+                                  size: 20,
                                 ),
                                 label: Text(
                                   _isInWatchlist ? 'Verwijder' : 'Opslaan',
+                                  style: const TextStyle(fontSize: 14),
                                 ),
                                 onPressed: () async {
-                                  // controleer login
                                   if (_user == null) {
                                     final goToLogin =
                                         await _ensureLoggedInWithPrompt(
-                                          context,
-                                        );
+                                      context,
+                                    );
                                     if (!goToLogin) return;
-                                    // gebruiker navigeert naar login -> wachten op auth listener om data te laden
                                     return;
                                   }
                                   await _toggleWatchlist();
