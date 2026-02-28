@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FoodScreen extends StatefulWidget {
@@ -9,35 +10,117 @@ class FoodScreen extends StatefulWidget {
 }
 
 class _FoodScreenState extends State<FoodScreen> {
-  // Controller om de tekst uit het invoerveld te lezen
   final TextEditingController _foodController = TextEditingController();
+  final TextEditingController _zipCodeController = TextEditingController();
 
-  // Lijstje voor de snelle icoontjes boven de zoekbalk
-  final List<Map<String, String>> _quickChoices = [
+  // De geselecteerde dieetwens (maximaal één)
+  String? _selectedFilter;
+
+  final List<Map<String, String>> _filterOptions = [
+    {'label': 'Vegetarisch', 'slug': 'vegetarian'},
+    {'label': 'Vegan', 'slug': 'vegan'},
+    {'label': 'Glutenvrij', 'slug': 'gluten-free-options'},
+    {'label': 'Halal', 'slug': 'halal'},
+  ];
+
+  // Je favoriete lijstje (aanpasbaar via Long Press)
+  List<Map<String, String>> _quickChoices = [
     {'name': 'Pizza', 'emoji': '🍕'},
     {'name': 'Sushi', 'emoji': '🍣'},
     {'name': 'Burger', 'emoji': '🍔'},
     {'name': 'Kapsalon', 'emoji': '🍟'},
   ];
 
-  // De functie die Thuisbezorgd opent
-  // We voegen 'String? manualFood' toe zodat we zowel de knop als de icoontjes kunnen gebruiken
+  // Dialoog om favoriet aan te passen
+  void _editFavorite(int index) {
+    final nameEditController = TextEditingController(text: _quickChoices[index]['name']);
+    final emojiEditController = TextEditingController(text: _quickChoices[index]['emoji']);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pas favoriet aan'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameEditController,
+              decoration: const InputDecoration(
+                labelText: 'Naam (tekst & emoji toegestaan)',
+                hintText: 'Bijv. Taco 🌮',
+              ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: emojiEditController,
+              decoration: const InputDecoration(
+                labelText: 'Alleen Emoji',
+                hintText: 'Kies 1 emoji',
+                counterText: "",
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 30),
+              maxLength: 1,
+              inputFormatters: [
+                // BLOKKEERT: letters (a-z, A-Z), cijfers (0-9) en spaties (\s)
+                FilteringTextInputFormatter.deny(RegExp(r'[a-zA-Z0-9\s]')),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuleren'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (emojiEditController.text.isNotEmpty) {
+                setState(() {
+                  _quickChoices[index] = {
+                    'name': nameEditController.text.trim(),
+                    'emoji': emojiEditController.text.trim(),
+                  };
+                });
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Voer een geldige emoji in!')),
+                );
+              }
+            },
+            child: const Text('Opslaan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _orderFood([String? manualFood]) async {
-    // Pak of de tekst uit het tekstveld, of de tekst van het icoontje waar je op klikte
     final String food = manualFood ?? _foodController.text.trim();
-    
-    if (food.isEmpty) {
+    final String zipDigits = _zipCodeController.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (zipDigits.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vul eerst in wat je wilt eten!')),
+        const SnackBar(content: Text('Vul eerst 4 cijfers van je postcode in!')),
       );
       return;
     }
 
-    // Update het tekstveld visueel
-    _foodController.text = food;
+    if (food.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Wat wil je eten?')),
+      );
+      return;
+    }
 
-    final Uri url = Uri.parse('https://www.thuisbezorgd.nl/zoeken?q=$food');
+    // URL bouwen
+    String urlString = 'https://www.thuisbezorgd.nl/bestellen/eten/$zipDigits?q=$food';
+    if (_selectedFilter != null) {
+      urlString += '&filter=$_selectedFilter';
+    }
 
+    final Uri url = Uri.parse(urlString);
     try {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
@@ -51,80 +134,97 @@ class _FoodScreenState extends State<FoodScreen> {
       appBar: AppBar(
         title: const Text('Food & Movies'),
         backgroundColor: Colors.orangeAccent,
+        centerTitle: true,
       ),
-      body: SingleChildScrollView( // Zorgt dat het op kleine schermen ook past
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(
-              Icons.fastfood,
-              size: 60,
-              color: Colors.orange,
-            ),
+            const Text('Locatie', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 10),
-            const Text(
-              'Honger voordat de film begint?',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            TextField(
+              controller: _zipCodeController,
+              decoration: InputDecoration(
+                labelText: 'Postcode (4 cijfers)',
+                prefixIcon: const Icon(Icons.location_on, color: Colors.orange),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(4),
+              ],
             ),
             const SizedBox(height: 25),
-
-            // --- NIEUW: De Rij met Snelle Keuzes ---
+            const Text('Dieetwens (max. 1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              children: _filterOptions.map((filter) {
+                final bool isSelected = _selectedFilter == filter['slug'];
+                return FilterChip(
+                  label: Text(filter['label']!),
+                  selected: isSelected,
+                  selectedColor: Colors.orangeAccent.withOpacity(0.3),
+                  checkmarkColor: Colors.orange,
+                  onSelected: (bool selected) {
+                    setState(() {
+                      _selectedFilter = selected ? filter['slug'] : null;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Divider(),
+            ),
+            const Text(
+              'Houd een icoon ingedrukt om aan te passen',
+              style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 15),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _quickChoices.map((item) {
+              children: List.generate(_quickChoices.length, (index) {
                 return GestureDetector(
-                  onTap: () => _orderFood(item['name']),
+                  onTap: () => _orderFood(_quickChoices[index]['name']),
+                  onLongPress: () => _editFavorite(index),
                   child: Column(
                     children: [
                       CircleAvatar(
                         radius: 30,
                         backgroundColor: Colors.orange.withOpacity(0.1),
-                        child: Text(item['emoji']!, style: const TextStyle(fontSize: 25)),
+                        child: Text(_quickChoices[index]['emoji']!, style: const TextStyle(fontSize: 25)),
                       ),
                       const SizedBox(height: 5),
-                      Text(item['name']!, style: const TextStyle(fontSize: 12)),
+                      Text(_quickChoices[index]['name']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ),
-            // ---------------------------------------
-
             const SizedBox(height: 30),
-            const Divider(),
-            const SizedBox(height: 20),
-            
-            // Invoerveld voor handmatig zoeken
             TextField(
               controller: _foodController,
               decoration: InputDecoration(
-                labelText: 'Wat wil je eten?',
-                hintText: 'Bijv. Chinees, Pasta...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
+                labelText: 'Zelf iets zoeken...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                suffixIcon: const Icon(Icons.search),
               ),
             ),
             const SizedBox(height: 20),
-            
-            // De Bestelknop (werkt nog steeds hetzelfde)
             ElevatedButton(
-              onPressed: () => _orderFood(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               ),
-              child: const Text(
-                'BESTELLEN BIJ THUISBEZORGD',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              onPressed: () => _orderFood(),
+              child: const Text('ZOEK OP THUISBEZORGD', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

@@ -230,6 +230,42 @@ export default async function handler(req, res) {
         }
     }
 
+    else if (type === 'actualfilms') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/movie/now_playing?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    else if (type === 'tmdbmovieinfo') {
+        const { movie_id, language = 'nl-NL' } = req.query;
+
+        if (!movie_id) {
+            return res.status(400).json({
+                error: 'TMDB requires movie_id',
+            });
+        }
+
+        url = `https://api.themoviedb.org/3/movie/${movie_id}?` +
+            new URLSearchParams({
+                language,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
     else if (type === 'translate') {
         const { text, target = 'nl', source = 'auto' } = req.query;
 
