@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Deze app gebruikt je locatie om restaurants en eetgelegenheden in jouw omgeving te kunnen tonen en zoeken op basis van je huidige locatie.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Deze app gebruikt je locatie om automatisch je postcode in te vullen en restaurants en eetgelegenheden bij jou in de buurt te tonen.</string>
 </dict>
 </plist>
