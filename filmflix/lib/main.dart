@@ -1,4 +1,5 @@
 import 'package:cinetrackr/firebase_options.dart';
+import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
@@ -82,10 +83,11 @@ class CineTrackrApp extends StatelessWidget {
           //if (snapshot.hasData) {
           //return const HomeScreen();
           //}
-          //return const HomeScreen(); 
+          return const HomeScreen();
+          //return const FilmNowScreen();
           //return const LoginScreen();
-          return const MovieDetailScreen(imdbId: "tt1632701");
-          //return const FoodScreen();
+          //return const SearchScreen();
+        //return const MovieDetailScreen(imdbId: "tt1632701");
         },
       ),
     );
