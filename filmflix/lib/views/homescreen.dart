@@ -32,205 +32,164 @@ class HomeScreen extends StatelessWidget {
         : Colors.grey.withOpacity(0.4);
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(gradient: backgroundGradient),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final screenWidth = constraints.maxWidth;
+          final isSmallPhone = screenWidth < 360;
 
-                /// Header
-                Center(
-                  child: Text(
-                    "Welkom bij uw Bioscoopomgeving",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+          final crossAxisCount = screenWidth < 600 ? 2 : 3;
 
-                const SizedBox(height: 40),
+          return Container(
+            decoration: BoxDecoration(gradient: backgroundGradient),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
 
-                /// Grid
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final maxWidth = constraints.maxWidth;
-
-                      // Cap content width so items don't spread too far on web/large screens
-                      final contentWidth = maxWidth.clamp(0.0, 700.0);
-
-                      // Responsive column count — default 2 per row on phones and larger,
-                      // but 1 per row only for very narrow screens
-                      final crossAxisCount = maxWidth < 350 ? 1 : 2;
-
-                      // Spacing tuned by content width so items feel larger but not distant
-                      final crossAxisSpacing = contentWidth < 420 ? 16.0 : 24.0;
-                      final mainAxisSpacing = contentWidth < 420 ? 20.0 : 28.0;
-
-                      // Compute sizes using contentWidth (the visible grid width)
-                      final itemWidth =
-                          (contentWidth -
-                              (crossAxisCount - 1) * crossAxisSpacing) /
-                          crossAxisCount;
-                      final itemHeight = itemWidth * 0.9 + 48;
-                      final childAspectRatio = itemWidth / itemHeight;
-
-                      // Derived values passed to each item
-                      final imageHeight = itemHeight * 0.6;
-                      final titleFontSize = (itemWidth * 0.06).clamp(
-                        12.0,
-                        20.0,
-                      );
-
-                      return Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: contentWidth),
-                          child: GridView.count(
-                            physics: const BouncingScrollPhysics(),
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: crossAxisSpacing,
-                            mainAxisSpacing: mainAxisSpacing,
-                            childAspectRatio: childAspectRatio,
-                            children: [
-                              _buildItem(
-                                "assets/images/afbeelding filmagenda.png",
-                                "Filmagenda",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                imageHeight,
-                                titleFontSize,
-                                () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const FilmagendaScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildItem(
-                                "assets/images/afbeelding eten drinken.png",
-                                "Eten & Dranken",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                imageHeight,
-                                titleFontSize,
-                                () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const FoodScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildItem(
-                                "assets/images/afbeelding thuisbio.jpg",
-                                "Thuisbioscoop",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                imageHeight,
-                                titleFontSize,
-                                () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const HomeCinemaScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildItem(
-                                "assets/images/afbeelding bestelling.jpg",
-                                "Bestellingen",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                imageHeight,
-                                titleFontSize,
-                                () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const OrdersScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildItem(
-                                "assets/images/afbeelding vragen.jpg",
-                                "Klantenservice",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                imageHeight,
-                                titleFontSize,
-                                () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const CustomerServiceScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                              _buildItem(
-                                "assets/images/afbeelding kaart.jpg",
-                                "Bioscooppas",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                imageHeight,
-                                titleFontSize,
-                                () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          const SearchScreen(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                      /// Header
+                      Center(
+                        child: Text(
+                          "Welkom bij uw Bioscoopomgeving",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: isSmallPhone ? 22 : 28,
+                            fontWeight: FontWeight.w700,
+                            color: textColor,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                      );
-                    },
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      /// Grid
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 24,
+                        mainAxisSpacing: 28,
+                        childAspectRatio: isSmallPhone ? 0.85 : 0.9,
+                        children: [
+                          _buildItem(
+                            "assets/images/AfbeeldingFilmagenda.png",
+                            "Filmagenda",
+                            itemBackgroundColor,
+                            textColor,
+                            shadowColor,
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const FilmNowScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildItem(
+                            "assets/images/AfbeeldingEtenDrinken.png",
+                            "Eten & Dranken",
+                            itemBackgroundColor,
+                            textColor,
+                            shadowColor,
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const FoodScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildItem(
+                            "assets/images/AfbeeldingThuisbio.png",
+                            "Thuisbioscoop",
+                            itemBackgroundColor,
+                            textColor,
+                            shadowColor,
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const HomeCinemaScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildItem(
+                            "assets/images/AfbeeldingBestelling.png",
+                            "Bestellingen",
+                            itemBackgroundColor,
+                            textColor,
+                            shadowColor,
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const OrdersScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildItem(
+                            "assets/images/AfbeeldingVragen.png",
+                            "Klantenservice",
+                            itemBackgroundColor,
+                            textColor,
+                            shadowColor,
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CustomerServiceScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildItem(
+                            "assets/images/AfbeeldingKaart.png",
+                            "Bioscooppas",
+                            itemBackgroundColor,
+                            textColor,
+                            shadowColor,
+                            () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SearchScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildItem(
-    String imagePath,
-    String title,
-    Color itemBgColor,
-    Color textColor,
-    Color shadowColor,
-    double imageHeight,
-    double titleFontSize,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            height: imageHeight,
+  String imagePath,
+  String title,
+  Color itemBgColor,
+  Color textColor,
+  Color shadowColor,
+  VoidCallback onTap,
+) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Column(
+      children: [
+        /// IMAGE neemt ALLE resterende ruimte
+        Expanded(
+          child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               color: itemBgColor,
@@ -249,31 +208,35 @@ class HomeScreen extends StatelessWidget {
                 child: Image.asset(
                   imagePath,
                   fit: BoxFit.contain,
-                  width: double.infinity,
-                  height: imageHeight,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: titleFontSize,
-              fontWeight: FontWeight.w600,
-              color: textColor,
-              letterSpacing: 0.3,
-            ),
+        ),
+
+        const SizedBox(height: 8),
+
+        /// TEXT krijgt minimale ruimte
+        Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+            letterSpacing: 0.3,
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }
 
-class FilmagendaScreen extends StatelessWidget {
-  const FilmagendaScreen({super.key});
+class FilmNowScreen extends StatelessWidget {
+  const FilmNowScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
