@@ -1,3 +1,4 @@
+import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
@@ -261,14 +262,3 @@ class WatchlistScreen extends StatelessWidget {
   }
 }
 
-class CustomerServiceScreen extends StatelessWidget {
-  const CustomerServiceScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Klantenservice')),
-      body: const Center(child: Text('Klantenservice Content Here')),
-    );
-  }
-}

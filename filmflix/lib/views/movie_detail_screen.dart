@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
+import 'package:cinetrackr/services/movie_api.dart';
 import 'package:http/http.dart' as http;
 
 class MovieDetailScreen extends StatefulWidget {
@@ -430,84 +431,88 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _loadMovie() async {
-    // Deze functie is verantwoordelijk voor het laden van de details van de film. We gebruiken onze MovieRepository om de volledige details van de film op te halen op basis van de imdbId die we van de widget hebben ontvangen. We verwachten dat deze data zowel een 'rapid' deel bevat (met informatie van RapidAPI) als een 'omdb' deel (met informatie van OMDb). We extraheren relevante informatie zoals de poster URL, titel, overzicht, rating, genres, creators, cast, seizoenen, en streaming opties. We slaan deze informatie op in de state variabelen zodat we deze kunnen tonen in de UI. We hebben ook foutafhandeling om eventuele problemen bij het laden van de film te loggen en weer te geven aan de gebruiker.
+    // Nieuwe aanpak: start twee RapidAPI-requests (show + episode) tegelijkertijd
+    // en toon meteen het eerste antwoord dat terugkomt. De andere response werkt
+    // de UI bij zodra die binnen is.
     try {
-      final movie = await MovieRepository.getFullMovie(widget.imdbId);
-      final rapid = movie.rapid as Map<String, dynamic>;
-      final omdb = movie.omdb as Map<String, dynamic>?;
-      final poster = // We proberen eerst de poster URL te halen uit de RapidAPI data, waarbij we specifiek zoeken naar een verticale poster van 480px breed. Als die er niet is, proberen we een kleinere versie van 300px breed. Als die er ook niet is, vallen we terug op de poster URL die we van OMDb krijgen. Deze volgorde geeft de voorkeur aan de mogelijk hogere kwaliteit posters van RapidAPI, maar zorgt er ook voor dat we altijd een poster hebben als die beschikbaar is via OMDb.
-          (rapid['imageSet']?['verticalPoster']?['w480'] ??
-                  rapid['imageSet']?['verticalPoster']?['w300'] ??
-                  omdb?['Poster'])
-              ?.toString();
-
       setState(() {
-        // Zodra we de data hebben opgehaald en de relevante informatie hebben geëxtraheerd, updaten we de state van onze screen. We slaan de volledige rapid en omdb data op in _rapidData en _omdbData voor eventueel later gebruik. We zetten de poster URL, titel, overzicht, rating, genres, creators, cast, seizoenen, en streaming opties in hun respectievelijke state variabelen. We zetten ook _loadingMovie op false om aan te geven dat we klaar zijn met laden, zodat we de UI kunnen bijwerken om de details van de film te tonen.
-        _rapidData = rapid;
-        _omdbData = omdb;
-        _poster = poster;
-        _title = (rapid['title'] ?? omdb?['Title'] ?? '').toString();
-        _overview = (rapid['overview'] ?? omdb?['Plot'] ?? '').toString();
-        _rating = (omdb?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
-            .toString();
+        _loadingMovie = true;
+        _error = null;
+      });
 
-        _rated = omdb?['Rated']?.toString();
+      final omdbFuture = MovieApi.omdbGet(imdbId: widget.imdbId, plot: 'full');
+      final showFuture = MovieRepository.getRapidDetailsShow(widget.imdbId);
+      final episodeFuture = MovieRepository.getRapidDetailsEpisode(widget.imdbId);
+
+      // Zodra één van de Rapid futures als eerste binnen is, gebruiken we die om
+      // direct iets te tonen.
+      final firstRapid = await Future.any([showFuture, episodeFuture]);
+      final omdb = await omdbFuture;
+
+      void applyRapidAndOmdb(Map<String, dynamic> rapid, Map<String, dynamic>? omdbData) {
+        final poster = (rapid['imageSet']?['verticalPoster']?['w480'] ??
+                rapid['imageSet']?['verticalPoster']?['w300'] ??
+                omdbData?['Poster'])
+            ?.toString();
 
         final rapidGenres = _toList(rapid['genres'])
-            .map(
-              // We hebben gemerkt dat de genres in de RapidAPI data soms in verschillende formaten kunnen voorkomen. Soms zijn het gewoon strings, maar soms zijn het ook objecten met een 'name' veld. Om hier robuust mee om te gaan, gebruiken we een map functie die controleert of elk genre item een Map is met een 'name' key. Als dat het geval is, nemen we de waarde van 'name' als het genre; anders nemen we het item zelf als string. We zetten deze genres vervolgens om in een Set om duplicaten te verwijderen, aangezien we later ook genres uit OMDb zullen toevoegen.
-              (g) =>
-                  (g is Map && g.containsKey('name')
-                          ? g['name']
-                          : g) // Deze lijn controleert of het genre item een Map is met een 'name' key. Als dat het geval is, gebruiken we de waarde van 'name' als het genre. Als het item geen Map is of geen 'name' key heeft, nemen we het item zelf als string. Dit zorgt ervoor dat we correct omgaan met verschillende mogelijke formaten van de genres in de RapidAPI data.
-                      .toString(), // We zetten het resultaat om in een string, zodat we consistent strings hebben in onze genres lijst, ongeacht het oorspronkelijke formaat van de data.
-            )
-            .toSet(); // We zetten de genres van RapidAPI om in een Set om eventuele duplicaten te verwijderen, aangezien we later ook genres uit OMDb zullen toevoegen. Dit zorgt ervoor dat we een unieke lijst van genres hebben voor de film.
+            .map((g) => (g is Map && g.containsKey('name') ? g['name'] : g).toString())
+            .toSet();
 
-        final omdbGenresRaw = omdb?['Genre']?.toString() ?? '';
+        final omdbGenresRaw = omdbData?['Genre']?.toString() ?? '';
         final omdbGenres = omdbGenresRaw
-            .split(
-              ',',
-            ) //De genres van OMDb worden vaak teruggegeven als een enkele string met genres gescheiden door komma's (bijvoorbeeld "Action, Adventure, Sci-Fi"). Om deze te verwerken, splitsen we de string op de komma's om een lijst van individuele genres te krijgen. We trimmen ook eventuele extra spaties rond de genre namen en filteren lege strings eruit. Net als bij de RapidAPI genres zetten we deze ook om in een Set om duplicaten te verwijderen.
-            .map(
-              (g) => g.trim(),
-            ) // We trimmen de genres om eventuele extra spaties te verwijderen die kunnen ontstaan bij het splitsen van de string. Dit zorgt ervoor dat we schone genre namen hebben zonder onbedoelde spaties.
-            .where(
-              (g) => g.isNotEmpty,
-            ) // We filteren lege strings eruit, voor het geval er een genre veld is dat leeg is of alleen uit spaties bestaat. Dit zorgt ervoor dat we geen lege genres in onze lijst hebben.
-            .toSet(); // We zetten de genres van OMDb ook om in een Set om eventuele duplicaten te verwijderen, vooral in combinatie met de genres van RapidAPI. Dit zorgt ervoor dat we een unieke lijst van genres hebben voor de film, zelfs als er overlap is tussen de twee bronnen.
+            .split(',')
+            .map((g) => g.trim())
+            .where((g) => g.isNotEmpty)
+            .toSet();
 
-        _genres = {
-          ...rapidGenres,
-          ...omdbGenres,
-        }.toList(); // We combineren de genres van RapidAPI en OMDb door ze samen te voegen in een nieuwe Set (om duplicaten te verwijderen) en vervolgens om te zetten in een lijst. Dit geeft ons een gecombineerde lijst van unieke genres voor de film, afkomstig van beide bronnen. We slaan deze lijst op in de _genres state variabele, zodat we deze kunnen tonen in de UI.
+        setState(() {
+          _rapidData = rapid;
+          _omdbData = omdbData;
+          _poster = poster;
+          _title = (rapid['title'] ?? omdbData?['Title'] ?? '').toString();
+          _overview = (rapid['overview'] ?? omdbData?['Plot'] ?? '').toString();
+          _rating = (omdbData?['imdbRating'] ?? rapid['rating']?.toString() ?? '-').toString();
+          _rated = omdbData?['Rated']?.toString();
 
-        _creators = _toList(
-          // We halen de creators op uit de RapidAPI data. Net als bij genres kunnen de creators in verschillende formaten voorkomen, dus we gebruiken de _toList helper om hier robuust mee om te gaan. We zetten vervolgens elk creator item om in een string, zodat we een consistente lijst van strings hebben voor de creators.
-          rapid['creators'],
-        ).map((c) => c.toString()).toList();
-        _cast = _toList(rapid['cast'])
-            .map((c) => c.toString())
-            .toList(); // We halen de cast op uit de RapidAPI data, en gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. We zetten elk cast item om in een string, zodat we een consistente lijst van strings hebben voor de cast.
-        _seasons = _toList(
-          rapid['seasons'],
-        ); // We halen de seizoenen op uit de RapidAPI data, en gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. We laten deze als dynamic omdat we mogelijk extra informatie per seizoen willen tonen, zoals het aantal afleveringen of de release data.
-        _streaming = _toList(
-          rapid['streamingOptions']?['nl'],
-        ); // We halen de streaming opties op uit de RapidAPI data, specifiek voor de Nederlandse markt (aangegeven door 'nl'). We gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. Deze streaming opties bevatten informatie over waar en hoe de film gestreamd kan worden, zoals welke services het aanbieden, of het inbegrepen is bij een abonnement, of het gekocht of gehuurd kan worden, en eventuele prijzen.
-        _streaming = _toList(rapid['streamingOptions']?['nl']);
+          _genres = {
+            ...rapidGenres,
+            ...omdbGenres,
+          }.toList();
 
-        if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
-          final biosLink = {
-            'type': 'Bioscoop',
-            'link':
-                'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}',
-            'service': {'name': 'Bioscoop'},
-          };
-          _streaming.add(biosLink);
+          _creators = _toList(rapid['creators']).map((c) => c.toString()).toList();
+          _cast = _toList(rapid['cast']).map((c) => c.toString()).toList();
+          _seasons = _toList(rapid['seasons']);
+          _streaming = _toList(rapid['streamingOptions']?['nl']);
+
+          if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
+            final biosLink = {
+              'type': 'Bioscoop',
+              'link': 'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}',
+              'service': {'name': 'Bioscoop'},
+            };
+            _streaming.add(biosLink);
+          }
+
+          _loadingMovie = false;
+        });
+      }
+
+      // apply first rapid result immediately
+      applyRapidAndOmdb(firstRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
+
+      // When the other Rapid response arrives, merge/update UI with additional info.
+      showFuture.then((showRapid) {
+        if (firstRapid != showRapid) {
+          applyRapidAndOmdb(showRapid, omdb as Map<String, dynamic>?);
         }
-        _loadingMovie = false;
-      });
+      }).catchError((e) => debugPrint('Show fetch error: $e'));
+
+      episodeFuture.then((episodeRapid) {
+        if (firstRapid != episodeRapid) {
+          applyRapidAndOmdb(episodeRapid, omdb as Map<String, dynamic>?);
+        }
+      }).catchError((e) => debugPrint('Episode fetch error: $e'));
     } catch (e, s) {
       debugPrint('Error loading movie: $e\n$s');
       setState(() {
@@ -595,17 +600,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<bool> _ensureLoggedInWithPrompt(BuildContext context) async {
-    // Deze functie controleert of er een gebruiker is ingelogd, en als dat niet het geval is, toont het een dialog die de gebruiker informeert dat inloggen vereist is om verder te gaan. De dialog geeft de optie om naar het login-scherm te navigeren of om te annuleren. Als de gebruiker ervoor kiest om naar het login-scherm te gaan, navigeren we daar naartoe als een fullscreen dialog. Nadat de gebruiker terugkeert van het login-scherm, controleren we opnieuw of er nu een gebruiker is ingelogd, en laden we indien nodig de gebruikersdata. We returnen true als er een gebruiker is ingelogd (na eventueel inloggen), en false als de gebruiker heeft geannuleerd of als er nog steeds geen gebruiker is ingelogd.
-    if (_user != null) return true;
+ if (_user != null) return true;
 
     final result = await showDialog<bool>(
-      // We tonen een dialog aan de gebruiker waarin we uitleggen dat inloggen vereist is om deze actie uit te voeren. We geven de gebruiker de optie om naar het login-scherm te navigeren of om te annuleren. We wachten op de keuze van de gebruiker en slaan deze op in de 'result' variabele. Als de gebruiker ervoor kiest om te annuleren, of als er een fout optreedt bij het tonen van de dialog, returnen we false. Als de gebruiker ervoor kiest om naar het login-scherm te gaan, returnen we true, en gaan we verder met het navigeren naar het login-scherm.
-      context: context,
+    context: context,
       builder: (ctx) {
-        //ctx omdat we de context van de dialog builder gebruiken om de Navigator aan te sturen. In deze builder definiëren we de inhoud van de AlertDialog die aan de gebruiker wordt getoond. We geven een duidelijke titel en uitleg over waarom inloggen nodig is, en bieden twee knoppen: "Annuleren" en "Naar login". De "Annuleren" knop sluit de dialog en geeft false terug, terwijl de "Naar login" knop sluit de dialog en geeft true terug, wat aangeeft dat de gebruiker heeft gekozen om naar het login-scherm te gaan.
-        return AlertDialog(
-          // In deze AlertDialog informeren we de gebruiker dat inloggen vereist is om de gewenste actie uit te voeren. We geven een duidelijke titel en uitleg, en bieden twee knoppen: "Annuleren" om terug te gaan zonder iets te doen, en "Naar login" om door te gaan naar het login-scherm. We gebruiken Navigator.of(ctx).pop() om de keuze van de gebruiker terug te geven aan de caller van showDialog.
-          title: const Text('Inloggen vereist'),
+       return AlertDialog(
+        title: const Text('Inloggen vereist'),
           content: const Text(
             'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?',
           ),
@@ -624,8 +625,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
 
     if (result != true || !mounted)
-      return false; // Als de gebruiker heeft geannuleerd of als er een fout is opgetreden bij het tonen van de dialog, returnen we false. We controleren ook of de widget nog steeds gemonteerd is voordat we verder gaan, om te voorkomen dat we proberen te navigeren als de screen al is gesloten.
-
+      return false; 
     // Navigeer naar login als fullscreen dialog
     final loggedIn = await Navigator.of(context).push<bool>(
       MaterialPageRoute(

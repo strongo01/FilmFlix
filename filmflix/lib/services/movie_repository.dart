@@ -13,12 +13,32 @@ class MovieRepository { // Repository class die doet als een laag tussen de API 
 
   // Get full details (RapidAPI + OMDb)
   static Future<MovieDetail> getFullMovie(String imdbId) async {
-    final rapid = await MovieApi.getDetails(id: imdbId);
-    final omdb = await MovieApi.omdbGet(imdbId: imdbId, plot: 'full');
+    // Fetch both show- and episode-granularity in parallel, plus OMDb.
+    final showFuture = getRapidDetailsShow(imdbId);
+    final episodeFuture = getRapidDetailsEpisode(imdbId);
+    final omdbFuture = MovieApi.omdbGet(imdbId: imdbId, plot: 'full');
+
+    // Wait for both rapid responses and OMDb; prefer episode data for final return if available.
+    final results = await Future.wait([showFuture, episodeFuture, omdbFuture]);
+
+    final showRapid = results[0] as Map<String, dynamic>?;
+    final episodeRapid = results[1] as Map<String, dynamic>?;
+    final omdb = results[2] as Map<String, dynamic>?;
+
+    final rapid = episodeRapid ?? showRapid ?? <String, dynamic>{};
 
     print("IMDB ID: $imdbId");
     print("OMDB RESPONSE: $omdb");
 
     return MovieDetail(rapid: rapid, omdb: omdb);
+  }
+
+  // Rapid detail helpers (separate granularity)
+  static Future<Map<String, dynamic>> getRapidDetailsShow(String imdbId) {
+    return MovieApi.getDetails(id: imdbId, seriesGranularity: 'show');
+  }
+
+  static Future<Map<String, dynamic>> getRapidDetailsEpisode(String imdbId) {
+    return MovieApi.getDetails(id: imdbId, seriesGranularity: 'episode');
   }
 }
