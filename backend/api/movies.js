@@ -86,9 +86,14 @@ export default async function handler(req, res) {
     }
 
     else if (type === 'get') {
+        const { details } = req.query;
+
+        // Bepaal de granularity op basis van de 'details' parameter
+        const final_series_granularity = details === 'episodes' ? 'episode' : 'show';
+
         url = `https://${RAPID_HOST}/shows/${id}?` +
             new URLSearchParams({
-                series_granularity,
+                series_granularity: final_series_granularity,
                 output_language,
             });
 
