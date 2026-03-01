@@ -83,15 +83,13 @@ class CineTrackrApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          //if (snapshot.hasData) {
-          //return const HomeScreen();
-          //}
-          //return const HomeScreen();
+          
+          return const HomeScreen();
           //return const FilmNowScreen();
           //return const LoginScreen();
           //return const SearchScreen();
         //return const MovieDetailScreen(imdbId: "tt1632701");
-        return const CustomerServiceScreen();
+        //return const CustomerServiceScreen();
         },
       ),
     );

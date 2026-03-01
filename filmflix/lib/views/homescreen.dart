@@ -1,8 +1,11 @@
+import 'package:cinetrackr/views/adminscreen.dart';
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -164,6 +167,45 @@ class HomeScreen extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (context) => const BiosKaartScreen(),
                                   ),
+                                );
+                              },
+                            ),
+                            // only show Admin item for users with role 'admin'
+                            FutureBuilder<bool>(
+                              future: () async {
+                                try {
+                                  final user = FirebaseAuth.instance.currentUser;
+                                  if (user == null) return false;
+                                  final doc = await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(user.uid)
+                                      .get();
+                                  final data = doc.data();
+                                  if (data == null) return false;
+                                  final role = data['role'];
+                                  if (role is String) return role.toLowerCase() == 'admin';
+                                  if (role is List) return role.map((e) => e.toString().toLowerCase()).contains('admin');
+                                  return false;
+                                } catch (e) {
+                                  return false;
+                                }
+                              }(),
+                              builder: (ctx, snap) {
+                                final isAdmin = snap.data == true;
+                                if (!isAdmin) return const SizedBox.shrink();
+                                return _buildItem(
+                                  "assets/icons/appicon.png",
+                                  "Admin",
+                                  itemBackgroundColor,
+                                  textColor,
+                                  shadowColor,
+                                  () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const AdminScreen(),
+                                      ),
+                                    );
+                                  },
                                 );
                               },
                             ),

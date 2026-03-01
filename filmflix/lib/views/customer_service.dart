@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -157,6 +158,17 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     });
   }
 
+  // Optimistically move a question document to the top of the cached list
+  // so the UI reorders immediately when a chat is opened or a reply is sent.
+  void _moveQuestionToTop(String docId) {
+    final idx = _customerQuestions.indexWhere((d) => d.id == docId);
+    if (idx <= 0) return;
+    setState(() {
+      final doc = _customerQuestions.removeAt(idx);
+      _customerQuestions.insert(0, doc);
+    });
+  }
+
   void _subscribeCustomerQuestions(String uid) {
     _customerQuestionsSub?.cancel();
     _customerQuestionsSub = FirebaseFirestore.instance
@@ -169,17 +181,68 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
             int unread = 0;
             for (final d in docs) {
               final data = d.data();
-              final hasAdminAnswer =
-                  (data['answer'] != null &&
-                      data['answer'].toString().isNotEmpty) ||
-                  (data['adminReplies'] != null &&
-                      (data['adminReplies'] as List).isNotEmpty);
+              final adminReplies = (data['adminReplies'] as List?) ?? [];
               final userRead = data['userRead'] == true;
-              if (hasAdminAnswer && !userRead) unread += 1;
+
+              // If the document is marked unread for the user, count it.
+              if (!userRead) {
+                unread += 1;
+                continue;
+              }
+
+              // Otherwise, check adminReplies for individual seen state; if any admin reply
+              // has a seenBy list that does NOT include this user, count as unread.
+              for (final ar in adminReplies) {
+                if (ar is Map) {
+                  final seenBy = (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ?? [];
+                  if (!seenBy.contains(uid)) {
+                    unread += 1;
+                    break;
+                  }
+                }
+              }
             }
             if (!mounted) return;
+            // sort docs by latest activity (answerAt/updatedAt/createdAt or replies' createdAt)
+            int _tsFromValue(dynamic v) {
+              try {
+                if (v is Timestamp) return v.millisecondsSinceEpoch;
+                if (v is int) return v;
+                if (v is Map && v['seconds'] != null && v['nanoseconds'] != null) {
+                  // raw map representation
+                  final s = v['seconds'] as int? ?? 0;
+                  return s * 1000;
+                }
+              } catch (_) {}
+              return 0;
+            }
+
+            int _lastActivityMs(QueryDocumentSnapshot<Map<String, dynamic>> d) {
+              final data = d.data();
+              int last = 0;
+              last = Math.max(last, _tsFromValue(data['updatedAt']));
+              last = Math.max(last, _tsFromValue(data['answerAt']));
+              last = Math.max(last, _tsFromValue(data['createdAt']));
+              final adminReplies = (data['adminReplies'] as List?) ?? [];
+              for (final ar in adminReplies) {
+                if (ar is Map) last = Math.max(last, _tsFromValue(ar['createdAt']));
+              }
+              final userReplies = (data['userReplies'] as List?) ?? [];
+              for (final ur in userReplies) {
+                if (ur is Map) last = Math.max(last, _tsFromValue(ur['createdAt']));
+              }
+              return last;
+            }
+
+            final sorted = List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(docs);
+            try {
+              sorted.sort((a, b) => _lastActivityMs(b).compareTo(_lastActivityMs(a)));
+            } catch (e) {
+              // fallback to original order on error
+            }
+
             setState(() {
-              _customerQuestions = docs;
+              _customerQuestions = sorted;
               _customerRepliesUnread = unread;
             });
           },
@@ -208,7 +271,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           .toList();
       debugPrint('Loaded ${snap.docs.length} faq docs');
       for (final d in snap.docs) {
-        debugPrint('faq doc ${d.id}: ${d.data()}');
+        //debugPrint('faq doc ${d.id}: ${d.data()}');
       }
       if (!mounted) return;
       setState(() {
@@ -304,10 +367,12 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                 controller: emailCtrl,
                 decoration: const InputDecoration(labelText: 'E-mail'),
               ),
+              const SizedBox(height: 8),
               TextField(
                 controller: nameCtrl,
                 decoration: const InputDecoration(labelText: 'Naam'),
               ),
+              const SizedBox(height: 8),
               TextField(
                 controller: questionCtrl,
                 decoration: const InputDecoration(labelText: 'Vraag'),
@@ -362,8 +427,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         'name': name,
         'question': question,
         'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
         // mark as unread for the user until an admin replies
-        'userRead': false,
+        'userRead': true,
         'adminReplies': [],
         'userReplies': [],
         'answer': null,
@@ -462,7 +528,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                 controller: c,
                 maxLines: 3,
                 decoration: const InputDecoration(
-                  hintText: 'Typ hier je vraag...',
+                  hintText: 'Typ hier je vraag over films of series...',
                 ),
               ),
             ],
@@ -769,31 +835,34 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                 Positioned(
                   right: 6,
                   top: 6,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 20,
-                      minHeight: 20,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _customerRepliesUnread > 9
-                            ? '9+'
-                            : '$_customerRepliesUnread',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  child: IgnorePointer(
+                    // allow taps to pass through the badge to the icon button
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 20,
+                        minHeight: 20,
+                      ),
+                      child: Center(
+                        child: Text(
+                          _customerRepliesUnread > 9
+                              ? '9+'
+                              : '$_customerRepliesUnread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -937,34 +1006,74 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           width: double.maxFinite,
           child: _customerQuestions.isEmpty
               ? const Text('Je hebt nog geen vragen gestuurd.')
-              : ListView.builder(
+              : ListView.separated(
                   shrinkWrap: true,
                   itemCount: _customerQuestions.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (c, i) {
                     final d = _customerQuestions[i];
                     final data = d.data();
-                    final question = data['question'] ?? '';
-                    final answer = data['answer'] ?? '';
+                    final question = (data['question'] ?? '').toString();
+                    // derive a short preview: prefer latest admin reply, then answer, else question
+                    String preview = question;
                     final adminReplies = (data['adminReplies'] as List?) ?? [];
+                    final answer = (data['answer'] ?? '').toString();
+                    if (adminReplies.isNotEmpty) {
+                      final last = adminReplies.last;
+                      preview = last?.toString() ?? preview;
+                    } else if (answer.isNotEmpty) {
+                      preview = answer;
+                    }
+                    // show createdAt if available
+                    String timeText = '';
+                    final created = data['createdAt'];
+                    try {
+                      if (created is Timestamp) {
+                        final dt = created.toDate();
+                        timeText =
+                            '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                      }
+                    } catch (_) {}
+
                     return ListTile(
-                      title: Text(question.toString()),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      leading: const CircleAvatar(
+                        child: Icon(Icons.question_mark),
+                      ),
+                      title: Text(
+                        question,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        preview,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if ((answer as String).isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Text('Antwoord: $answer'),
-                          ],
-                          for (final ar in adminReplies)
-                            Text('Antwoord: ${ar.toString()}'),
+                          if (timeText.isNotEmpty)
+                            Text(
+                              timeText,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              minimumSize: const Size(0, 0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Open'),
+                            onPressed: () => _openChatDialog(d.id),
+                          ),
                         ],
                       ),
-                      isThreeLine: true,
-                      trailing: TextButton(
-                        child: const Text('Beantwoord'),
-                        onPressed: () =>
-                            _openFollowupDialog(d.id, question.toString()),
-                      ),
+                      onTap: () => _openChatDialog(d.id),
                     );
                   },
                 ),
@@ -975,6 +1084,237 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
             child: const Text('Sluiten'),
           ),
         ],
+      ),
+    );
+  }
+
+  // Open a chat-style dialog for a specific customer question document.
+  Future<void> _openChatDialog(String docId) async {
+    // find the doc in the cached list
+    QueryDocumentSnapshot<Map<String, dynamic>> doc;
+    try {
+      doc = _customerQuestions.firstWhere((d) => d.id == docId);
+    } catch (e) {
+      return;
+    }
+
+    // move this question to the top immediately so the list updates live
+    _moveQuestionToTop(docId);
+
+    // mark admin replies as seen for this user and set userRead=true
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final uid = currentUser?.uid;
+    if (uid != null) {
+      try {
+        final currentAdminReplies = (doc.data()['adminReplies'] as List?) ?? [];
+        bool needsUpdate = false;
+        final List<dynamic> newAdminReplies = [];
+        for (final ar in currentAdminReplies) {
+          if (ar is Map) {
+            final seenBy = (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ?? [];
+            if (!seenBy.contains(uid)) {
+              seenBy.add(uid);
+              needsUpdate = true;
+            }
+            final newAr = Map<String, dynamic>.from(ar);
+            newAr['seenBy'] = seenBy;
+            newAdminReplies.add(newAr);
+          } else {
+            newAdminReplies.add(ar);
+          }
+        }
+        if (needsUpdate) {
+          await FirebaseFirestore.instance.collection('customerquestions').doc(docId).update({
+            'adminReplies': newAdminReplies,
+            'userRead': true,
+          });
+        } else {
+          await FirebaseFirestore.instance.collection('customerquestions').doc(docId).update({'userRead': true});
+        }
+      } catch (e) {
+        debugPrint('Failed to mark question read/seen: $e');
+      }
+    }
+
+    final data = doc.data();
+    final questionText = (data['question'] ?? '').toString();
+    final answerText = (data['answer'] ?? '').toString();
+    final adminReplies = (data['adminReplies'] as List?) ?? [];
+    final userReplies = (data['userReplies'] as List?) ?? [];
+
+    final TextEditingController replyCtrl = TextEditingController();
+    final ScrollController scrollCtrl = ScrollController();
+
+    // build message list: earliest -> latest
+    final List<Map<String, dynamic>> messages = [];
+    // original question from user (treat as user message)
+    messages.add({
+      'text': questionText,
+      'isAdmin': false,
+      'ts': data['createdAt'],
+    });
+    if (answerText.isNotEmpty)
+      messages.add({
+        'text': answerText,
+        'isAdmin': true,
+        'ts': data['answerAt'] ?? data['updatedAt'],
+      });
+    for (final ar in adminReplies) {
+      if (ar is Map) {
+        final text = (ar['text'] ?? ar['answer'] ?? ar['message'] ?? ar.toString()).toString();
+        final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
+        messages.add({'text': text, 'isAdmin': true, 'ts': ts});
+      } else {
+        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null});
+      }
+    }
+    for (final ur in userReplies) {
+      if (ur is Map && ur['text'] != null) {
+        messages.add({
+          'text': ur['text'].toString(),
+          'isAdmin': false,
+          'ts': ur['createdAt'],
+        });
+      } else {
+        messages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
+      }
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setStateDialog) {
+          return AlertDialog(
+            title: Text(
+              'Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}',
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 520,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollCtrl,
+                      itemCount: messages.length,
+                      itemBuilder: (c, i) {
+                        final m = messages[i];
+                        final isAdmin = m['isAdmin'] == true;
+                        final txt = (m['text'] ?? '').toString();
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 6,
+                            horizontal: 8,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: isAdmin
+                                ? MainAxisAlignment.start
+                                : MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width * 0.66,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isAdmin
+                                      ? Colors.grey.shade200
+                                      : Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  txt,
+                                  style: TextStyle(
+                                    color: isAdmin
+                                        ? Colors.black87
+                                        : Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: replyCtrl,
+                          decoration: const InputDecoration(
+                            hintText: 'Typ een bericht...',
+                          ),
+                          maxLines: 3,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final text = replyCtrl.text.trim();
+                          if (text.isEmpty) return;
+                          // push to Firestore
+                          try {
+                            await FirebaseFirestore.instance
+                                .collection('customerquestions')
+                                .doc(docId)
+                                .update({
+                                  'userReplies': FieldValue.arrayUnion([
+                                    {
+                                      'text': text,
+                                      'createdAt': Timestamp.now(),
+                                    },
+                                  ]),
+                                  'userRead': true,
+                                });
+                            // locally append to messages so UI updates immediately
+                            setStateDialog(() {
+                              messages.add({
+                                'text': text,
+                                'isAdmin': false,
+                                'ts': Timestamp.now(),
+                              });
+                              replyCtrl.clear();
+                            });
+                              // move the question to the top optimistically
+                              _moveQuestionToTop(docId);
+                            // scroll to bottom
+                            await Future.delayed(
+                              const Duration(milliseconds: 100),
+                            );
+                            if (scrollCtrl.hasClients)
+                              scrollCtrl.jumpTo(
+                                scrollCtrl.position.maxScrollExtent,
+                              );
+                          } catch (e) {
+                            debugPrint('Failed to send chat reply: $e');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Versturen mislukt'),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Verstuur'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx2).pop(),
+                child: const Text('Sluiten'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
