@@ -42,129 +42,134 @@ class HomeScreen extends StatelessWidget {
 
           return Container(
             decoration: BoxDecoration(gradient: backgroundGradient),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
 
-                      /// Header
-                      Center(
-                        child: Text(
-                          "Welkom bij uw Bioscoopomgeving",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: isSmallPhone ? 22 : 28,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            letterSpacing: 0.5,
+                        /// Header
+                        Center(
+                          child: Text(
+                            "Welkom bij uw Bioscoopomgeving",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: isSmallPhone ? 22 : 28,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 40),
+                        const SizedBox(height: 40),
 
-                      /// Grid
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 28,
-                        childAspectRatio: isSmallPhone ? 0.85 : 0.9,
-                        children: [
-                          _buildItem(
-                            "assets/images/AfbeeldingFilmagenda.png",
-                            "Filmagenda",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const FilmNowScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingEtenDrinken.png",
-                            "Eten & Drinken",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const FoodScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingThuisbio.png",
-                            "Thuisbioscoop",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const SearchScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingWatchlist.png",
-                            "Watchlist",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const WatchlistScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingVragen.png",
-                            "Klantenservice",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CustomerServiceScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingKaart.png",
-                            "Bioscoopkaart",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const BiosKaartScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+                        /// Grid
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 28,
+                          childAspectRatio: isSmallPhone ? 0.85 : 0.9,
+                          children: [
+                            _buildItem(
+                              "assets/images/AfbeeldingFilmagenda.png",
+                              "Filmagenda",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const FilmNowScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingEtenDrinken.png",
+                              "Eten & Drinken",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const FoodScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingThuisbio.png",
+                              "Thuisbioscoop",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const SearchScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingWatchlist.png",
+                              "Watchlist",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const WatchlistScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingVragen.png",
+                              "Klantenservice",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const CustomerServiceScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingKaart.png",
+                              "Bioscoopkaart",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const BiosKaartScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
