@@ -61,6 +61,31 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     });
   }
 
+  // DETAILS (RapidAPI) - Base
+  static Future<Map<String, dynamic>> getDetailsBase({
+    required String id,
+    String outputLanguage = 'en',
+  }) {
+    return _get({
+      'type': 'get',
+      'id': id,
+      'output_language': outputLanguage,
+    });
+  }
+
+  // DETAILS (RapidAPI) - Episodes
+  static Future<Map<String, dynamic>> getDetailsEpisodes({
+    required String id,
+    String outputLanguage = 'en',
+  }) {
+    return _get({
+      'type': 'get',
+      'id': id,
+      'output_language': outputLanguage,
+      'details': 'episodes',
+    });
+  }
+
   // FILTER (RapidAPI)
   static Future<Map<String, dynamic>> filter({
     String country = 'nl',

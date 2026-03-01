@@ -52,6 +52,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   List<dynamic> _seasons = [];
   List<dynamic> _streaming = [];
   bool _loadingMovie = true;
+  bool _loadingEpisodes = false; // Nieuwe state voor het laden van afleveringen
   String? _error;
   String? _rated;
 
@@ -406,19 +407,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   void initState() {
-    super
-        .initState(); // In de initState van deze screen zetten we een listener op de Firebase Authentication status, zodat we kunnen reageren op veranderingen in de login status van de gebruiker. We halen ook direct de huidige user op, en als er al een user is ingelogd, laden we hun data (zoals watchlist en seen episodes). Daarnaast starten we het proces om de details van de film te laden, zodat we deze kunnen tonen zodra ze beschikbaar zijn.
+    super.initState();
     _user = FirebaseAuth.instance.currentUser;
 
     _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
       setState(() {
         _user = u;
       });
-      if (u != null)
+      if (u != null) {
         _loadUserData();
-      else {
+      } else {
         setState(() {
-          // Als de gebruiker uitlogt, resetten we de relevante state variabelen zoals _isInWatchlist en _seenSet, zodat we geen verouderde data tonen als er geen gebruiker is ingelogd.
           _isInWatchlist = false;
           _seenSet.clear();
         });
@@ -426,100 +425,111 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     });
     if (_user != null) _loadUserData();
 
-    _loadMovie();
+    _loadInitialMovieData();
   }
 
-  Future<void> _loadMovie() async {
-    // Deze functie is verantwoordelijk voor het laden van de details van de film. We gebruiken onze MovieRepository om de volledige details van de film op te halen op basis van de imdbId die we van de widget hebben ontvangen. We verwachten dat deze data zowel een 'rapid' deel bevat (met informatie van RapidAPI) als een 'omdb' deel (met informatie van OMDb). We extraheren relevante informatie zoals de poster URL, titel, overzicht, rating, genres, creators, cast, seizoenen, en streaming opties. We slaan deze informatie op in de state variabelen zodat we deze kunnen tonen in de UI. We hebben ook foutafhandeling om eventuele problemen bij het laden van de film te loggen en weer te geven aan de gebruiker.
+  Future<void> _loadInitialMovieData() async {
+    setState(() {
+      _loadingMovie = true;
+      _error = null;
+    });
+
     try {
-      final movie = await MovieRepository.getFullMovie(widget.imdbId);
+      final movie = await MovieRepository.getMovieBaseDetails(widget.imdbId);
       final rapid = movie.rapid as Map<String, dynamic>;
       final omdb = movie.omdb as Map<String, dynamic>?;
-      final poster = // We proberen eerst de poster URL te halen uit de RapidAPI data, waarbij we specifiek zoeken naar een verticale poster van 480px breed. Als die er niet is, proberen we een kleinere versie van 300px breed. Als die er ook niet is, vallen we terug op de poster URL die we van OMDb krijgen. Deze volgorde geeft de voorkeur aan de mogelijk hogere kwaliteit posters van RapidAPI, maar zorgt er ook voor dat we altijd een poster hebben als die beschikbaar is via OMDb.
-          (rapid['imageSet']?['verticalPoster']?['w480'] ??
-                  rapid['imageSet']?['verticalPoster']?['w300'] ??
-                  omdb?['Poster'])
-              ?.toString();
+      final poster = (rapid['imageSet']?['verticalPoster']?['w480'] ??
+              rapid['imageSet']?['verticalPoster']?['w300'] ??
+              omdb?['Poster'])
+          ?.toString();
 
-      setState(() {
-        // Zodra we de data hebben opgehaald en de relevante informatie hebben geëxtraheerd, updaten we de state van onze screen. We slaan de volledige rapid en omdb data op in _rapidData en _omdbData voor eventueel later gebruik. We zetten de poster URL, titel, overzicht, rating, genres, creators, cast, seizoenen, en streaming opties in hun respectievelijke state variabelen. We zetten ook _loadingMovie op false om aan te geven dat we klaar zijn met laden, zodat we de UI kunnen bijwerken om de details van de film te tonen.
-        _rapidData = rapid;
-        _omdbData = omdb;
-        _poster = poster;
-        _title = (rapid['title'] ?? omdb?['Title'] ?? '').toString();
-        _overview = (rapid['overview'] ?? omdb?['Plot'] ?? '').toString();
-        _rating = (omdb?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
-            .toString();
+      if (mounted) {
+        setState(() {
+          _rapidData = rapid;
+          _omdbData = omdb;
+          _poster = poster;
+          _title = (rapid['title'] ?? omdb?['Title'] ?? '').toString();
+          _overview = (rapid['overview'] ?? omdb?['Plot'] ?? '').toString();
+          _rating = (omdb?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
+              .toString();
+          _rated = omdb?['Rated']?.toString();
 
-        _rated = omdb?['Rated']?.toString();
+          final rapidGenres = _toList(rapid['genres'])
+              .map(
+                (g) => (g is Map && g.containsKey('name') ? g['name'] : g)
+                    .toString(),
+              )
+              .toSet();
 
-        final rapidGenres = _toList(rapid['genres'])
-            .map(
-              // We hebben gemerkt dat de genres in de RapidAPI data soms in verschillende formaten kunnen voorkomen. Soms zijn het gewoon strings, maar soms zijn het ook objecten met een 'name' veld. Om hier robuust mee om te gaan, gebruiken we een map functie die controleert of elk genre item een Map is met een 'name' key. Als dat het geval is, nemen we de waarde van 'name' als het genre; anders nemen we het item zelf als string. We zetten deze genres vervolgens om in een Set om duplicaten te verwijderen, aangezien we later ook genres uit OMDb zullen toevoegen.
-              (g) =>
-                  (g is Map && g.containsKey('name')
-                          ? g['name']
-                          : g) // Deze lijn controleert of het genre item een Map is met een 'name' key. Als dat het geval is, gebruiken we de waarde van 'name' als het genre. Als het item geen Map is of geen 'name' key heeft, nemen we het item zelf als string. Dit zorgt ervoor dat we correct omgaan met verschillende mogelijke formaten van de genres in de RapidAPI data.
-                      .toString(), // We zetten het resultaat om in een string, zodat we consistent strings hebben in onze genres lijst, ongeacht het oorspronkelijke formaat van de data.
-            )
-            .toSet(); // We zetten de genres van RapidAPI om in een Set om eventuele duplicaten te verwijderen, aangezien we later ook genres uit OMDb zullen toevoegen. Dit zorgt ervoor dat we een unieke lijst van genres hebben voor de film.
+          final omdbGenresRaw = omdb?['Genre']?.toString() ?? '';
+          final omdbGenres = omdbGenresRaw
+              .split(',')
+              .map((g) => g.trim())
+              .where((g) => g.isNotEmpty)
+              .toSet();
 
-        final omdbGenresRaw = omdb?['Genre']?.toString() ?? '';
-        final omdbGenres = omdbGenresRaw
-            .split(
-              ',',
-            ) //De genres van OMDb worden vaak teruggegeven als een enkele string met genres gescheiden door komma's (bijvoorbeeld "Action, Adventure, Sci-Fi"). Om deze te verwerken, splitsen we de string op de komma's om een lijst van individuele genres te krijgen. We trimmen ook eventuele extra spaties rond de genre namen en filteren lege strings eruit. Net als bij de RapidAPI genres zetten we deze ook om in een Set om duplicaten te verwijderen.
-            .map(
-              (g) => g.trim(),
-            ) // We trimmen de genres om eventuele extra spaties te verwijderen die kunnen ontstaan bij het splitsen van de string. Dit zorgt ervoor dat we schone genre namen hebben zonder onbedoelde spaties.
-            .where(
-              (g) => g.isNotEmpty,
-            ) // We filteren lege strings eruit, voor het geval er een genre veld is dat leeg is of alleen uit spaties bestaat. Dit zorgt ervoor dat we geen lege genres in onze lijst hebben.
-            .toSet(); // We zetten de genres van OMDb ook om in een Set om eventuele duplicaten te verwijderen, vooral in combinatie met de genres van RapidAPI. Dit zorgt ervoor dat we een unieke lijst van genres hebben voor de film, zelfs als er overlap is tussen de twee bronnen.
+          _genres = {...rapidGenres, ...omdbGenres}.toList();
 
-        _genres = {
-          ...rapidGenres,
-          ...omdbGenres,
-        }.toList(); // We combineren de genres van RapidAPI en OMDb door ze samen te voegen in een nieuwe Set (om duplicaten te verwijderen) en vervolgens om te zetten in een lijst. Dit geeft ons een gecombineerde lijst van unieke genres voor de film, afkomstig van beide bronnen. We slaan deze lijst op in de _genres state variabele, zodat we deze kunnen tonen in de UI.
+          _creators =
+              _toList(rapid['creators']).map((c) => c.toString()).toList();
+          _cast = _toList(rapid['cast']).map((c) => c.toString()).toList();
+          _streaming = _toList(rapid['streamingOptions']?['nl']);
 
-        _creators = _toList(
-          // We halen de creators op uit de RapidAPI data. Net als bij genres kunnen de creators in verschillende formaten voorkomen, dus we gebruiken de _toList helper om hier robuust mee om te gaan. We zetten vervolgens elk creator item om in een string, zodat we een consistente lijst van strings hebben voor de creators.
-          rapid['creators'],
-        ).map((c) => c.toString()).toList();
-        _cast = _toList(rapid['cast'])
-            .map((c) => c.toString())
-            .toList(); // We halen de cast op uit de RapidAPI data, en gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. We zetten elk cast item om in een string, zodat we een consistente lijst van strings hebben voor de cast.
-        _seasons = _toList(
-          rapid['seasons'],
-        ); // We halen de seizoenen op uit de RapidAPI data, en gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. We laten deze als dynamic omdat we mogelijk extra informatie per seizoen willen tonen, zoals het aantal afleveringen of de release data.
-        _streaming = _toList(
-          rapid['streamingOptions']?['nl'],
-        ); // We halen de streaming opties op uit de RapidAPI data, specifiek voor de Nederlandse markt (aangegeven door 'nl'). We gebruiken de _toList helper om te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. Deze streaming opties bevatten informatie over waar en hoe de film gestreamd kan worden, zoals welke services het aanbieden, of het inbegrepen is bij een abonnement, of het gekocht of gehuurd kan worden, en eventuele prijzen.
-        _streaming = _toList(rapid['streamingOptions']?['nl']);
+          if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
+            final biosLink = {
+              'type': 'Bioscoop',
+              'link':
+                  'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}',
+              'service': {'name': 'Bioscoop'},
+            };
+            _streaming.add(biosLink);
+          }
 
-        if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
-          final biosLink = {
-            'type': 'Bioscoop',
-            'link':
-                'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}',
-            'service': {'name': 'Bioscoop'},
-          };
-          _streaming.add(biosLink);
-        }
-        _loadingMovie = false;
-      });
+          _loadingMovie = false;
+        });
+
+        // After the base UI is built, load the episodes
+        _loadEpisodes();
+      }
     } catch (e, s) {
-      debugPrint('Error loading movie: $e\n$s');
-      setState(() {
-        _error = e.toString();
-        _loadingMovie = false;
-      });
+      debugPrint('Error loading initial movie data: $e\n$s');
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loadingMovie = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadEpisodes() async {
+    if (_rapidData == null) return;
+
+    setState(() {
+      _loadingEpisodes = true;
+    });
+
+    try {
+      final seasons = await MovieRepository.getMovieEpisodes(widget.imdbId);
+      if (mounted) {
+        setState(() {
+          _seasons = seasons;
+        });
+      }
+    } catch (e, s) {
+      debugPrint('Error loading episodes: $e\n$s');
+      // Optionally, show an error message for the seasons
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingEpisodes = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
-    // In de dispose methode van deze screen zorgen we ervoor dat we onze Firebase Authentication listener netjes opruimen door de subscription te cancelen. Dit is belangrijk om geheugenlekken te voorkomen en ervoor te zorgen dat we geen onnodige updates meer ontvangen nadat de screen is gesloten. We roepen ook super.dispose() aan om ervoor te zorgen dat de rest van het opruimproces correct wordt afgehandeld.
     _authSub?.cancel();
     super.dispose();
   }
@@ -936,7 +946,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Icon(Icons.translate, size: 16),
                       label: const Text(
@@ -1399,7 +1411,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             const SizedBox(height: 12),
 
             // Seasons & Episodes expansion
-            if (_seasons.isNotEmpty)
+            if (_loadingEpisodes)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+
+            if (!_loadingEpisodes && _seasons.isNotEmpty)
               Card(
                 color: isDark ? Colors.grey.shade900 : Colors.white,
                 child: ExpansionTile(
@@ -1417,7 +1437,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 ),
               ),
 
-            if (_seasons.isEmpty)
+            if (!_loadingEpisodes && _seasons.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Center(
