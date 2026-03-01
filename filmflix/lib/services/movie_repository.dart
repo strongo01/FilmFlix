@@ -11,39 +11,14 @@ class MovieRepository { // Repository class die doet als een laag tussen de API 
     return results.map((e) => MovieSearchItem.fromJson(e)).toList();
   }
 
-  // Get full details by combining base and episodes
+  // Get full details (RapidAPI + OMDb)
   static Future<MovieDetail> getFullMovie(String imdbId) async {
-    // Roep beide functies parallel aan
-    final results = await Future.wait([
-      getMovieBaseDetails(imdbId),
-      getMovieEpisodes(imdbId),
-    ]);
-
-    final movieDetail = results[0] as MovieDetail;
-    final seasons = results[1] as List<Season>;
-
-    // Voeg de seizoenen toe aan de rapid data van de movieDetail
-    if (movieDetail.rapid != null && movieDetail.rapid is Map<String, dynamic>) {
-      (movieDetail.rapid as Map<String, dynamic>)['seasons'] = seasons.map((s) => s.toJson()).toList();
-    }
-
-    return movieDetail;
-  }
-
-  // Get base details (RapidAPI + OMDb)
-  static Future<MovieDetail> getMovieBaseDetails(String imdbId) async {
-    final rapid = await MovieApi.getDetailsBase(id: imdbId);
+    final rapid = await MovieApi.getDetails(id: imdbId);
     final omdb = await MovieApi.omdbGet(imdbId: imdbId, plot: 'full');
 
-    return MovieDetail(rapid: rapid, omdb: omdb);
-  }
+    print("IMDB ID: $imdbId");
+    print("OMDB RESPONSE: $omdb");
 
-  // Get episodes (RapidAPI)
-  static Future<List<Season>> getMovieEpisodes(String imdbId) async {
-    final data = await MovieApi.getDetailsEpisodes(id: imdbId);
-    final seasons = (data['result']['seasons'] as List<dynamic>? ?? [])
-        .map((e) => Season.fromJson(e))
-        .toList();
-    return seasons;
+    return MovieDetail(rapid: rapid, omdb: omdb);
   }
 }
