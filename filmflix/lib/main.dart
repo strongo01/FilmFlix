@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'views/homescreen.dart';
 import 'views/loginscreen.dart';
 import 'views/foodscreen.dart';
+import 'package:cinetrackr/views/kaart.dart';   
 
 
 Future<void> main() async {
@@ -73,6 +74,7 @@ class CineTrackrApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/search': (context) => const SearchScreen(),
+        '/cinemas': (context) => const CinemasMapView(),
         // eventueel andere routes
       },
       home: StreamBuilder<User?>(
