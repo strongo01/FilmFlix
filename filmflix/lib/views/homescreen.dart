@@ -1,5 +1,6 @@
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
+import 'package:cinetrackr/views/kaart.dart';
 import 'package:cinetrackr/views/search_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -157,7 +158,7 @@ class HomeScreen extends StatelessWidget {
                             () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => const BiosKaartScreen(),
+                                  builder: (context) => const CinemasMapView(),
                                 ),
                               );
                             },
