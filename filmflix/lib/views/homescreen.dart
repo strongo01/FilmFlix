@@ -3,6 +3,7 @@ import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
+import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -288,18 +289,6 @@ class BiosKaartScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('BiosKaart')),
       body: const Center(child: Text('BiosKaart Content Here')),
-    );
-  }
-}
-
-class WatchlistScreen extends StatelessWidget {
-  const WatchlistScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Watchlist')),
-      body: const Center(child: Text('Watchlist Content Here')),
     );
   }
 }

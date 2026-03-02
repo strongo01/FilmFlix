@@ -1014,26 +1014,94 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                     final d = _customerQuestions[i];
                     final data = d.data();
                     final question = (data['question'] ?? '').toString();
-                    // derive a short preview: prefer latest admin reply, then answer, else question
+                    // derive a short preview: pick the most recent message (answer/adminReplies/userReplies)
                     String preview = question;
                     final adminReplies = (data['adminReplies'] as List?) ?? [];
+                    final userReplies = (data['userReplies'] as List?) ?? [];
                     final answer = (data['answer'] ?? '').toString();
-                    if (adminReplies.isNotEmpty) {
-                      final last = adminReplies.last;
-                      preview = last?.toString() ?? preview;
-                    } else if (answer.isNotEmpty) {
-                      preview = answer;
+
+                    DateTime? _toDt(dynamic ts) {
+                      try {
+                        if (ts == null) return null;
+                        if (ts is Timestamp) return ts.toDate();
+                        if (ts is int) return DateTime.fromMillisecondsSinceEpoch(ts);
+                        if (ts is String) return DateTime.tryParse(ts);
+                      } catch (_) {}
+                      return null;
                     }
-                    // show createdAt if available
+
+                    String _extractTextFromMap(Map m) {
+                      if (m['text'] != null && m['text'].toString().trim().isNotEmpty) return m['text'].toString();
+                      if (m['answer'] != null && m['answer'].toString().trim().isNotEmpty) return m['answer'].toString();
+                      if (m['message'] != null && m['message'].toString().trim().isNotEmpty) return m['message'].toString();
+                      final firstString = m.values.firstWhere((v) => v != null && v is String && v.toString().trim().isNotEmpty, orElse: () => null);
+                      return firstString?.toString() ?? m.toString();
+                    }
+
+                    DateTime? lastDt = _toDt(data['createdAt']);
+                    String lastText = preview;
+
+                    // answer (admin)
+                    if (answer.isNotEmpty) {
+                      final dt = _toDt(data['answerAt'] ?? data['updatedAt']);
+                      if (dt != null && (lastDt == null || dt.isAfter(lastDt))) {
+                        lastDt = dt;
+                        lastText = answer;
+                      }
+                    }
+
+                    // admin replies
+                    for (final ar in adminReplies) {
+                      try {
+                        String text;
+                        dynamic rawTs;
+                        if (ar is Map) {
+                          text = _extractTextFromMap(ar);
+                          rawTs = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
+                        } else {
+                          text = ar?.toString() ?? '';
+                          rawTs = null;
+                        }
+                        final dt = _toDt(rawTs);
+                        if (dt != null && (lastDt == null || dt.isAfter(lastDt))) {
+                          lastDt = dt;
+                          lastText = text;
+                        }
+                      } catch (_) {}
+                    }
+
+                    // user replies
+                    for (final ur in userReplies) {
+                      try {
+                        String text;
+                        dynamic rawTs;
+                        if (ur is Map) {
+                          text = _extractTextFromMap(ur);
+                          rawTs = ur['createdAt'] ?? ur['updatedAt'];
+                        } else {
+                          text = ur?.toString() ?? '';
+                          rawTs = null;
+                        }
+                        final dt = _toDt(rawTs);
+                        if (dt != null && (lastDt == null || dt.isAfter(lastDt))) {
+                          lastDt = dt;
+                          lastText = text;
+                        }
+                      } catch (_) {}
+                    }
+
+                    preview = lastText;
+                    // show time of last message (if available)
                     String timeText = '';
-                    final created = data['createdAt'];
                     try {
-                      if (created is Timestamp) {
-                        final dt = created.toDate();
+                      if (lastDt != null) {
+                        final dt = lastDt.toLocal();
                         timeText =
                             '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
                       }
-                    } catch (_) {}
+                    } catch (_) {
+                      // ignore
+                    }
 
                     return ListTile(
                       leading: const CircleAvatar(
@@ -1137,6 +1205,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     }
 
     final data = doc.data();
+    final docRef = FirebaseFirestore.instance.collection('customerquestions').doc(docId);
     final questionText = (data['question'] ?? '').toString();
     final answerText = (data['answer'] ?? '').toString();
     final adminReplies = (data['adminReplies'] as List?) ?? [];
@@ -1146,7 +1215,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final ScrollController scrollCtrl = ScrollController();
 
     // build message list: earliest -> latest
-    final List<Map<String, dynamic>> messages = [];
+    var messages = <Map<String, dynamic>>[];
     // original question from user (treat as user message)
     messages.add({
       'text': questionText,
@@ -1161,7 +1230,24 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       });
     for (final ar in adminReplies) {
       if (ar is Map) {
-        final text = (ar['text'] ?? ar['answer'] ?? ar['message'] ?? ar.toString()).toString();
+        String text;
+        if (ar['text'] != null && ar['text'].toString().trim().isNotEmpty) {
+          text = ar['text'].toString();
+        } else if (ar['answer'] != null && ar['answer'].toString().trim().isNotEmpty) {
+          text = ar['answer'].toString();
+        } else if (ar['message'] != null && ar['message'].toString().trim().isNotEmpty) {
+          text = ar['message'].toString();
+        } else {
+          final firstString = ar.values.firstWhere(
+            (v) => v != null && v is String && v.toString().trim().isNotEmpty,
+            orElse: () => null,
+          );
+          if (firstString != null) {
+            text = firstString.toString();
+          } else {
+            text = ar.toString();
+          }
+        }
         final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
         messages.add({'text': text, 'isAdmin': true, 'ts': ts});
       } else {
@@ -1169,154 +1255,208 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       }
     }
     for (final ur in userReplies) {
-      if (ur is Map && ur['text'] != null) {
-        messages.add({
-          'text': ur['text'].toString(),
-          'isAdmin': false,
-          'ts': ur['createdAt'],
-        });
+      if (ur is Map) {
+        String text;
+        if (ur['text'] != null && ur['text'].toString().trim().isNotEmpty) {
+          text = ur['text'].toString();
+        } else {
+          final firstString = ur.values.firstWhere(
+            (v) => v != null && v is String && v.toString().trim().isNotEmpty,
+            orElse: () => null,
+          );
+          text = firstString?.toString() ?? ur.toString();
+        }
+        messages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt']});
       } else {
         messages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
       }
     }
 
-    await showDialog<void>(
-      context: context,
+    // sort messages by timestamp (oldest -> newest). support Timestamp, DateTime, int, String
+    int tsToMs(dynamic ts) {
+      try {
+        if (ts == null) {
+          return 0;
+        }
+        if (ts is Timestamp) {
+          return ts.millisecondsSinceEpoch;
+        }
+        if (ts is DateTime) {
+          return ts.millisecondsSinceEpoch;
+        }
+        if (ts is int) {
+          return ts;
+        }
+        if (ts is String) {
+          final dt = DateTime.tryParse(ts);
+          return dt?.millisecondsSinceEpoch ?? 0;
+        }
+      } catch (_) {
+        // ignore
+      }
+      return 0;
+    }
+
+    messages.sort((a, b) => tsToMs(a['ts']).compareTo(tsToMs(b['ts'])));
+    // subscribe to realtime updates for this doc while dialog is open
+    StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? docSub;
+    void Function(void Function())? setStateDialog;
+    docSub = docRef.snapshots().listen((snap) {
+      if (!snap.exists) return;
+      try {
+        final d = snap.data()!;
+        final qText = (d['question'] ?? '').toString();
+        final aText = (d['answer'] ?? '').toString();
+        final aReplies = (d['adminReplies'] as List?) ?? [];
+        final uReplies = (d['userReplies'] as List?) ?? [];
+
+        final List<Map<String, dynamic>> newMessages = [];
+        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt']});
+        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt']});
+        for (final ar in aReplies) {
+          if (ar is Map) {
+            String text;
+            if (ar['text'] != null && ar['text'].toString().trim().isNotEmpty) text = ar['text'].toString();
+            else if (ar['answer'] != null && ar['answer'].toString().trim().isNotEmpty) text = ar['answer'].toString();
+            else if (ar['message'] != null && ar['message'].toString().trim().isNotEmpty) text = ar['message'].toString();
+            else {
+              final firstString = ar.values.firstWhere((v) => v != null && v is String && v.toString().trim().isNotEmpty, orElse: () => null);
+              text = firstString?.toString() ?? ar.toString();
+            }
+            final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
+            newMessages.add({'text': text, 'isAdmin': true, 'ts': ts});
+          } else {
+            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null});
+          }
+        }
+        for (final ur in uReplies) {
+          if (ur is Map) {
+            String text;
+            if (ur['text'] != null && ur['text'].toString().trim().isNotEmpty) text = ur['text'].toString();
+            else {
+              final firstString = ur.values.firstWhere((v) => v != null && v is String && v.toString().trim().isNotEmpty, orElse: () => null);
+              text = firstString?.toString() ?? ur.toString();
+            }
+            newMessages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt']});
+          } else {
+            newMessages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
+          }
+        }
+
+        newMessages.sort((a, b) => tsToMs(a['ts']).compareTo(tsToMs(b['ts'])));
+
+        // update dialog state if available
+        setStateDialog?.call(() {
+          messages
+            ..clear()
+            ..addAll(newMessages);
+        });
+        // auto-scroll handled in the dialog after setState
+      } catch (e) {
+        debugPrint('Realtime doc listener build error: $e');
+      }
+    }, onError: (e) {
+      debugPrint('Doc snapshots listen error: $e');
+    });
+
+    await Navigator.of(context).push(MaterialPageRoute(
+      fullscreenDialog: true,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx2, setStateDialog) {
-          return AlertDialog(
-            title: Text(
-              'Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}',
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 520,
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollCtrl,
-                      itemCount: messages.length,
-                      itemBuilder: (c, i) {
-                        final m = messages[i];
-                        final isAdmin = m['isAdmin'] == true;
-                        final txt = (m['text'] ?? '').toString();
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 6,
-                            horizontal: 8,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: isAdmin
-                                ? MainAxisAlignment.start
-                                : MainAxisAlignment.end,
-                            children: [
-                              Container(
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      MediaQuery.of(context).size.width * 0.66,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isAdmin
-                                      ? Colors.grey.shade200
-                                      : Theme.of(context).colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  txt,
-                                  style: TextStyle(
-                                    color: isAdmin
-                                        ? Colors.black87
-                                        : Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: replyCtrl,
-                          decoration: const InputDecoration(
-                            hintText: 'Typ een bericht...',
-                          ),
-                          maxLines: 3,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () async {
-                          final text = replyCtrl.text.trim();
-                          if (text.isEmpty) return;
-                          // push to Firestore
-                          try {
-                            await FirebaseFirestore.instance
-                                .collection('customerquestions')
-                                .doc(docId)
-                                .update({
-                                  'userReplies': FieldValue.arrayUnion([
-                                    {
-                                      'text': text,
-                                      'createdAt': Timestamp.now(),
-                                    },
-                                  ]),
-                                  'userRead': true,
-                                });
-                            // locally append to messages so UI updates immediately
-                            setStateDialog(() {
-                              messages.add({
-                                'text': text,
-                                'isAdmin': false,
-                                'ts': Timestamp.now(),
-                              });
-                              replyCtrl.clear();
-                            });
-                              // move the question to the top optimistically
-                              _moveQuestionToTop(docId);
-                            // scroll to bottom
-                            await Future.delayed(
-                              const Duration(milliseconds: 100),
-                            );
-                            if (scrollCtrl.hasClients)
-                              scrollCtrl.jumpTo(
-                                scrollCtrl.position.maxScrollExtent,
-                              );
-                          } catch (e) {
-                            debugPrint('Failed to send chat reply: $e');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Versturen mislukt'),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Verstuur'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
+        builder: (ctx2, setState) {
+          setStateDialog = setState;
+          return Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.of(ctx2).pop(),
-                child: const Text('Sluiten'),
               ),
-            ],
+              title: Text(
+                'Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}',
+              ),
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: double.maxFinite,
+                height: double.infinity,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollCtrl,
+                        itemCount: messages.length,
+                        itemBuilder: (c, i) {
+                          final m = messages[i];
+                          final isAdmin = m['isAdmin'] == true;
+                          final txt = (m['text'] ?? '').toString();
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                            child: Row(
+                              mainAxisAlignment: isAdmin ? MainAxisAlignment.start : MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
+                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(txt, style: TextStyle(color: isAdmin ? Colors.black87 : Colors.white)),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: replyCtrl,
+                            decoration: const InputDecoration(hintText: 'Typ een bericht...'),
+                            maxLines: 3,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final text = replyCtrl.text.trim();
+                            if (text.isEmpty) return;
+                            try {
+                              await FirebaseFirestore.instance.collection('customerquestions').doc(docId).update({
+                                'userReplies': FieldValue.arrayUnion([
+                                  {'text': text, 'createdAt': Timestamp.now()},
+                                ]),
+                                'userRead': true,
+                              });
+                              setStateDialog?.call(() {
+                                messages.add({'text': text, 'isAdmin': false, 'ts': Timestamp.now()});
+                                replyCtrl.clear();
+                              });
+                              _moveQuestionToTop(docId);
+                              await Future.delayed(const Duration(milliseconds: 100));
+                              if (scrollCtrl.hasClients) scrollCtrl.jumpTo(scrollCtrl.position.maxScrollExtent);
+                            } catch (e) {
+                              debugPrint('Failed to send chat reply: $e');
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
+                            }
+                          },
+                          child: const Text('Verstuur'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         },
       ),
-    );
+    ));
+    // stop realtime listener when dialog is closed
+    await docSub?.cancel();
   }
 
   Future<void> _openFollowupDialog(String docId, String question) async {
