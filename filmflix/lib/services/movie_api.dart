@@ -52,12 +52,13 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
   static Future<Map<String, dynamic>> getDetails({
     required String id,
     String outputLanguage = 'en',
+    String seriesGranularity = 'episode',
   }) {
     return _get({
       'type': 'get',
       'id': id,
       'output_language': outputLanguage,
-      'series_granularity': 'episode',
+      'series_granularity': seriesGranularity,
     });
   }
 

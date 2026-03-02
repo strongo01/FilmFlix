@@ -28,7 +28,7 @@ class _FoodScreenState extends State<FoodScreen> {
     {'name': 'Pizza', 'emoji': '🍕'},
     {'name': 'Sushi', 'emoji': '🍣'},
     {'name': 'Burger', 'emoji': '🍔'},
-    {'name': 'Kapsalon', 'emoji': '🍟'},
+    {'name': 'Kapsalon', 'emoji': '🍗'},
   ];
 
   // Dialoog om favoriet aan te passen
