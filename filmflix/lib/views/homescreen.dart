@@ -167,7 +167,7 @@ class HomeScreen extends StatelessWidget {
                               () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (context) => const BiosKaartScreen(),
+                                    builder: (context) => const CinemasMapView(),
                                   ),
                                 );
                               },
@@ -281,28 +281,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-class BiosKaartScreen extends StatelessWidget {
-  const BiosKaartScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('BiosKaart')),
-      body: const Center(child: Text('BiosKaart Content Here')),
-    );
-  }
-}
-
-class WatchlistScreen extends StatelessWidget {
-  const WatchlistScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Watchlist')),
-      body: const Center(child: Text('Watchlist Content Here')),
-    );
-  }
-}
-
