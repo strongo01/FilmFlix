@@ -1,7 +1,12 @@
+import 'package:cinetrackr/views/adminscreen.dart';
+import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
+import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -42,129 +47,173 @@ class HomeScreen extends StatelessWidget {
 
           return Container(
             decoration: BoxDecoration(gradient: backgroundGradient),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
 
-                      /// Header
-                      Center(
-                        child: Text(
-                          "Welkom bij uw Bioscoopomgeving",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: isSmallPhone ? 22 : 28,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            letterSpacing: 0.5,
+                        /// Header
+                        Center(
+                          child: Text(
+                            "Welkom bij uw Bioscoopomgeving",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: isSmallPhone ? 22 : 28,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 40),
+                        const SizedBox(height: 40),
 
-                      /// Grid
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 28,
-                        childAspectRatio: isSmallPhone ? 0.85 : 0.9,
-                        children: [
-                          _buildItem(
-                            "assets/images/AfbeeldingFilmagenda.png",
-                            "Filmagenda",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const FilmNowScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingEtenDrinken.png",
-                            "Eten & Drinken",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const FoodScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingThuisbio.png",
-                            "Thuisbioscoop",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const SearchScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingWatchlist.png",
-                            "Watchlist",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const WatchlistScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingVragen.png",
-                            "Klantenservice",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CustomerServiceScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          _buildItem(
-                            "assets/images/AfbeeldingKaart.png",
-                            "Bioscoopkaart",
-                            itemBackgroundColor,
-                            textColor,
-                            shadowColor,
-                            () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const BiosKaartScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
+                        /// Grid
+                        GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 28,
+                          childAspectRatio: isSmallPhone ? 0.85 : 0.9,
+                          children: [
+                            _buildItem(
+                              "assets/images/AfbeeldingFilmagenda.png",
+                              "Filmagenda",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const FilmNowScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingEtenDrinken.png",
+                              "Eten & Drinken",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const FoodScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingThuisbio.png",
+                              "Thuisbioscoop",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const SearchScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingWatchlist.png",
+                              "Watchlist",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const WatchlistScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingVragen.png",
+                              "Klantenservice",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const CustomerServiceScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            _buildItem(
+                              "assets/images/AfbeeldingKaart.png",
+                              "Bioscoopkaart",
+                              itemBackgroundColor,
+                              textColor,
+                              shadowColor,
+                              () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const BiosKaartScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            // only show Admin item for users with role 'admin'
+                            FutureBuilder<bool>(
+                              future: () async {
+                                try {
+                                  final user = FirebaseAuth.instance.currentUser;
+                                  if (user == null) return false;
+                                  final doc = await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(user.uid)
+                                      .get();
+                                  final data = doc.data();
+                                  if (data == null) return false;
+                                  final role = data['role'];
+                                  if (role is String) return role.toLowerCase() == 'admin';
+                                  if (role is List) return role.map((e) => e.toString().toLowerCase()).contains('admin');
+                                  return false;
+                                } catch (e) {
+                                  return false;
+                                }
+                              }(),
+                              builder: (ctx, snap) {
+                                final isAdmin = snap.data == true;
+                                if (!isAdmin) return const SizedBox.shrink();
+                                return _buildItem(
+                                  "assets/icons/appicon.png",
+                                  "Admin",
+                                  itemBackgroundColor,
+                                  textColor,
+                                  shadowColor,
+                                  () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const AdminScreen(),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -256,14 +305,3 @@ class WatchlistScreen extends StatelessWidget {
   }
 }
 
-class CustomerServiceScreen extends StatelessWidget {
-  const CustomerServiceScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Klantenservice')),
-      body: const Center(child: Text('Klantenservice Content Here')),
-    );
-  }
-}

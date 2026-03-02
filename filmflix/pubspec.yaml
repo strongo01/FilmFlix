@@ -49,6 +49,8 @@ dependencies:
   cloud_firestore: ^6.1.2
   geolocator: ^14.0.2
   geocoding: ^4.0.0
+  firebase_ai: ^3.8.0
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
@@ -102,6 +104,7 @@ flutter:
     - assets/images/AfbeeldingEtenDrinken.png
     - assets/images/AfbeeldingBestelling.png
     - assets/images/AfbeeldingWatchlist.png
+    - assets/icons/appicon.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
