@@ -283,7 +283,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Carrousel
     final screenWidth = MediaQuery.of(context).size.width;
-    final carouselHeight = screenWidth * 9 / 16; // 16:9 ratio voor backdrops
+    final carouselHeight = screenWidth * 1.2; // Was 9 / 16, nu groter
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
@@ -408,12 +408,12 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
 
                     // Kleine scrollable thumbnails onderaan
                     SizedBox(
-                      height: 110,
+                      height: 180, // Was 110
                       child: ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         scrollDirection: Axis.horizontal,
                         itemCount: films.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (_, __) => const SizedBox(width: 12), // Was 8
                         itemBuilder: (context, i) {
                           final f = films[i];
                           return GestureDetector(
@@ -429,7 +429,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: SizedBox(
-                                width: 78,
+                                width: 120, // Was 78
                                 child: f.poster != null
                                     ? Image.network(
                                         proxiedUrl(f.poster!),
