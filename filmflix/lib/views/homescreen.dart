@@ -2,6 +2,7 @@ import 'package:cinetrackr/views/adminscreen.dart';
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
+import 'package:cinetrackr/views/kaart.dart';
 import 'package:cinetrackr/views/search_screen.dart';
 import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:flutter/material.dart';
