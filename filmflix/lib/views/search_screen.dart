@@ -275,7 +275,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onSubmitted: (_) => search(),
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
-                hintText: "Zoek film...",
+                hintText: "Zoek serie/film...",
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : Colors.black45,
                 ),
