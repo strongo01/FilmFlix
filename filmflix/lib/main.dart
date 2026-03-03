@@ -1,23 +1,23 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cinetrackr/firebase_options.dart';
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'views/homescreen.dart';
-import 'views/loginscreen.dart';
-import 'views/foodscreen.dart';
+import 'package:cinetrackr/views/homescreen.dart';
+import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:cinetrackr/views/kaart.dart';   
-
+import 'package:cinetrackr/views/settingscreen.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const CineTrackrApp());
 }
+
 
 class CineTrackrApp extends StatelessWidget {
   const CineTrackrApp({super.key});
@@ -86,12 +86,13 @@ class CineTrackrApp extends StatelessWidget {
             );
           }
           
-          return const HomeScreen();
+          //return const HomeScreen();
           //return const FilmNowScreen();
           //return const LoginScreen();
           //return const SearchScreen();
         //return const MovieDetailScreen(imdbId: "tt1632701");
         //return const CustomerServiceScreen();
+          return const SettingsScreen();
         },
       ),
     );
