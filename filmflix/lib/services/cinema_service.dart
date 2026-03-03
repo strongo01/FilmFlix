@@ -1,74 +1,42 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _kCachedCinemasKey = 'cached_cinemas_v1';
 
 Future<List<Map<String, dynamic>>> fetchCinemasFromOverpass() async {
-  // Switched to Nominatim search for 'cinema' within the same bbox.
-  // BBox from previous Overpass query: south, west, north, east = 50.5,3.3,53.7,7.2
-  final bboxMinLon = 3.3;
-  final bboxMinLat = 50.5;
-  final bboxMaxLon = 7.2;
-  final bboxMaxLat = 53.7;
-
-  final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
-    'q': 'cinema',
-    'format': 'json',
-    'limit': '200',
-    'viewbox': '$bboxMinLon,$bboxMinLat,$bboxMaxLon,$bboxMaxLat',
-    'bounded': '1',
-    'extratags': '1',
-    'namedetails': '1',
-  });
-
-  final resp = await http.get(uri, headers: {
-    'User-Agent': 'filmflix_app',
-    'Accept': 'application/json',
-  }).timeout(const Duration(seconds: 30));
-
-  if (resp.statusCode != 200) throw Exception('Nominatim error: ${resp.statusCode}');
-
-  final List<dynamic> elems = json.decode(resp.body) as List<dynamic>;
+  // Load local GeoJSON asset instead of fetching from Overpass API.
+  final s = await rootBundle.loadString('assets/kaart/export.geojson');
+  final data = json.decode(s) as Map<String, dynamic>;
+  final features = data['features'] as List<dynamic>? ?? [];
   final cinemas = <Map<String, dynamic>>[];
 
-  for (final e in elems) {
-    final Map<String, dynamic> elem = Map<String, dynamic>.from(e as Map);
+  for (final f in features) {
+    final Map<String, dynamic> feat = Map<String, dynamic>.from(f as Map);
     double? lat;
     double? lon;
-    // Nominatim returns lat/lon as strings; handle both string and numeric.
-    if (elem.containsKey('lat') && elem.containsKey('lon')) {
-      final latVal = elem['lat'];
-      final lonVal = elem['lon'];
-      if (latVal is String) lat = double.tryParse(latVal);
-      else if (latVal is num) lat = latVal.toDouble();
 
-      if (lonVal is String) lon = double.tryParse(lonVal);
-      else if (lonVal is num) lon = lonVal.toDouble();
+    final geometry = feat['geometry'] as Map<String, dynamic>?;
+    if (geometry != null && geometry['type'] == 'Point' && geometry['coordinates'] is List) {
+      final coords = (geometry['coordinates'] as List).map((e) => e as num).toList();
+      if (coords.length >= 2) {
+        lon = coords[0].toDouble();
+        lat = coords[1].toDouble();
+      }
     }
 
     if (lat == null || lon == null) continue;
 
     String name = 'Onbekend';
     String? website;
+    final props = feat['properties'] as Map<String, dynamic>?;
+    if (props != null) {
+      if (props.containsKey('name')) name = props['name']?.toString() ?? name;
+      else if (props.containsKey('operator')) name = props['operator']?.toString() ?? name;
 
-    // Nominatim may provide namedetails and extratags
-    if (elem.containsKey('namedetails') && elem['namedetails'] is Map) {
-      final named = Map<String, dynamic>.from(elem['namedetails'] as Map);
-      if (named.containsKey('name')) name = named['name'] as String;
-    }
-
-    if (elem.containsKey('extratags') && elem['extratags'] is Map) {
-      final tags = Map<String, dynamic>.from(elem['extratags'] as Map);
-      if (tags.containsKey('name')) name = tags['name'] as String;
-      if (tags.containsKey('website')) website = tags['website'] as String;
-      else if (tags.containsKey('url')) website = tags['url'] as String;
-    }
-
-    // Fall back to display_name
-    if ((name == 'Onbekend' || name.isEmpty) && elem.containsKey('display_name')) {
-      final dn = elem['display_name'] as String;
-      name = dn.split(',').first.trim();
+      if (props.containsKey('website')) website = props['website']?.toString();
+      else if (props.containsKey('url')) website = props['url']?.toString();
+      else if (props.containsKey('contact:website')) website = props['contact:website']?.toString();
     }
 
     cinemas.add({'name': name, 'lat': lat, 'lng': lon, 'website': website});

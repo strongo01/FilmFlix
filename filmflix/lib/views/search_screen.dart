@@ -19,6 +19,10 @@ class _SearchScreenState extends State<SearchScreen> {
   final controller = TextEditingController();
   List<MovieSearchItem> results = [];
   bool loading = false;
+  List<MovieSearchItem> topRated = [];
+  List<MovieSearchItem> popular = [];
+  bool loadingTopRated = false;
+  bool loadingPopular = false;
 
   Future<void> search() async {
     final query = controller.text.trim();
@@ -42,6 +46,110 @@ class _SearchScreenState extends State<SearchScreen> {
       results = [];
     } finally {
       setState(() => loading = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    controller.addListener(() {
+      setState(() {});
+    });
+    _fetchTopRated();
+    _fetchPopular();
+  }
+
+  Future<void> _fetchTopRated({int page = 1}) async {
+    loadingTopRated = true;
+    setState(() {});
+    final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+        .replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
+    try {
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) return;
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      topRated = items.map((e) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
+        final id = m['id']?.toString() ?? '';
+        final title = m['title'] ?? m['name'] ?? '';
+        final posterPath = m['poster_path'] as String?;
+        final poster = posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : null;
+        final year = (m['release_date'] ?? '').toString().split('-').firstWhere((_) => true, orElse: () => '');
+        return MovieSearchItem(
+          id: 'tmdb:$id',
+          title: title.toString(),
+          year: int.tryParse(year) ?? null,
+          poster: poster,
+          raw: m,
+          tmdbId: id,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Failed fetchTopRated: $e');
+    } finally {
+      loadingTopRated = false;
+      setState(() {});
+    }
+  }
+
+  Future<void> _fetchPopular({int page = 1}) async {
+    loadingPopular = true;
+    setState(() {});
+    final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+        .replace(queryParameters: {'type': 'popular', 'page': page.toString()});
+    try {
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) return;
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      popular = items.map((e) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
+        final id = m['id']?.toString() ?? '';
+        final title = m['title'] ?? m['name'] ?? '';
+        final posterPath = m['poster_path'] as String?;
+        final poster = posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : null;
+        final year = (m['release_date'] ?? '').toString().split('-').firstWhere((_) => true, orElse: () => '');
+        return MovieSearchItem(
+          id: 'tmdb:$id',
+          title: title.toString(),
+          year: int.tryParse(year) ?? null,
+          poster: poster,
+          raw: m,
+          tmdbId: id,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Failed fetchPopular: $e');
+    } finally {
+      loadingPopular = false;
+      setState(() {});
+    }
+  }
+
+  Future<void> _openTmdbMovieDetail(String movieId) async {
+    if (movieId.isEmpty) return;
+    final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+        .replace(queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': movieId});
+    try {
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kon filmdetails niet ophalen')));
+        return;
+      }
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final imdbId = jsonData?['imdb_id']?.toString();
+      if (imdbId != null && imdbId.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbId)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geen IMDb ID gevonden voor deze film')));
+      }
+    } catch (e) {
+      debugPrint('Failed openTmdbMovieDetail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fout bij ophalen filmdetails')));
     }
   }
 
@@ -193,7 +301,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           if (loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
-          else
+          else if (controller.text.trim().isNotEmpty)
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.all(12),
@@ -236,6 +344,107 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   );
                 },
+              ),
+            )
+          else
+            // show two tabs: Best Rated and Populair
+            Expanded(
+              child: DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    TabBar(
+                      tabs: const [Tab(text: 'Best Rated'), Tab(text: 'Populair')],
+                      labelColor: isDark ? Colors.white : Colors.black87,
+                      indicatorColor: isDark ? Colors.white : Colors.black87,
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          // Best Rated
+                          loadingTopRated
+                              ? const Center(child: CircularProgressIndicator())
+                              : GridView.builder(
+                                  padding: const EdgeInsets.all(12),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 0.6,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                                  itemCount: topRated.length,
+                                  itemBuilder: (_, index) {
+                                    final movie = topRated[index];
+                                    return GestureDetector(
+                                      onTap: () => _openTmdbMovieDetail(movie.tmdbId ?? ''),
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: _posterWithFallback(movie),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            movie.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white : Colors.black87,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+
+                          // Populair
+                          loadingPopular
+                              ? const Center(child: CircularProgressIndicator())
+                              : GridView.builder(
+                                  padding: const EdgeInsets.all(12),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 0.6,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                                  itemCount: popular.length,
+                                  itemBuilder: (_, index) {
+                                    final movie = popular[index];
+                                    return GestureDetector(
+                                      onTap: () => _openTmdbMovieDetail(movie.tmdbId ?? ''),
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: _posterWithFallback(movie),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            movie.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white : Colors.black87,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
         ],

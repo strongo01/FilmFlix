@@ -266,6 +266,40 @@ export default async function handler(req, res) {
         };
     }
 
+    // TMDB — TOP RATED
+    else if (type === 'top_rated') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/movie/top_rated?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    // TMDB — POPULAR
+    else if (type === 'popular') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/movie/popular?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
     else if (type === 'translate') {
         const { text, target = 'nl', source = 'auto' } = req.query;
 
