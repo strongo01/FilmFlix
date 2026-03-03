@@ -485,14 +485,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           _seasons = _toList(rapid['seasons']);
           _streaming = _toList(rapid['streamingOptions']?['nl']);
 
-          if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
-            final biosLink = {
-              'type': 'Bioscoop',
-              'link': 'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}',
-              'service': {'name': 'Bioscoop'},
-            };
-            _streaming.add(biosLink);
-          }
+          // Voor films: we tonen zoekopties naar bioscopen (Biosagenda en Kinepolis)
+          // We voegen geen generieke 'Bioscoop' service meer toe aan _streaming;
+          // de UI voegt aparte chips toe in _buildGroupedStreaming op basis van _title.
 
           _loadingMovie = false;
         });
@@ -737,14 +732,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       grouped[name]!.add(typedItem);
     }
 
-    // Check OMDb type: voeg biosagenda link toe als het een movie is
+    // Voor films: voeg één groep 'Bioscoop' toe met twee zoekchips: Biosagenda en Kinepolis
     if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
-      final biosLink =
-          'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
+      final biosLink = 'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
+      final kinepolisLink = 'https://kinepolis.nl/search/movies?search=${Uri.encodeComponent(_title ?? '')}';
       grouped.putIfAbsent(
         'Bioscoop',
         () => [
-          {'type': 'bios', 'link': biosLink},
+          {'type': 'biosagenda', 'link': biosLink, 'label': 'Biosagenda'},
+          {'type': 'kinepolis', 'link': kinepolisLink, 'label': 'Kinepolis'},
         ],
       );
     }
@@ -803,17 +799,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 children: uniqueOptions.values.map((option) {
                   final link = option['link'] ?? option['service']?['homePage'];
 
-                  final chip = serviceName == 'Bioscoop'
+                  final chip = (serviceName == 'Bioscoop')
                       ? Chip(
                           label: Text(
-                            'Bioscoop',
+                            option['label']?.toString() ?? 'Bioscoop',
                             style: TextStyle(
                               color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
-                          backgroundColor: isDark
-                              ? Colors.grey[800]
-                              : Colors.grey[200],
+                          backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
                         )
                       : _buildTypeChip(option);
 
@@ -1100,7 +1094,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (_error != null) {
       return Scaffold(body: Center(child: Text('Error: $_error')));
     }
-
+final isMovie = (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
+         
     final rapid = _rapidData!;
     final poster = _poster;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1372,8 +1367,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
             const SizedBox(height: 12),
 
-            // Streaming card
-            if (_streaming.isNotEmpty)
+            // Streaming card — show also for movies even when _streaming is empty
+               if (_streaming.isNotEmpty || isMovie)
               Card(
                 color: isDark ? Colors.grey.shade900 : Colors.white,
                 child: Padding(
