@@ -1,45 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:cinetrackr/services/cinema_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 
-class CinemasMapView extends StatelessWidget {
+class CinemasMapView extends StatefulWidget {
   const CinemasMapView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // ←←← HIER ALLE BIOSCOOPEN TOEVOEGEN ←←←
-    // Je kunt coördinaten makkelijk vinden via Google Maps:
-    // Rechtsklik op de bioscoop → "Wat is hier?" → kopieer lat, lng
-    final List<Map<String, dynamic>> cinemas = [
-      {'name': 'Pathé Tuschinski', 'lat': 52.3665, 'lng': 4.8960},
-      {'name': 'Pathé De Munt', 'lat': 52.3678, 'lng': 4.8935},
-      {'name': 'Pathé Arena', 'lat': 52.3100, 'lng': 4.9365},
-      {'name': 'Vue Amsterdam', 'lat': 52.3105, 'lng': 4.9360},
-      {'name': 'Vue Alkmaar', 'lat': 52.6350, 'lng': 4.7530},
-      {'name': 'Vue Alphen aan den Rijn', 'lat': 52.1300, 'lng': 4.6550},
-      {'name': 'Vue Amersfoort', 'lat': 52.1550, 'lng': 5.3850},
-      {'name': 'Kinepolis Almere', 'lat': 52.3750, 'lng': 5.2200},
-      {'name': 'Pathé Rotterdam', 'lat': 51.9200, 'lng': 4.4800},
-      {'name': 'Kinepolis Breda', 'lat': 51.5900, 'lng': 4.7800},
-      {'name': 'Pathé Utrecht', 'lat': 52.0900, 'lng': 5.1100},
-      {'name': 'Vue Groningen', 'lat': 53.2100, 'lng': 6.5600},
-      // Voeg hier alle andere bioscopen toe (er zijn ±200 in NL)
-      // Voorbeeld extra:
-      // {'name': 'Filmhuis Den Haag', 'lat': 52.0800, 'lng': 4.3100},
-    ];
+  State<CinemasMapView> createState() => _CinemasMapViewState();
+}
 
-    final markers = cinemas.map((cinema) {
+class _CinemasMapViewState extends State<CinemasMapView> {
+  bool _loading = true;
+  List<Map<String, dynamic>> _cinemas = [];
+  final MapController _mapController = MapController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCinemas();
+  }
+
+  Future<void> _loadCinemas() async {
+    // First load cached cinemas (if any) to show immediate results
+    try {
+      final cached = await loadCachedCinemas();
+      if (cached.isNotEmpty) {
+        setState(() {
+          _cinemas = cached;
+          _loading = false;
+        });
+      }
+
+      // Then fetch fresh data and update cache+UI
+      final results = await fetchCinemasFromOverpass();
+      await cacheCinemas(results);
+      setState(() {
+        _cinemas = results;
+        _loading = false;
+      });
+    } catch (e) {
+      if (mounted && _cinemas.isEmpty) {
+        setState(() => _loading = false);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fout bij laden bioscopen: $e')),
+      );
+    }
+  }
+
+  Future<void> _goToUserLocation() async {
+    final contextMounted = mounted;
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Locatiedienst is uitgeschakeld')));
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Locatie toegang geweigerd')));
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Locatiepermissies permanent geweigerd. Schakel in instellingen.')));
+      return;
+    }
+
+    try {
+      if (contextMounted) setState(() => _loading = true);
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+      _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
+    } catch (e) {
+      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kon locatie niet ophalen: $e')));
+    } finally {
+      if (contextMounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final markers = _cinemas.map((cinema) {
       return Marker(
         point: LatLng(cinema['lat'] as double, cinema['lng'] as double),
         width: 50,
         height: 50,
         child: GestureDetector(
-          onTap: () {
+          onTap: () async {
+            final website = cinema['website'] as String?;
+            if (website != null && website.isNotEmpty) {
+              var uri = Uri.tryParse(website);
+              if (uri == null || uri.scheme.isEmpty) {
+                uri = Uri.tryParse('https://$website');
+              }
+              if (uri != null) {
+                try {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  return;
+                } catch (_) {
+                  // fallthrough to dialog
+                }
+              }
+            }
+
             showDialog(
               context: context,
               builder: (_) => AlertDialog(
-                title: Text(cinema['name']),
-                content: const Text('Bioscoop gevonden! 🎥'),
+                title: Text(cinema['name'] ?? 'Onbekend'),
+                content: const Text('Geen website beschikbaar — Bioscoop gevonden! 🎥'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -61,31 +135,29 @@ class CinemasMapView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alle bioscopen in Nederland'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 49, 225, 244),
       ),
-      body: FlutterMap(
-        options: const MapOptions(
-          initialCenter: LatLng(52.15, 5.3), // Midden van Nederland
-          initialZoom: 7.5,
-          minZoom: 6,
-          maxZoom: 18,
-        ),
-        children: [
-          // Gratis OpenStreetMap tegels
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'nl.bioscopen.app',
-          ),
-          MarkerLayer(markers: markers),
-        ],
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(52.15, 5.3), // Midden van Nederland
+                initialZoom: 7.5,
+                minZoom: 6,
+                maxZoom: 18,
+              ),
+              children: [
+                // Gratis OpenStreetMap tegels
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'nl.bioscopen.app',
+                ),
+                MarkerLayer(markers: markers),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Eventueel later: zoom naar gebruiker locatie of filter
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Zoom uit of in om alle bioscopen te zien')),
-          );
-        },
+        onPressed: _goToUserLocation,
         child: const Icon(Icons.my_location),
       ),
     );
