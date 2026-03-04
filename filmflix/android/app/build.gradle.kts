@@ -39,7 +39,7 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 7 //elke upload naar google play store + 1
+        versionCode = 8 //elke upload naar google play store + 1
         versionName = flutter.versionName
     }
 
