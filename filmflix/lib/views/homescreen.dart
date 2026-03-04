@@ -50,16 +50,17 @@ class HomeScreen extends StatelessWidget {
                     // Gecentreerde tekst bovenaan (nu met ruimte voor statusbar + knop)
                     SizedBox(height: MediaQuery.of(context).padding.top + 16), // ruimte voor statusbar + marge
 
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      child: Center(
-                        child: Text(
-                          "Welkom bij uw Bioscoopomgeving",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            letterSpacing: 0.5,
-                            fontSize: 20,
+                        /// Header
+                        Center(
+                          child: Text(
+                            "Welkom bij CineTrackr",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: isSmallPhone ? 22 : 28,
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                           textAlign: TextAlign.center,
                         ),
