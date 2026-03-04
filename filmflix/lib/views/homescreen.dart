@@ -38,12 +38,25 @@ class HomeScreen extends StatelessWidget {
         ? Colors.black.withOpacity(0.25)
         : Colors.grey.withOpacity(0.4);
 
+
+
     return Scaffold(
+        appBar: AppBar(
+        title: Text(
+                            "Welkom bij uw Bioscoopomgeving",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+
+                              fontWeight: FontWeight.w700,
+                              color: textColor,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final screenWidth = constraints.maxWidth;
           final isSmallPhone = screenWidth < 360;
-
           final crossAxisCount = screenWidth < 600 ? 2 : 3;
 
           return Container(
