@@ -105,6 +105,7 @@ flutter:
     - assets/images/AfbeeldingEtenDrinken.png
     - assets/images/AfbeeldingBestelling.png
     - assets/images/AfbeeldingWatchlist.png
+    - assets/kaart/export.geojson
     - assets/icons/appicon.png
 
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cinetrackr/models/movie_models.dart';
+import 'package:cinetrackr/services/movie_api.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,13 @@ class _SearchScreenState extends State<SearchScreen> {
   final controller = TextEditingController();
   List<MovieSearchItem> results = [];
   bool loading = false;
+  String? _nextCursor;
+  bool _hasMore = false;
+  Map<String, dynamic>? _lastFilterParams;
+  List<MovieSearchItem> topRated = [];
+  List<MovieSearchItem> popular = [];
+  bool loadingTopRated = false;
+  bool loadingPopular = false;
 
   Future<void> search() async {
     final query = controller.text.trim();
@@ -28,11 +36,19 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         results = [];
         loading = false;
+        _hasMore = false;
+        _nextCursor = null;
+        _lastFilterParams = null;
       });
       return;
     }
 
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      _hasMore = false;
+      _nextCursor = null;
+      _lastFilterParams = null;
+    });
     try {
       results = await MovieRepository.search(
         query,
@@ -42,6 +58,479 @@ class _SearchScreenState extends State<SearchScreen> {
       results = [];
     } finally {
       setState(() => loading = false);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    controller.addListener(() {
+      setState(() {});
+    });
+    _fetchTopRated();
+    _fetchPopular();
+  }
+
+  // Available genres for filter
+  static const List<Map<String, String>> _availableGenres = [
+    {"id": "action", "name": "Action"},
+    {"id": "adventure", "name": "Adventure"},
+    {"id": "animation", "name": "Animation"},
+    {"id": "comedy", "name": "Comedy"},
+    {"id": "crime", "name": "Crime"},
+    {"id": "documentary", "name": "Documentary"},
+    {"id": "drama", "name": "Drama"},
+    {"id": "family", "name": "Family"},
+    {"id": "fantasy", "name": "Fantasy"},
+    {"id": "history", "name": "History"},
+    {"id": "horror", "name": "Horror"},
+    {"id": "music", "name": "Music"},
+    {"id": "mystery", "name": "Mystery"},
+    {"id": "news", "name": "News"},
+    {"id": "reality", "name": "Reality"},
+    {"id": "romance", "name": "Romance"},
+    {"id": "scifi", "name": "Science Fiction"},
+    {"id": "talk", "name": "Talk Show"},
+    {"id": "thriller", "name": "Thriller"},
+    {"id": "war", "name": "War"},
+    {"id": "western", "name": "Western"},
+  ];
+
+  Future<void> _openFilterModal(BuildContext context) async {
+    // local filter state
+    String country = 'nl';
+    String seriesGranularity = 'show';
+    String outputLanguage = 'en';
+    String showType = '';
+    int? ratingMin;
+    int? ratingMax;
+    String catalogs = '';
+    final Set<String> selectedGenres = {};
+    String genresRelation = 'any';
+    String keyword = '';
+    String showOriginalLanguage = '';
+    int? yearMin;
+    int? yearMax;
+    String orderBy = '';
+    String orderDirection = '';
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        'Filter zoeken',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: TextField(
+                        decoration: const InputDecoration(labelText: 'Keyword'),
+                        onChanged: (v) => keyword = v,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8,
+                      ),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _availableGenres.map((g) {
+                          final id = g['id']!;
+                          final name = g['name']!;
+                          final sel = selectedGenres.contains(id);
+                          return FilterChip(
+                            label: Text(name),
+                            selected: sel,
+                            onSelected: (v) => setState(
+                              () => v
+                                  ? selectedGenres.add(id)
+                                  : selectedGenres.remove(id),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Year min',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => yearMin = int.tryParse(v),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Year max',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => yearMax = int.tryParse(v),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Rating min (0-100)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => ratingMin = int.tryParse(v),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Rating max (0-100)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => ratingMax = int.tryParse(v),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (mounted) this.setState(() => loading = true);
+                              // build params
+                              final genresParam = selectedGenres.isEmpty
+                                  ? null
+                                  : selectedGenres.join(',');
+
+                              final filterParams = {
+                                'country': country,
+                                'series_granularity': seriesGranularity,
+                                'output_language': outputLanguage,
+                                'show_type': showType.isEmpty ? null : showType,
+                                'rating_min': ratingMin,
+                                'rating_max': ratingMax,
+                                'catalogs': catalogs.isEmpty ? null : catalogs,
+                                'genres': genresParam,
+                                'genresRelation': genresRelation,
+                                'keyword': keyword.isEmpty ? null : keyword,
+                                'showOriginalLanguage':
+                                    showOriginalLanguage.isEmpty
+                                        ? null
+                                        : showOriginalLanguage,
+                                'yearMin': yearMin,
+                                'yearMax': yearMax,
+                                'orderBy': 'rating',
+                                'orderDirection': 'desc',
+                              };
+
+                              Map<String, dynamic>? resp;
+                              try {
+                                resp = await MovieApi.filterAdvanced(
+                                  country: country,
+                                  seriesGranularity: seriesGranularity,
+                                  outputLanguage: outputLanguage,
+                                  showType: showType.isEmpty ? null : showType,
+                                  ratingMin: ratingMin,
+                                  ratingMax: ratingMax,
+                                  catalogs: catalogs.isEmpty ? null : catalogs,
+                                  genres: genresParam,
+                                  genresRelation: genresRelation,
+                                  keyword: keyword.isEmpty ? null : keyword,
+                                  showOriginalLanguage:
+                                      showOriginalLanguage.isEmpty
+                                          ? null
+                                          : showOriginalLanguage,
+                                  yearMin: yearMin,
+                                  yearMax: yearMax,
+                                  orderBy: 'rating',
+                                  orderDirection: 'desc',
+                                );
+                              } catch (e) {
+                                // fallback: try the simpler filter endpoint which may accept minimal params (e.g., only genres)
+                                try {
+                                  resp = await MovieApi.filter(
+                                    country: country,
+                                    ratingMin: ratingMin ?? 0,
+                                    ratingMax: ratingMax ?? 100,
+                                    genres: genresParam,
+                                    catalogs: catalogs.isEmpty
+                                        ? null
+                                        : catalogs,
+                                    yearMin: yearMin,
+                                    yearMax: yearMax,
+                                    //orderBy: orderBy.isEmpty ? null : orderBy,
+                                    orderBy: 'rating',
+                                    orderDirection: 'desc',
+                                  );
+                                } catch (e2) {
+                                  debugPrint(
+                                    'Filter failed (advanced & fallback): $e / $e2',
+                                  );
+                                  if (mounted)
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Filter mislukte — probeer het later opnieuw',
+                                        ),
+                                      ),
+                                    );
+                                  if (mounted)
+                                    this.setState(() => loading = false);
+                                  return;
+                                }
+                              }
+
+                              // debug: print raw response from filter endpoint
+                              debugPrint('Filter response keys: ${resp?.keys}');
+                              final resultsList =
+                                  resp?['shows'] ??
+                                  resp?['results'] ??
+                                  resp?['result'] ??
+                                  (resp is List ? resp : []);
+                              debugPrint(
+                                'Filter results type: ${resultsList.runtimeType}',
+                              );
+                              debugPrint(
+                                'Filter results length: ${(resultsList as Iterable).length}',
+                              );
+
+                              // map results to MovieSearchItem
+                              final List<dynamic> items =
+                                  resultsList is List ? resultsList : [];
+                              if (mounted)
+                                this.setState(() {
+                                  results =
+                                      items
+                                          .map(
+                                            (e) => MovieSearchItem.fromJson(
+                                              Map<String, dynamic>.from(
+                                                e as Map,
+                                              ),
+                                            ),
+                                          )
+                                          .toList();
+                                  _hasMore = resp != null && resp['hasMore'] == true;
+                                  _nextCursor =
+                                      resp?['nextCursor']?.toString();
+                                  _lastFilterParams = filterParams;
+                                  loading = false;
+                                });
+
+                              Navigator.of(ctx).pop();
+                            },
+                            child: const Text('Apply filters'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _loadMore() async {
+    if (_nextCursor == null || _lastFilterParams == null) return;
+
+    debugPrint('--- Loading More ---');
+    debugPrint('Cursor used: $_nextCursor');
+    debugPrint('Params: $_lastFilterParams');
+
+    setState(() => loading = true);
+
+    try {
+      final resp = await MovieApi.filterAdvanced(
+        country: _lastFilterParams!['country'],
+        seriesGranularity: _lastFilterParams!['series_granularity'],
+        outputLanguage: _lastFilterParams!['output_language'],
+        showType: _lastFilterParams!['show_type'],
+        ratingMin: _lastFilterParams!['rating_min'],
+        ratingMax: _lastFilterParams!['rating_max'],
+        catalogs: _lastFilterParams!['catalogs'],
+        genres: _lastFilterParams!['genres'],
+        genresRelation: _lastFilterParams!['genres_relation'], // Corrected key from genresRelation
+        keyword: _lastFilterParams!['keyword'],
+        showOriginalLanguage: _lastFilterParams!['show_original_language'], // Corrected key mapping
+        yearMin: _lastFilterParams!['year_min'], // Corrected key mapping
+        yearMax: _lastFilterParams!['year_max'], // Corrected key mapping
+        orderBy: _lastFilterParams!['order_by'], // Corrected key mapping
+        orderDirection: _lastFilterParams!['order_direction'], // Corrected key mapping
+        cursor: _nextCursor,
+      );
+
+      final resultsList =
+          resp['shows'] ?? resp['results'] ?? resp['result'] ?? [];
+      final List<dynamic> items = resultsList is List ? resultsList : [];
+
+      setState(() {
+        results.addAll(
+          items.map(
+            (e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map)),
+          ),
+        );
+        _hasMore = resp != null && resp['hasMore'] == true;
+        _nextCursor = resp?['nextCursor']?.toString();
+        loading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading more results: $e');
+      setState(() => loading = false);
+    }
+  }
+
+  Future<void> _fetchTopRated({int page = 1}) async {
+    loadingTopRated = true;
+    setState(() {});
+    final uri = Uri.parse(
+      'https://film-flix-olive.vercel.app/api/movies',
+    ).replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
+    try {
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) return;
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      topRated = items.map((e) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
+        final id = m['id']?.toString() ?? '';
+        final title = m['title'] ?? m['name'] ?? '';
+        final posterPath = m['poster_path'] as String?;
+        final poster = posterPath != null
+            ? 'https://image.tmdb.org/t/p/w500$posterPath'
+            : null;
+        final year = (m['release_date'] ?? '')
+            .toString()
+            .split('-')
+            .firstWhere((_) => true, orElse: () => '');
+        return MovieSearchItem(
+          id: 'tmdb:$id',
+          title: title.toString(),
+          year: int.tryParse(year) ?? null,
+          poster: poster,
+          raw: m,
+          tmdbId: id,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Failed fetchTopRated: $e');
+    } finally {
+      loadingTopRated = false;
+      setState(() {});
+    }
+  }
+
+  Future<void> _fetchPopular({int page = 1}) async {
+    loadingPopular = true;
+    setState(() {});
+    final uri = Uri.parse(
+      'https://film-flix-olive.vercel.app/api/movies',
+    ).replace(queryParameters: {'type': 'popular', 'page': page.toString()});
+    try {
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) return;
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      popular = items.map((e) {
+        final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
+        final id = m['id']?.toString() ?? '';
+        final title = m['title'] ?? m['name'] ?? '';
+        final posterPath = m['poster_path'] as String?;
+        final poster = posterPath != null
+            ? 'https://image.tmdb.org/t/p/w500$posterPath'
+            : null;
+        final year = (m['release_date'] ?? '')
+            .toString()
+            .split('-')
+            .firstWhere((_) => true, orElse: () => '');
+        return MovieSearchItem(
+          id: 'tmdb:$id',
+          title: title.toString(),
+          year: int.tryParse(year) ?? null,
+          poster: poster,
+          raw: m,
+          tmdbId: id,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('Failed fetchPopular: $e');
+    } finally {
+      loadingPopular = false;
+      setState(() {});
+    }
+  }
+
+  Future<void> _openTmdbMovieDetail(String movieId) async {
+    if (movieId.isEmpty) return;
+    final uri = Uri.parse(
+      'https://film-flix-olive.vercel.app/api/movies',
+    ).replace(queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': movieId});
+    try {
+      final resp = await http.get(uri);
+      if (resp.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kon filmdetails niet ophalen')),
+        );
+        return;
+      }
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final imdbId = jsonData?['imdb_id']?.toString();
+      if (imdbId != null && imdbId.isNotEmpty) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbId)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geen IMDb ID gevonden voor deze film')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed openTmdbMovieDetail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fout bij ophalen filmdetails')),
+      );
     }
   }
 
@@ -145,7 +634,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
@@ -167,16 +656,29 @@ class _SearchScreenState extends State<SearchScreen> {
               onSubmitted: (_) => search(),
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
-                hintText: "Zoek film...",
+                hintText: "Zoek serie/film...",
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : Colors.black45,
                 ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    Icons.search,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                  onPressed: search,
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                      tooltip: 'Filter',
+                      onPressed: () => _openFilterModal(context),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.search,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                      onPressed: search,
+                    ),
+                  ],
                 ),
                 filled: true,
                 fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
@@ -191,51 +693,196 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-          if (loading)
+          if (loading && results.isEmpty)
             const Expanded(child: Center(child: CircularProgressIndicator()))
-          else
+          else if (controller.text.trim().isNotEmpty || results.isNotEmpty)
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(12),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.6,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: results.length,
-                itemBuilder: (_, index) {
-                  final movie = results[index];
+              child: ListView(
+                children: [
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.6,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                    itemCount: results.length,
+                    itemBuilder: (_, index) {
+                      final movie = results[index];
 
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MovieDetailScreen(imdbId: movie.id),
+                      return GestureDetector(
+                        onTap:
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MovieDetailScreen(
+                                  imdbId: movie.id,
+                                ),
+                              ),
+                            ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: _posterWithFallback(movie),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              movie.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  if (_hasMore)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: loading
+                          ? const Center(child: CircularProgressIndicator())
+                          : ElevatedButton(
+                            onPressed: _loadMore,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[800],
+                            ),
+                            child: const Text(
+                              'Laad meer resultaten',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                    ),
+                ],
+              ),
+            )
+          else
+            // show two tabs: Best Rated and Populair
+            Expanded(
+              child: DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    TabBar(
+                      tabs: const [
+                        Tab(text: 'Best Rated'),
+                        Tab(text: 'Populair'),
+                      ],
+                      labelColor: isDark ? Colors.white : Colors.black87,
+                      indicatorColor: isDark ? Colors.white : Colors.black87,
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          // Best Rated
+                          loadingTopRated
+                              ? const Center(child: CircularProgressIndicator())
+                              : GridView.builder(
+                                  padding: const EdgeInsets.all(12),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 0.6,
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                      ),
+                                  itemCount: topRated.length,
+                                  itemBuilder: (_, index) {
+                                    final movie = topRated[index];
+                                    return GestureDetector(
+                                      onTap: () => _openTmdbMovieDetail(
+                                        movie.tmdbId ?? '',
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: _posterWithFallback(movie),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            movie.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+
+                          // Populair
+                          loadingPopular
+                              ? const Center(child: CircularProgressIndicator())
+                              : GridView.builder(
+                                  padding: const EdgeInsets.all(12),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 0.6,
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                      ),
+                                  itemCount: popular.length,
+                                  itemBuilder: (_, index) {
+                                    final movie = popular[index];
+                                    return GestureDetector(
+                                      onTap: () => _openTmdbMovieDetail(
+                                        movie.tmdbId ?? '',
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: _posterWithFallback(movie),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            movie.title,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ],
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: _posterWithFallback(movie),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          movie.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
         ],

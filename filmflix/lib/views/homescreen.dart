@@ -65,7 +65,7 @@ class HomeScreen extends StatelessWidget {
                         /// Header
                         Center(
                           child: Text(
-                            "Welkom bij uw Bioscoopomgeving",
+                            "Welkom bij CineTrackr",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: isSmallPhone ? 22 : 28,
