@@ -15,7 +15,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     final backgroundGradient = isDarkMode
         ? const LinearGradient(
@@ -45,45 +46,56 @@ class HomeScreen extends StatelessWidget {
           Container(
             decoration: BoxDecoration(gradient: backgroundGradient),
             child: SafeArea(
-              child: SingleChildScrollView(  // ← scroll alleen de inhoud
+              child: SingleChildScrollView(
+                // ← scroll alleen de inhoud
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Gecentreerde tekst bovenaan (nu met ruimte voor statusbar + knop)
-                    SizedBox(height: MediaQuery.of(context).padding.top + 16), // ruimte voor statusbar + marge
-                   Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: IconButton(
-                          icon: Icon(Icons.settings, color: textColor, size: 28),
-                          tooltip: 'Instellingen',
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const SettingsScreen(),
+                    SizedBox(
+                      height: MediaQuery.of(context).padding.top + 16,
+                    ), // ruimte voor statusbar + marge
+                    Row(
+                      children: [
+                        const SizedBox(width: 44), // Ruimte voor de knop aan de linkerkant
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              "Welkom bij CineTrackr",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: textColor,
+                                letterSpacing: 0.5,
                               ),
-                            );
-                          },
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    /// Header
-                    Center(
-                      child: Text(
-                        "Welkom bij CineTrackr",
-                        textAlign: TextAlign.center, // Corrected parameter
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                          letterSpacing: 0.5,
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.settings,
+                              color: textColor,
+                              size: 28,
+                            ),
+                            tooltip: 'Instellingen',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-const SizedBox(height: 32),
- 
+
+                    const SizedBox(height: 32),
+
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: LayoutBuilder(
@@ -107,7 +119,9 @@ const SizedBox(height: 32),
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const FilmNowScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const FilmNowScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -118,7 +132,9 @@ const SizedBox(height: 32),
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const FoodScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const FoodScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -129,7 +145,9 @@ const SizedBox(height: 32),
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const SearchScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -140,7 +158,9 @@ const SizedBox(height: 32),
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const WatchlistScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const WatchlistScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -151,7 +171,10 @@ const SizedBox(height: 32),
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const CustomerServiceScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const CustomerServiceScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -162,13 +185,16 @@ const SizedBox(height: 32),
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const CinemasMapView()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const CinemasMapView(),
+                                  ),
                                 ),
                               ),
                               FutureBuilder<bool>(
                                 future: () async {
                                   try {
-                                    final user = FirebaseAuth.instance.currentUser;
+                                    final user =
+                                        FirebaseAuth.instance.currentUser;
                                     if (user == null) return false;
                                     final doc = await FirebaseFirestore.instance
                                         .collection('users')
@@ -177,9 +203,15 @@ const SizedBox(height: 32),
                                     final data = doc.data();
                                     if (data == null) return false;
                                     final role = data['role'];
-                                    if (role is String) return role.toLowerCase() == 'admin';
+                                    if (role is String)
+                                      return role.toLowerCase() == 'admin';
                                     if (role is List) {
-                                      return role.any((e) => (e?.toString().toLowerCase() ?? '') == 'admin');
+                                      return role.any(
+                                        (e) =>
+                                            (e?.toString().toLowerCase() ??
+                                                '') ==
+                                            'admin',
+                                      );
                                     }
                                     return false;
                                   } catch (_) {
@@ -187,7 +219,8 @@ const SizedBox(height: 32),
                                   }
                                 }(),
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.done &&
+                                  if (snapshot.connectionState ==
+                                          ConnectionState.done &&
                                       snapshot.hasData &&
                                       snapshot.data == true) {
                                     return _buildItem(
@@ -198,7 +231,9 @@ const SizedBox(height: 32),
                                       shadowColor,
                                       () => Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (_) => const AdminScreen()),
+                                        MaterialPageRoute(
+                                          builder: (_) => const AdminScreen(),
+                                        ),
                                       ),
                                     );
                                   }
@@ -217,8 +252,6 @@ const SizedBox(height: 32),
               ),
             ),
           ),
-
-          
         ],
       ),
     );
