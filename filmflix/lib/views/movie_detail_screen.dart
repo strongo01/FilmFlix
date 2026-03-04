@@ -442,21 +442,30 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
       final omdbFuture = MovieApi.omdbGet(imdbId: widget.imdbId, plot: 'full');
       final showFuture = MovieRepository.getRapidDetailsShow(widget.imdbId);
-      final episodeFuture = MovieRepository.getRapidDetailsEpisode(widget.imdbId);
+      final episodeFuture = MovieRepository.getRapidDetailsEpisode(
+        widget.imdbId,
+      );
 
       // Zodra één van de Rapid futures als eerste binnen is, gebruiken we die om
       // direct iets te tonen.
       final firstRapid = await Future.any([showFuture, episodeFuture]);
       final omdb = await omdbFuture;
 
-      void applyRapidAndOmdb(Map<String, dynamic> rapid, Map<String, dynamic>? omdbData) {
-        final poster = (rapid['imageSet']?['verticalPoster']?['w480'] ??
-                rapid['imageSet']?['verticalPoster']?['w300'] ??
-                omdbData?['Poster'])
-            ?.toString();
+      void applyRapidAndOmdb(
+        Map<String, dynamic> rapid,
+        Map<String, dynamic>? omdbData,
+      ) {
+        final poster =
+            (rapid['imageSet']?['verticalPoster']?['w480'] ??
+                    rapid['imageSet']?['verticalPoster']?['w300'] ??
+                    omdbData?['Poster'])
+                ?.toString();
 
         final rapidGenres = _toList(rapid['genres'])
-            .map((g) => (g is Map && g.containsKey('name') ? g['name'] : g).toString())
+            .map(
+              (g) => (g is Map && g.containsKey('name') ? g['name'] : g)
+                  .toString(),
+            )
             .toSet();
 
         final omdbGenresRaw = omdbData?['Genre']?.toString() ?? '';
@@ -472,15 +481,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           _poster = poster;
           _title = (rapid['title'] ?? omdbData?['Title'] ?? '').toString();
           _overview = (rapid['overview'] ?? omdbData?['Plot'] ?? '').toString();
-          _rating = (omdbData?['imdbRating'] ?? rapid['rating']?.toString() ?? '-').toString();
+          _rating =
+              (omdbData?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
+                  .toString();
           _rated = omdbData?['Rated']?.toString();
 
-          _genres = {
-            ...rapidGenres,
-            ...omdbGenres,
-          }.toList();
+          _genres = {...rapidGenres, ...omdbGenres}.toList();
 
-          _creators = _toList(rapid['creators']).map((c) => c.toString()).toList();
+          _creators = _toList(
+            rapid['creators'],
+          ).map((c) => c.toString()).toList();
           _cast = _toList(rapid['cast']).map((c) => c.toString()).toList();
           _seasons = _toList(rapid['seasons']);
           _streaming = _toList(rapid['streamingOptions']?['nl']);
@@ -494,20 +504,27 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       }
 
       // apply first rapid result immediately
-      applyRapidAndOmdb(firstRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
+      applyRapidAndOmdb(
+        firstRapid as Map<String, dynamic>,
+        omdb as Map<String, dynamic>?,
+      );
 
       // When the other Rapid response arrives, merge/update UI with additional info.
-      showFuture.then((showRapid) {
-        if (firstRapid != showRapid) {
-          applyRapidAndOmdb(showRapid, omdb as Map<String, dynamic>?);
-        }
-      }).catchError((e) => debugPrint('Show fetch error: $e'));
+      showFuture
+          .then((showRapid) {
+            if (firstRapid != showRapid) {
+              applyRapidAndOmdb(showRapid, omdb as Map<String, dynamic>?);
+            }
+          })
+          .catchError((e) => debugPrint('Show fetch error: $e'));
 
-      episodeFuture.then((episodeRapid) {
-        if (firstRapid != episodeRapid) {
-          applyRapidAndOmdb(episodeRapid, omdb as Map<String, dynamic>?);
-        }
-      }).catchError((e) => debugPrint('Episode fetch error: $e'));
+      episodeFuture
+          .then((episodeRapid) {
+            if (firstRapid != episodeRapid) {
+              applyRapidAndOmdb(episodeRapid, omdb as Map<String, dynamic>?);
+            }
+          })
+          .catchError((e) => debugPrint('Episode fetch error: $e'));
     } catch (e, s) {
       debugPrint('Error loading movie: $e\n$s');
       setState(() {
@@ -595,13 +612,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<bool> _ensureLoggedInWithPrompt(BuildContext context) async {
- if (_user != null) return true;
+    if (_user != null) return true;
 
     final result = await showDialog<bool>(
-    context: context,
+      context: context,
       builder: (ctx) {
-       return AlertDialog(
-        title: const Text('Inloggen vereist'),
+        return AlertDialog(
+          title: const Text('Inloggen vereist'),
           content: const Text(
             'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?',
           ),
@@ -619,8 +636,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       },
     );
 
-    if (result != true || !mounted)
-      return false; 
+    if (result != true || !mounted) return false;
     // Navigeer naar login als fullscreen dialog
     final loggedIn = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -652,13 +668,21 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
     try {
       if (newState) {
-        // Als de nieuwe staat is dat de film in de watchlist moet worden toegevoegd, gebruiken we FieldValue.arrayUnion om de imdbId toe te voegen aan de 'watchlist' array in het gebruikersdocument in Firestore. We gebruiken SetOptions(merge: true) om ervoor te zorgen dat we alleen het 'watchlist' veld bijwerken en geen andere data in het document overschrijven. Als de nieuwe staat is dat de film uit de watchlist moet worden verwijderd, gebruiken we FieldValue.arrayRemove om de imdbId te verwijderen uit de 'watchlist' array. Ook hier gebruiken we SetOptions(merge: true) om alleen het relevante veld bij te werken.
+        // Add imdbId to watchlist and save lightweight metadata so WatchlistScreen
+        // can show title/overview without extra API calls.
+        final meta = {
+          'title': _title ?? '',
+          'overview': _overview ?? '',
+        };
         await docRef.set({
           'watchlist': FieldValue.arrayUnion([widget.imdbId]),
+          'watchlist_meta.${widget.imdbId}': meta,
         }, SetOptions(merge: true));
       } else {
+        // Remove from watchlist and delete stored metadata for this id.
         await docRef.set({
           'watchlist': FieldValue.arrayRemove([widget.imdbId]),
+          'watchlist_meta.${widget.imdbId}': FieldValue.delete(),
         }, SetOptions(merge: true));
       }
     } catch (e, s) {
@@ -692,8 +716,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
     try {
       if (seen) {
+        final meta = {
+          'title': _title ?? '',
+          'overview': _overview ?? '',
+        };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
+          // ensure metadata exists when user marks episodes as seen
+          'watchlist_meta.${widget.imdbId}': meta,
         }, SetOptions(merge: true));
       } else {
         await docRef.set({
@@ -716,6 +746,54 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  Future<void> _toggleMovieSeen(bool seen) async {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) return;
+
+    const epKey = 'movie';
+
+    // Optimistic update
+    setState(() {
+      if (seen) {
+        _seenSet.add(epKey);
+      } else {
+        _seenSet.remove(epKey);
+      }
+    });
+
+    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    try {
+      if (seen) {
+        final meta = {
+          'title': _title ?? '',
+          'overview': _overview ?? '',
+        };
+        await docRef.set({
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
+          'watchlist_meta.${widget.imdbId}': meta,
+        }, SetOptions(merge: true));
+      } else {
+        // When unmarking a movie as seen, remove the entire field so it
+        // doesn't leave an empty array like seenEpisodes.tt123456 (array)
+        await docRef.set({
+          'seenEpisodes.${widget.imdbId}': FieldValue.delete(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e, s) {
+      debugPrint('Error toggling movie seen: $e\n$s');
+      // rollback
+      setState(() {
+        if (seen)
+          _seenSet.remove(epKey);
+        else
+          _seenSet.add(epKey);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kon "Gezien" status niet bijwerken.')),
+      );
+    }
+  }
+
   List<Widget> _buildGroupedStreaming(
     List<dynamic> streaming,
     BuildContext context,
@@ -734,8 +812,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
     // Voor films: voeg één groep 'Bioscoop' toe met twee zoekchips: Biosagenda en Kinepolis
     if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
-      final biosLink = 'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
-      final kinepolisLink = 'https://kinepolis.nl/search/movies?search=${Uri.encodeComponent(_title ?? '')}';
+      final biosLink =
+          'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
+      final kinepolisLink =
+          'https://kinepolis.nl/search/movies?search=${Uri.encodeComponent(_title ?? '')}';
       grouped.putIfAbsent(
         'Bioscoop',
         () => [
@@ -807,7 +887,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
-                          backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
+                          backgroundColor: isDark
+                              ? Colors.grey[800]
+                              : Colors.grey[200],
                         )
                       : _buildTypeChip(option);
 
@@ -1094,8 +1176,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (_error != null) {
       return Scaffold(body: Center(child: Text('Error: $_error')));
     }
-final isMovie = (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
-         
+    final isMovie =
+        (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
+
     final rapid = _rapidData!;
     final poster = _poster;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1175,7 +1258,7 @@ final isMovie = (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
                         ),
 
                         const Spacer(),
-                        // watchlist button
+                        // watchlist button + movie 'Gezien' checkbox underneath
                         _loadingUserData
                             ? const SizedBox(
                                 width: 24,
@@ -1184,44 +1267,78 @@ final isMovie = (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
                                   strokeWidth: 2,
                                 ),
                               )
-                            : OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                    color: Colors.white,
-                                    width: 1,
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: Colors.white,
+                                        width: 1,
+                                      ),
+                                      foregroundColor:
+                                          isDark ? Colors.white : Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                    icon: Icon(
+                                      _isInWatchlist
+                                          ? Icons.bookmark
+                                          : Icons.bookmark_add_outlined,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      _isInWatchlist ? 'Verwijder' : 'Opslaan',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    onPressed: () async {
+                                      if (_user == null) {
+                                        final goToLogin =
+                                            await _ensureLoggedInWithPrompt(
+                                          context,
+                                        );
+                                        if (!goToLogin) return;
+                                        return;
+                                      }
+                                      await _toggleWatchlist();
+                                    },
                                   ),
-                                  foregroundColor:
-                                      isDark ? Colors.white : Colors.black,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  backgroundColor: Colors.transparent,
-                                ),
-                                icon: Icon(
-                                  _isInWatchlist
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_add_outlined,
-                                  size: 20,
-                                ),
-                                label: Text(
-                                  _isInWatchlist ? 'Verwijder' : 'Opslaan',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                onPressed: () async {
-                                  if (_user == null) {
-                                    final goToLogin =
-                                        await _ensureLoggedInWithPrompt(
-                                      context,
-                                    );
-                                    if (!goToLogin) return;
-                                    return;
-                                  }
-                                  await _toggleWatchlist();
-                                },
+                                  const SizedBox(height: 6),
+                                  if (isMovie)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Checkbox(
+                                          value: _seenSet.contains('movie'),
+                                          onChanged: (val) async {
+                                            if (_user == null) {
+                                              final go =
+                                                  await _ensureLoggedInWithPrompt(
+                                                context,
+                                              );
+                                              if (!go) return;
+                                            }
+                                            await _toggleMovieSeen(val ?? false);
+                                            setState(() {});
+                                          },
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Gezien',
+                                          style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black),
+                                        ),
+                                      ],
+                                    ),
+                                ],
                               ),
                       ],
                     ),
@@ -1368,7 +1485,7 @@ final isMovie = (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
             const SizedBox(height: 12),
 
             // Streaming card — show also for movies even when _streaming is empty
-               if (_streaming.isNotEmpty || isMovie)
+            if (_streaming.isNotEmpty || isMovie)
               Card(
                 color: isDark ? Colors.grey.shade900 : Colors.white,
                 child: Padding(
@@ -1412,7 +1529,7 @@ final isMovie = (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
                 ),
               ),
 
-            if (_seasons.isEmpty)
+            if (_seasons.isEmpty && !isMovie)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Center(

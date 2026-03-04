@@ -1,62 +1,45 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _kCachedCinemasKey = 'cached_cinemas_v1';
 
 Future<List<Map<String, dynamic>>> fetchCinemasFromOverpass() async {
-  final query = '''
-[out:json][timeout:25];
-( 
-  node["amenity"="cinema"](50.5,3.3,53.7,7.2);
-  way["amenity"="cinema"](50.5,3.3,53.7,7.2);
-  relation["amenity"="cinema"](50.5,3.3,53.7,7.2);
-);
-out center;
-''';
-
-  final url = Uri.parse('https://overpass-api.de/api/interpreter?data=${Uri.encodeComponent(query)}');
-  final resp = await http.get(url);
-  if (resp.statusCode != 200) {
-    throw Exception('Overpass error: ${resp.statusCode}');
-  }
-
-  final data = json.decode(resp.body) as Map<String, dynamic>;
-  final elems = data['elements'] as List<dynamic>? ?? [];
+  // Load local GeoJSON asset instead of fetching from Overpass API.
+  final s = await rootBundle.loadString('assets/kaart/export.geojson');
+  final data = json.decode(s) as Map<String, dynamic>;
+  final features = data['features'] as List<dynamic>? ?? [];
   final cinemas = <Map<String, dynamic>>[];
 
-  for (final e in elems) {
-    final Map<String, dynamic> elem = Map<String, dynamic>.from(e as Map);
+  for (final f in features) {
+    final Map<String, dynamic> feat = Map<String, dynamic>.from(f as Map);
     double? lat;
     double? lon;
-    if (elem.containsKey('lat') && elem.containsKey('lon')) {
-      lat = (elem['lat'] as num).toDouble();
-      lon = (elem['lon'] as num).toDouble();
-    } else if (elem.containsKey('center')) {
-      final center = elem['center'] as Map<String, dynamic>?;
-      if (center != null && center['lat'] != null && center['lon'] != null) {
-        lat = (center['lat'] as num).toDouble();
-        lon = (center['lon'] as num).toDouble();
+
+    final geometry = feat['geometry'] as Map<String, dynamic>?;
+    if (geometry != null && geometry['type'] == 'Point' && geometry['coordinates'] is List) {
+      final coords = (geometry['coordinates'] as List).map((e) => e as num).toList();
+      if (coords.length >= 2) {
+        lon = coords[0].toDouble();
+        lat = coords[1].toDouble();
       }
     }
 
     if (lat == null || lon == null) continue;
 
     String name = 'Onbekend';
-    if (elem.containsKey('tags')) {
-      final tags = Map<String, dynamic>.from(elem['tags'] as Map);
-      if (tags.containsKey('name')) name = tags['name'] as String;
-      else if (tags.containsKey('operator')) name = tags['operator'] as String;
-      // Extract website if available
-      String? website;
-      if (tags.containsKey('website')) website = tags['website'] as String;
-      else if (tags.containsKey('url')) website = tags['url'] as String;
-      else if (tags.containsKey('contact:website')) website = tags['contact:website'] as String;
-      cinemas.add({'name': name, 'lat': lat, 'lng': lon, 'website': website});
-      continue;
+    String? website;
+    final props = feat['properties'] as Map<String, dynamic>?;
+    if (props != null) {
+      if (props.containsKey('name')) name = props['name']?.toString() ?? name;
+      else if (props.containsKey('operator')) name = props['operator']?.toString() ?? name;
+
+      if (props.containsKey('website')) website = props['website']?.toString();
+      else if (props.containsKey('url')) website = props['url']?.toString();
+      else if (props.containsKey('contact:website')) website = props['contact:website']?.toString();
     }
 
-    cinemas.add({'name': name, 'lat': lat, 'lng': lon, 'website': null});
+    cinemas.add({'name': name, 'lat': lat, 'lng': lon, 'website': website});
   }
 
   return cinemas;

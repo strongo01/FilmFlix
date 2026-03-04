@@ -1,27 +1,57 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
+class MovieApi {
+  //  API Helper class voor alle movie-gerelateerde API calls
   static const String _baseUrl =
       'https://film-flix-olive.vercel.app/api/movies';
 
   // Algemene GET helper die alle API calls afhandelt. Deze functie bouwt de URL op basis van de meegegeven parameters, maakt de HTTP GET request, en decodeert het JSON antwoord. Het resultaat is altijd een Map<String, dynamic>, waarbij de daadwerkelijke data meestal in een 'result' veld zit.
   static Future<Map<String, dynamic>> _get(Map<String, dynamic> params) async {
-    final uri = Uri.parse(_baseUrl).replace(
-      queryParameters: params.map(
-        (key, value) => MapEntry(key, value?.toString()), // Zorgt dat alle parameters als strings worden toegevoegd, en dat null waarden worden genegeerd
+    final cleanParams = Map<String, dynamic>.from(params);
+    cleanParams.removeWhere(
+      (key, value) => value == null || value.toString().isEmpty,
+    );
+
+    // Handle cursor separately to avoid double-encoding
+    String? cursor;
+    if (cleanParams.containsKey('cursor')) {
+      cursor = cleanParams.remove('cursor');
+    }
+
+    var uri = Uri.parse(_baseUrl).replace(
+      queryParameters: cleanParams.map(
+        (key, value) => MapEntry(key, value.toString()),
       ),
     );
 
-    final response = await http.get(uri); // Maakt de HTTP GET request naar de API
+    if (cursor != null) {
+      final String connector = uri.query.isEmpty ? '?' : '&';
+      // Ensure cursor is appended with order_by and order_direction to maintain sorting
+      uri = Uri.parse(
+        '${uri.toString()}${connector}cursor=${Uri.encodeComponent(cursor)}&order_by=rating&order_direction=desc',
+      );
+    }
 
-    if (response.statusCode == 200) { // Als de response succesvol is, decodeer het JSON antwoord
+    debugPrint('API GET Request: $uri');
+    debugPrint('Final API GET Request URL: $uri');
+    final response = await http.get(uri);
+    // Uncomment the following lines to debug the response if needed
+    // final response = await http.get(uri);
+    debugPrint('API Response status: ${response.statusCode}');
+    debugPrint('API Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      // Als de response succesvol is, decodeer het JSON antwoord
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
       if (decoded is List<dynamic>) {
-        return {'result': decoded}; // Sommige API endpoints kunnen een lijst teruggeven, dus we wrappen dit in een 'result' veld voor consistentie
+        return {
+          'result': decoded,
+        }; // Sommige API endpoints kunnen een lijst teruggeven, dus we wrappen dit in een 'result' veld voor consistentie
       }
       // Als het antwoord niet het verwachte formaat heeft, gooien we een fout
       return {
@@ -39,7 +69,8 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     String showType = '',
     String outputLanguage = 'en',
   }) {
-    return _get({ // Deze functie maakt een zoekopdracht naar films/series op basis van de titel en andere optionele parameters zoals land, type (film/serie), en output taal. De parameters worden doorgegeven aan de _get helper, die de daadwerkelijke API call maakt.
+    return _get({
+      // Deze functie maakt een zoekopdracht naar films/series op basis van de titel en andere optionele parameters zoals land, type (film/serie), en output taal. De parameters worden doorgegeven aan de _get helper, die de daadwerkelijke API call maakt.
       'type': 'search',
       'title': title,
       'country': country,
@@ -72,6 +103,7 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     int? yearMin,
     int? yearMax,
     String? orderBy,
+    String? orderDirection,
   }) {
     return _get({
       'type': 'filter',
@@ -83,6 +115,47 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
       'year_min': yearMin,
       'year_max': yearMax,
       'order_by': orderBy,
+      'order_direction': orderDirection,
+    });
+  }
+
+  // Advanced filter wrapper that exposes more of the Rapid filters
+  static Future<Map<String, dynamic>> filterAdvanced({
+    String country = 'nl',
+    String? seriesGranularity,
+    String outputLanguage = 'en',
+    String? showType,
+    int? ratingMin,
+    int? ratingMax,
+    String? catalogs,
+    String? genres,
+    String? genresRelation,
+    String? keyword,
+    String? showOriginalLanguage,
+    int? yearMin,
+    int? yearMax,
+    String? orderBy,
+    String? orderDirection,
+    String? cursor,
+  }) {
+    return _get({
+      'type': 'filter',
+      'country': country,
+      'series_granularity': seriesGranularity,
+      'output_language': outputLanguage,
+      'show_type': showType,
+      'rating_min': ratingMin,
+      'rating_max': ratingMax,
+      'catalogs': catalogs,
+      'genres': genres,
+      'genres_relation': genresRelation,
+      'keyword': keyword,
+      'show_original_language': showOriginalLanguage,
+      'year_min': yearMin,
+      'year_max': yearMax,
+      'order_by': orderBy,
+      'order_direction': orderDirection,
+      'cursor': cursor,
     });
   }
 

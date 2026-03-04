@@ -87,9 +87,11 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      ); //na succesvol inloggen of registreren, navigeren we naar de HomeScreen. Als returnAfterLogin true is, zal de auth state listener in initState automatisch terug poppen naar het vorige scherm (zoals MovieDetailScreen) in plaats van naar de HomeScreen.
+      if (!widget.returnAfterLogin) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        ); //na succesvol inloggen of registreren, navigeren we naar de HomeScreen.
+      } // Als returnAfterLogin true is, laat de auth-listener in initState terug poppen naar het vorige scherm.
     } on FirebaseAuthException catch (e) {
       Fluttertoast.showToast(msg: e.message ?? 'Authenticatie mislukt');
     } catch (e) {
@@ -187,9 +189,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       debugPrint('GitHubSignIn: Sign-in successful');
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      if (!widget.returnAfterLogin) {
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      }
     } on FirebaseAuthException catch (e) {
       debugPrint('GitHubSignIn: FirebaseAuthException: ${e.code} - ${e.message}');
       Fluttertoast.showToast(msg: e.message ?? 'GitHub login mislukt');

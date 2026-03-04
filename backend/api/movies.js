@@ -36,6 +36,7 @@ export default async function handler(req, res) {
         year_max,
         order_by,
         order_direction = 'asc',
+        cursor,
 
         // OMDB
         i,        // IMDb ID
@@ -114,8 +115,8 @@ export default async function handler(req, res) {
         addParam(params, 'year_min', year_min);
         addParam(params, 'year_max', year_max);
         addParam(params, 'order_by', order_by);
-        addParam(params, 'order_direction', order_direction);
-
+        addParam(params, 'order_direction', order_direction);        
+        addParam(params, 'cursor', cursor);
         url = `https://${RAPID_HOST}/shows/search/filters?` + new URLSearchParams(params);
 
         headers = {
@@ -258,6 +259,40 @@ export default async function handler(req, res) {
         url = `https://api.themoviedb.org/3/movie/${movie_id}?` +
             new URLSearchParams({
                 language,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    // TMDB — TOP RATED
+    else if (type === 'top_rated') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/movie/top_rated?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    // TMDB — POPULAR
+    else if (type === 'popular') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/movie/popular?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
             });
 
         headers = {

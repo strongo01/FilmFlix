@@ -13,7 +13,10 @@ class _FoodScreenState extends State<FoodScreen> {
   final TextEditingController _foodController = TextEditingController();
   final TextEditingController _zipCodeController = TextEditingController();
 
-  // De geselecteerde dieetwens (maximaal één)
+  // Kleurenpalet
+  final Color movieBlue = const Color.fromRGBO(43, 77, 91, 1);
+  final Color movieBlueLight = const Color.fromRGBO(43, 77, 91, 0.1);
+  final Color dieetwensen = const Color.fromARGB(255, 255, 255, 255);
   String? _selectedFilter;
 
   final List<Map<String, String>> _filterOptions = [
@@ -23,46 +26,53 @@ class _FoodScreenState extends State<FoodScreen> {
     {'label': 'Halal', 'slug': 'halal'},
   ];
 
-  // Je favoriete lijstje (aanpasbaar via Long Press)
   List<Map<String, String>> _quickChoices = [
     {'name': 'Pizza', 'emoji': '🍕'},
     {'name': 'Sushi', 'emoji': '🍣'},
     {'name': 'Burger', 'emoji': '🍔'},
-    {'name': 'Kapsalon', 'emoji': '🍗'},
+    {'name': 'Kapsalon', 'emoji': '🍟'},
   ];
 
-  // Dialoog om favoriet aan te passen
+  // Hulpfunctie voor adaptieve kleuren
+  Color _getAdaptiveTextColor(BuildContext context) {
+    return MediaQuery.of(context).platformBrightness == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
+  }
+
   void _editFavorite(int index) {
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
     final nameEditController = TextEditingController(text: _quickChoices[index]['name']);
     final emojiEditController = TextEditingController(text: _quickChoices[index]['emoji']);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Pas favoriet aan'),
+        backgroundColor: isDark ? const Color.fromRGBO(28, 40, 46, 1) : Colors.white,
+        title: Text('Pas favoriet aan', style: TextStyle(color: _getAdaptiveTextColor(context))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameEditController,
-              decoration: const InputDecoration(
-                labelText: 'Naam (tekst & emoji toegestaan)',
-                hintText: 'Bijv. Taco 🌮',
+              style: TextStyle(color: _getAdaptiveTextColor(context)),
+              decoration: InputDecoration(
+                labelText: 'Naam',
+                labelStyle: TextStyle(color: _getAdaptiveTextColor(context).withOpacity(0.6)),
               ),
             ),
             const SizedBox(height: 15),
             TextField(
               controller: emojiEditController,
-              decoration: const InputDecoration(
+              style: const TextStyle(fontSize: 30),
+              decoration: InputDecoration(
                 labelText: 'Alleen Emoji',
-                hintText: 'Kies 1 emoji',
+                labelStyle: TextStyle(color: _getAdaptiveTextColor(context).withOpacity(0.6)),
                 counterText: "",
               ),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 30),
               maxLength: 1,
               inputFormatters: [
-                // BLOKKEERT: letters (a-z, A-Z), cijfers (0-9) en spaties (\s)
                 FilteringTextInputFormatter.deny(RegExp(r'[a-zA-Z0-9\s]')),
               ],
             ),
@@ -71,9 +81,10 @@ class _FoodScreenState extends State<FoodScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuleren'),
+            child: Text('Annuleren', style: TextStyle(color: movieBlue)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: movieBlue),
             onPressed: () {
               if (emojiEditController.text.isNotEmpty) {
                 setState(() {
@@ -83,13 +94,9 @@ class _FoodScreenState extends State<FoodScreen> {
                   };
                 });
                 Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Voer een geldige emoji in!')),
-                );
               }
             },
-            child: const Text('Opslaan'),
+            child: const Text('Opslaan', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -114,7 +121,6 @@ class _FoodScreenState extends State<FoodScreen> {
       return;
     }
 
-    // URL bouwen
     String urlString = 'https://www.thuisbezorgd.nl/bestellen/eten/$zipDigits?q=$food';
     if (_selectedFilter != null) {
       urlString += '&filter=$_selectedFilter';
@@ -130,25 +136,42 @@ class _FoodScreenState extends State<FoodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final textColor = _getAdaptiveTextColor(context);
+    final scaffoldBg = isDark ? const Color.fromRGBO(28, 40, 46, 1) : Colors.grey[50];
+
     return Scaffold(
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
-        title: const Text('Food & Movies'),
-        backgroundColor: Colors.orangeAccent,
+        title: const Text('Food & Movies', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: movieBlue,
         centerTitle: true,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Locatie', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('Locatie', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
             const SizedBox(height: 10),
             TextField(
               controller: _zipCodeController,
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                 labelText: 'Postcode (4 cijfers)',
-                prefixIcon: const Icon(Icons.location_on, color: Colors.orange),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                labelStyle: TextStyle(color: textColor.withOpacity(0.6)),
+                prefixIcon: Icon(Icons.location_on, color: movieBlue),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: movieBlue, width: 2),
+                  borderRadius: BorderRadius.circular(15),
+                ),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [
@@ -157,7 +180,7 @@ class _FoodScreenState extends State<FoodScreen> {
               ],
             ),
             const SizedBox(height: 25),
-            const Text('Dieetwens (max. 1)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text('Dieetwens', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
             const SizedBox(height: 10),
             Wrap(
               spacing: 10,
@@ -165,9 +188,19 @@ class _FoodScreenState extends State<FoodScreen> {
                 final bool isSelected = _selectedFilter == filter['slug'];
                 return FilterChip(
                   label: Text(filter['label']!),
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : dieetwensen, // Blauwe tekst in light mode!
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
                   selected: isSelected,
-                  selectedColor: Colors.orangeAccent.withOpacity(0.3),
-                  checkmarkColor: Colors.orange,
+                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : movieBlue.withOpacity(0.08),
+                  selectedColor: movieBlue,
+                  checkmarkColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: isSelected ? Colors.transparent : movieBlue.withOpacity(0.2)),
+                  ),
                   onSelected: (bool selected) {
                     setState(() {
                       _selectedFilter = selected ? filter['slug'] : null;
@@ -176,13 +209,13 @@ class _FoodScreenState extends State<FoodScreen> {
                 );
               }).toList(),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Divider(color: isDark ? Colors.white10 : Colors.black12),
             ),
-            const Text(
+            Text(
               'Houd een icoon ingedrukt om aan te passen',
-              style: TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+              style: TextStyle(fontSize: 11, color: textColor.withOpacity(0.5), fontStyle: FontStyle.italic),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 15),
@@ -196,35 +229,50 @@ class _FoodScreenState extends State<FoodScreen> {
                     children: [
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: Colors.orange.withOpacity(0.1),
+                        backgroundColor: movieBlue.withOpacity(isDark ? 0.2 : 0.1),
                         child: Text(_quickChoices[index]['emoji']!, style: const TextStyle(fontSize: 25)),
                       ),
-                      const SizedBox(height: 5),
-                      Text(_quickChoices[index]['name']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 8),
+                      Text(
+                        _quickChoices[index]['name']!, 
+                        style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.8), fontWeight: FontWeight.w500)
+                      ),
                     ],
                   ),
                 );
               }),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 35),
             TextField(
               controller: _foodController,
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                 labelText: 'Zelf iets zoeken...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-                suffixIcon: const Icon(Icons.search),
+                labelStyle: TextStyle(color: textColor.withOpacity(0.6)),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: movieBlue, width: 2),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                suffixIcon: Icon(Icons.search, color: movieBlue),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+                backgroundColor: movieBlue,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 18),
+                elevation: isDark ? 4 : 2,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               ),
               onPressed: () => _orderFood(),
-              child: const Text('ZOEK OP THUISBEZORGD', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text('ZOEK OP THUISBEZORGD', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1)),
             ),
           ],
         ),
