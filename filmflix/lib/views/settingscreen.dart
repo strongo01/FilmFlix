@@ -24,17 +24,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: const Text('Instellingen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: movieBlue,
         elevation: 0,
+        centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // --- NIEUW: VIERKANT ACCOUNT BLOK MET STATS ---
+          // --- ACCOUNT DASHBOARD ---
           _buildSectionLabel('Mijn Dashboard'),
           _buildAccountCard(cardColor, textColor),
 
           const SizedBox(height: 24),
 
-          // --- APP INSTELLINGEN ---
+          // --- VOORKEUREN ---
           _buildSectionLabel('Voorkeuren'),
           _buildProfessionalCard(
             cardColor,
@@ -49,87 +50,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 _buildDivider(isDark),
                 _buildSimpleTile(Icons.language, 'Taal', 'Nederlands', textColor),
-                _buildDivider(isDark),
-                _buildSimpleTile(Icons.privacy_tip_outlined, 'Privacy & Beveiliging', '', textColor),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // --- SUPPORT ---
+          // --- SUPPORT (NU MET DE GEVRAAGDE ITEMS) ---
           _buildSectionLabel('Support'),
           _buildProfessionalCard(
             cardColor,
-            child: _buildSimpleTile(Icons.help_outline, 'Klantenservice', '', textColor),
+            child: Column(
+              children: [
+                _buildSimpleTile(Icons.help_outline, 'Klantenservice', '', textColor),
+                _buildDivider(isDark),
+                _buildSimpleTile(Icons.info_outline, 'Over CineTrackr', '', textColor),
+                _buildDivider(isDark),
+                _buildSimpleTile(Icons.lock_outline, 'Privacybeleid', '', textColor),
+              ],
+            ),
           ),
 
           const SizedBox(height: 40),
 
           // --- LOGOUT ---
-          TextButton(
-            onPressed: () {},
-            child: const Text('UITLOGGEN', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+          Center(
+            child: TextButton(
+              onPressed: () {},
+              child: const Text('UITLOGGEN', 
+                style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            ),
+          ),
+          
+          const SizedBox(height: 10),
+          Center(
+            child: Text('v1.0.4', style: TextStyle(color: textColor.withOpacity(0.3), fontSize: 12)),
           ),
         ],
       ),
     );
   }
 
-  // --- HET NIEUWE VIERKANTE ACCOUNT BLOK ---
+  // --- ACCOUNT BLOK (MET FIX VOOR WITTE RANDEN) ---
   Widget _buildAccountCard(Color cardColor, Color textColor) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12), // Minder rond, meer 'vierkant-achtig'
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: Material(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () {},
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: movieBlue,
-                        borderRadius: BorderRadius.circular(8), // Vierkante avatar met zachte hoeken
-                      ),
-                      child: const Icon(Icons.person, color: Colors.white, size: 35),
+    return _buildProfessionalCard(
+      cardColor,
+      child: InkWell(
+        onTap: () {},
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 60, height: 60,
+                    decoration: BoxDecoration(
+                      color: movieBlue,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Gebruikersnaam', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-                        Text('Premium Member', style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 14)),
-                      ],
-                    ),
-                    const Spacer(),
-                    Icon(Icons.edit_square, color: movieBlue, size: 20),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Divider(height: 1),
-                ),
-                // DE STATS RIJ
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildStatItem('124', 'Films', textColor),
-                    _buildStatItem('45', 'Watchlist', textColor),
-                  ],
-                ),
-              ],
-            ),
+                    child: const Icon(Icons.person, color: Colors.white, size: 35),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Gebruikersnaam', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                      Text('Premium Member', style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 14)),
+                    ],
+                  ),
+                  const Spacer(),
+                  Icon(Icons.chevron_right, color: textColor.withOpacity(0.3)),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem('124', 'Films', textColor),
+                  _buildStatItem('45', 'Watchlist', textColor),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -145,14 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- HELPERS ---
-  Widget _buildSectionLabel(String label) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(label.toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
-    );
-  }
-
+  // --- ALGEMENE KAART HELPER ---
   Widget _buildProfessionalCard(Color color, {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
@@ -162,7 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Material(
         color: color,
         borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.antiAlias, // Voorkomt witte randen bij klikken
         child: child,
       ),
     );
@@ -170,20 +168,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSimpleTile(IconData icon, String title, String trailing, Color textColor) {
     return ListTile(
-      leading: Icon(icon, color: movieBlue),
-      title: Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.w500)),
+      leading: Icon(icon, color: movieBlue.withOpacity(0.7)),
+      title: Text(title, style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (trailing.isNotEmpty) Text(trailing, style: TextStyle(color: textColor.withOpacity(0.4))),
-          const Icon(Icons.chevron_right, size: 20),
+          if (trailing.isNotEmpty) Text(trailing, style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 14)),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
         ],
       ),
       onTap: () {},
     );
   }
 
+  Widget _buildSectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(label.toUpperCase(), style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+    );
+  }
+
   Widget _buildDivider(bool isDark) {
-    return Divider(height: 1, indent: 55, color: isDark ? Colors.white10 : Colors.black12);
+    return Divider(height: 1, indent: 55, endIndent: 10, color: isDark ? Colors.white10 : Colors.black12);
   }
 }

@@ -16,7 +16,7 @@ class _FoodScreenState extends State<FoodScreen> {
   // Kleurenpalet
   final Color movieBlue = const Color.fromRGBO(43, 77, 91, 1);
   final Color movieBlueLight = const Color.fromRGBO(43, 77, 91, 0.1);
-
+  final Color dieetwensen = const Color.fromARGB(255, 255, 255, 255);
   String? _selectedFilter;
 
   final List<Map<String, String>> _filterOptions = [
@@ -189,7 +189,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 return FilterChip(
                   label: Text(filter['label']!),
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : movieBlue, // Blauwe tekst in light mode!
+                    color: isSelected ? Colors.white : dieetwensen, // Blauwe tekst in light mode!
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
