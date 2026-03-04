@@ -196,33 +196,8 @@ class _AdminScreenState extends State<AdminScreen> {
                     'Kan geen chats laden: ${snap.error}',
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _showPermissionHelp,
-                    child: const Text('Wat nu?'),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _promptAndFetchDoc,
-                    child: const Text('Toon debug info'),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.security),
-                    label: const Text('Maak mij Admin (DEV)'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                    onPressed: () async {
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user == null) return;
-                      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                        'role': 'admin',
-                        'updatedAt': FieldValue.serverTimestamp(),
-                      }, SetOptions(merge: true));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Je bent nu Admin in Firestore! Refresh de app.')),
-                      );
-                    },
-                  ),
+                  
+                  
                 ],
               ),            ),
           );

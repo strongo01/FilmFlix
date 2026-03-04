@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cinetrackr/models/movie_models.dart';
+import 'package:cinetrackr/services/movie_api.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -59,11 +60,225 @@ class _SearchScreenState extends State<SearchScreen> {
     _fetchPopular();
   }
 
+  // Available genres for filter
+  static const List<Map<String, String>> _availableGenres = [
+    {"id":"action","name":"Action"},
+    {"id":"adventure","name":"Adventure"},
+    {"id":"animation","name":"Animation"},
+    {"id":"comedy","name":"Comedy"},
+    {"id":"crime","name":"Crime"},
+    {"id":"documentary","name":"Documentary"},
+    {"id":"drama","name":"Drama"},
+    {"id":"family","name":"Family"},
+    {"id":"fantasy","name":"Fantasy"},
+    {"id":"history","name":"History"},
+    {"id":"horror","name":"Horror"},
+    {"id":"music","name":"Music"},
+    {"id":"mystery","name":"Mystery"},
+    {"id":"news","name":"News"},
+    {"id":"reality","name":"Reality"},
+    {"id":"romance","name":"Romance"},
+    {"id":"scifi","name":"Science Fiction"},
+    {"id":"talk","name":"Talk Show"},
+    {"id":"thriller","name":"Thriller"},
+    {"id":"war","name":"War"},
+    {"id":"western","name":"Western"},
+  ];
+
+  Future<void> _openFilterModal(BuildContext context) async {
+    // local filter state
+    String country = 'nl';
+    String seriesGranularity = 'show';
+    String outputLanguage = 'en';
+    String showType = '';
+    int? ratingMin;
+    int? ratingMax;
+    String catalogs = '';
+    final Set<String> selectedGenres = {};
+    String genresRelation = 'any';
+    String keyword = '';
+    String showOriginalLanguage = '';
+    int? yearMin;
+    int? yearMax;
+    String orderBy = '';
+    String orderDirection = '';
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Text('Filter zoeken', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: TextField(
+                      decoration: const InputDecoration(labelText: 'Keyword'),
+                      onChanged: (v) => keyword = v,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: _availableGenres.map((g) {
+                        final id = g['id']!;
+                        final name = g['name']!;
+                        final sel = selectedGenres.contains(id);
+                        return FilterChip(
+                          label: Text(name),
+                          selected: sel,
+                          onSelected: (v) => setState(() => v ? selectedGenres.add(id) : selectedGenres.remove(id)),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: const InputDecoration(labelText: 'Year min'),
+                            keyboardType: TextInputType.number,
+                            onChanged: (v) => yearMin = int.tryParse(v),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            decoration: const InputDecoration(labelText: 'Year max'),
+                            keyboardType: TextInputType.number,
+                            onChanged: (v) => yearMax = int.tryParse(v),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: const InputDecoration(labelText: 'Rating min (0-100)'),
+                            keyboardType: TextInputType.number,
+                            onChanged: (v) => ratingMin = int.tryParse(v),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            decoration: const InputDecoration(labelText: 'Rating max (0-100)'),
+                            keyboardType: TextInputType.number,
+                            onChanged: (v) => ratingMax = int.tryParse(v),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (mounted) this.setState(() => loading = true);
+                            // build params
+                            final genresParam = selectedGenres.isEmpty ? null : selectedGenres.join(',');
+                            Map<String, dynamic>? resp;
+                            try {
+                              resp = await MovieApi.filterAdvanced(
+                                country: country,
+                                seriesGranularity: seriesGranularity,
+                                outputLanguage: outputLanguage,
+                                showType: showType.isEmpty ? null : showType,
+                                ratingMin: ratingMin,
+                                ratingMax: ratingMax,
+                                catalogs: catalogs.isEmpty ? null : catalogs,
+                                genres: genresParam,
+                                genresRelation: genresRelation,
+                                keyword: keyword.isEmpty ? null : keyword,
+                                showOriginalLanguage: showOriginalLanguage.isEmpty ? null : showOriginalLanguage,
+                                yearMin: yearMin,
+                                yearMax: yearMax,
+                                orderBy: orderBy.isEmpty ? null : orderBy,
+                                orderDirection: orderDirection.isEmpty ? null : orderDirection,
+                              );
+                            } catch (e) {
+                              // fallback: try the simpler filter endpoint which may accept minimal params (e.g., only genres)
+                              try {
+                                resp = await MovieApi.filter(
+                                  country: country,
+                                  ratingMin: ratingMin ?? 0,
+                                  ratingMax: ratingMax ?? 100,
+                                  genres: genresParam,
+                                  catalogs: catalogs.isEmpty ? null : catalogs,
+                                  yearMin: yearMin,
+                                  yearMax: yearMax,
+                                  orderBy: orderBy.isEmpty ? null : orderBy,
+                                );
+                              } catch (e2) {
+                                debugPrint('Filter failed (advanced & fallback): $e / $e2');
+                                if (mounted) ScaffoldMessenger.of(ctx).showSnackBar(
+                                  const SnackBar(content: Text('Filter mislukte — probeer het later opnieuw')),
+                                );
+                                if (mounted) this.setState(() => loading = false);
+                                return;
+                              }
+                            }
+
+                            // debug: print raw response from filter endpoint
+                            debugPrint('Filter response keys: ${resp?.keys}');
+                            final resultsList = resp?['shows'] ?? resp?['results'] ?? resp?['result'] ?? (resp is List ? resp : []);
+                            debugPrint('Filter results type: ${resultsList.runtimeType}');
+                            debugPrint('Filter results length: ${(resultsList as Iterable).length}');
+
+                            // map results to MovieSearchItem
+                            final List<dynamic> items = resultsList is List ? resultsList : [];
+                            if (mounted) this.setState(() {
+                              results = items.map((e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+                              loading = false;
+                            });
+
+                            Navigator.of(ctx).pop();
+                          },
+                          child: const Text('Apply filters'),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+
   Future<void> _fetchTopRated({int page = 1}) async {
     loadingTopRated = true;
     setState(() {});
-    final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
-        .replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
+    final uri = Uri.parse(
+      'https://film-flix-olive.vercel.app/api/movies',
+    ).replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
     try {
       final resp = await http.get(uri);
       if (resp.statusCode != 200) return;
@@ -74,8 +289,13 @@ class _SearchScreenState extends State<SearchScreen> {
         final id = m['id']?.toString() ?? '';
         final title = m['title'] ?? m['name'] ?? '';
         final posterPath = m['poster_path'] as String?;
-        final poster = posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : null;
-        final year = (m['release_date'] ?? '').toString().split('-').firstWhere((_) => true, orElse: () => '');
+        final poster = posterPath != null
+            ? 'https://image.tmdb.org/t/p/w500$posterPath'
+            : null;
+        final year = (m['release_date'] ?? '')
+            .toString()
+            .split('-')
+            .firstWhere((_) => true, orElse: () => '');
         return MovieSearchItem(
           id: 'tmdb:$id',
           title: title.toString(),
@@ -96,8 +316,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _fetchPopular({int page = 1}) async {
     loadingPopular = true;
     setState(() {});
-    final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
-        .replace(queryParameters: {'type': 'popular', 'page': page.toString()});
+    final uri = Uri.parse(
+      'https://film-flix-olive.vercel.app/api/movies',
+    ).replace(queryParameters: {'type': 'popular', 'page': page.toString()});
     try {
       final resp = await http.get(uri);
       if (resp.statusCode != 200) return;
@@ -108,8 +329,13 @@ class _SearchScreenState extends State<SearchScreen> {
         final id = m['id']?.toString() ?? '';
         final title = m['title'] ?? m['name'] ?? '';
         final posterPath = m['poster_path'] as String?;
-        final poster = posterPath != null ? 'https://image.tmdb.org/t/p/w500$posterPath' : null;
-        final year = (m['release_date'] ?? '').toString().split('-').firstWhere((_) => true, orElse: () => '');
+        final poster = posterPath != null
+            ? 'https://image.tmdb.org/t/p/w500$posterPath'
+            : null;
+        final year = (m['release_date'] ?? '')
+            .toString()
+            .split('-')
+            .firstWhere((_) => true, orElse: () => '');
         return MovieSearchItem(
           id: 'tmdb:$id',
           title: title.toString(),
@@ -129,12 +355,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _openTmdbMovieDetail(String movieId) async {
     if (movieId.isEmpty) return;
-    final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
-        .replace(queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': movieId});
+    final uri = Uri.parse(
+      'https://film-flix-olive.vercel.app/api/movies',
+    ).replace(queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': movieId});
     try {
       final resp = await http.get(uri);
       if (resp.statusCode != 200) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kon filmdetails niet ophalen')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kon filmdetails niet ophalen')),
+        );
         return;
       }
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
@@ -145,11 +374,15 @@ class _SearchScreenState extends State<SearchScreen> {
           MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbId)),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geen IMDb ID gevonden voor deze film')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Geen IMDb ID gevonden voor deze film')),
+        );
       }
     } catch (e) {
       debugPrint('Failed openTmdbMovieDetail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fout bij ophalen filmdetails')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fout bij ophalen filmdetails')),
+      );
     }
   }
 
@@ -253,7 +486,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
@@ -279,12 +512,25 @@ class _SearchScreenState extends State<SearchScreen> {
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : Colors.black45,
                 ),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    Icons.search,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                  ),
-                  onPressed: search,
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                      tooltip: 'Filter',
+                      onPressed: () => _openFilterModal(context),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.search,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                      onPressed: search,
+                    ),
+                  ],
                 ),
                 filled: true,
                 fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
@@ -301,7 +547,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           if (loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
-          else if (controller.text.trim().isNotEmpty)
+          else if (controller.text.trim().isNotEmpty || results.isNotEmpty)
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.all(12),
@@ -354,7 +600,10 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Column(
                   children: [
                     TabBar(
-                      tabs: const [Tab(text: 'Best Rated'), Tab(text: 'Populair')],
+                      tabs: const [
+                        Tab(text: 'Best Rated'),
+                        Tab(text: 'Populair'),
+                      ],
                       labelColor: isDark ? Colors.white : Colors.black87,
                       indicatorColor: isDark ? Colors.white : Colors.black87,
                     ),
@@ -366,22 +615,26 @@ class _SearchScreenState extends State<SearchScreen> {
                               ? const Center(child: CircularProgressIndicator())
                               : GridView.builder(
                                   padding: const EdgeInsets.all(12),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    childAspectRatio: 0.6,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
-                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 0.6,
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                      ),
                                   itemCount: topRated.length,
                                   itemBuilder: (_, index) {
                                     final movie = topRated[index];
                                     return GestureDetector(
-                                      onTap: () => _openTmdbMovieDetail(movie.tmdbId ?? ''),
+                                      onTap: () => _openTmdbMovieDetail(
+                                        movie.tmdbId ?? '',
+                                      ),
                                       child: Column(
                                         children: [
                                           Expanded(
                                             child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               child: _posterWithFallback(movie),
                                             ),
                                           ),
@@ -391,7 +644,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: isDark ? Colors.white : Colors.black87,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black87,
                                               fontSize: 12,
                                             ),
                                           ),
@@ -406,22 +661,26 @@ class _SearchScreenState extends State<SearchScreen> {
                               ? const Center(child: CircularProgressIndicator())
                               : GridView.builder(
                                   padding: const EdgeInsets.all(12),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    childAspectRatio: 0.6,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
-                                  ),
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 3,
+                                        childAspectRatio: 0.6,
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                      ),
                                   itemCount: popular.length,
                                   itemBuilder: (_, index) {
                                     final movie = popular[index];
                                     return GestureDetector(
-                                      onTap: () => _openTmdbMovieDetail(movie.tmdbId ?? ''),
+                                      onTap: () => _openTmdbMovieDetail(
+                                        movie.tmdbId ?? '',
+                                      ),
                                       child: Column(
                                         children: [
                                           Expanded(
                                             child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               child: _posterWithFallback(movie),
                                             ),
                                           ),
@@ -431,7 +690,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: isDark ? Colors.white : Colors.black87,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black87,
                                               fontSize: 12,
                                             ),
                                           ),
@@ -442,7 +703,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),

@@ -86,6 +86,44 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     });
   }
 
+  // Advanced filter wrapper that exposes more of the Rapid filters
+  static Future<Map<String, dynamic>> filterAdvanced({
+    String country = 'nl',
+    String? seriesGranularity,
+    String outputLanguage = 'en',
+    String? showType,
+    int? ratingMin,
+    int? ratingMax,
+    String? catalogs,
+    String? genres,
+    String? genresRelation,
+    String? keyword,
+    String? showOriginalLanguage,
+    int? yearMin,
+    int? yearMax,
+    String? orderBy,
+    String? orderDirection,
+  }) {
+    return _get({
+      'type': 'filter',
+      'country': country,
+      'series_granularity': seriesGranularity,
+      'output_language': outputLanguage,
+      'show_type': showType,
+      'rating_min': ratingMin,
+      'rating_max': ratingMax,
+      'catalogs': catalogs,
+      'genres': genres,
+      'genres_relation': genresRelation,
+      'keyword': keyword,
+      'show_original_language': showOriginalLanguage,
+      'year_min': yearMin,
+      'year_max': yearMax,
+      'order_by': orderBy,
+      'order_direction': orderDirection,
+    });
+  }
+
   //  OMDB GET
   static Future<Map<String, dynamic>> omdbGet({
     String? imdbId,

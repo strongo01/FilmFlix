@@ -19,11 +19,14 @@ class MovieSearchItem {
   factory MovieSearchItem.fromJson(Map<String, dynamic> json) { //dit zorgt voor een factory constructor die een MovieSearchItem maakt van een JSON object. Hierbij wordt gekeken naar de id, title, year, poster en tmdbId in het JSON object, en worden deze gebruikt om een MovieSearchItem te maken.
     return MovieSearchItem( //dit maakt een MovieSearchItem aan met de id, title, year, poster, raw data en tmdbId uit het JSON object. Hierbij wordt gekeken naar de id, title, year, poster en tmdbId in het JSON object, en worden deze gebruikt om een MovieSearchItem te maken.
       id: json['imdbId'] ?? json['id'] ?? '',
-      title: json['title'] ?? '',
-      year: json['releaseYear'],
-      poster: json['imageSet']?['verticalPoster']?['w240'],
+      title: json['title'] ?? json['original_title'] ?? json['name'] ?? '',
+      year: json['releaseYear'] ?? 
+            json['firstAirYear'] ?? 
+            (json['release_date'] != null ? int.tryParse(json['release_date'].toString().split('-')[0]) : null),
+      poster: json['imageSet']?['verticalPoster']?['w240'] ?? 
+              (json['poster_path'] != null ? 'https://image.tmdb.org/t/p/w500${json['poster_path']}' : null),
       raw: json,
-      tmdbId: json['tmdbId'],
+      tmdbId: json['tmdbId'] ?? json['id']?.toString(),
     );
   }
 }

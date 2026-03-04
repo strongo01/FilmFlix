@@ -32,9 +32,16 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           'seenEpisodes.$imdbId': FieldValue.arrayUnion([epKey]),
         }, SetOptions(merge: true));
       } else {
-        await docRef.set({
-          'seenEpisodes.$imdbId': FieldValue.arrayRemove([epKey]),
-        }, SetOptions(merge: true));
+        if (epKey == 'movie') {
+          // remove whole field when unchecking a movie 'Gezien' marker
+          await docRef.set({
+            'seenEpisodes.$imdbId': FieldValue.delete(),
+          }, SetOptions(merge: true));
+        } else {
+          await docRef.set({
+            'seenEpisodes.$imdbId': FieldValue.arrayRemove([epKey]),
+          }, SetOptions(merge: true));
+        }
       }
     } catch (e) {
       debugPrint('Failed to toggle seen $epKey for $imdbId: $e');
@@ -384,24 +391,51 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     }
                   }
 
-                  final savedSeries = watchlist
-                      .where((id) => seenMap.containsKey(id))
-                      .toList();
-                  final savedFilms = watchlist
-                      .where((id) => !seenMap.containsKey(id))
-                      .toList();
+                  bool seenIndicatesMovie(dynamic val) {
+                    if (val is List) {
+                      for (final e in val) {
+                        if (e != null && e.toString().toLowerCase() == 'movie') return true;
+                      }
+                    }
+                    return false;
+                  }
 
-                  final watchingSeries = seenMap.entries
-                      .where((e) {
-                        final val = e.value;
-                        if (val is List) return val.isNotEmpty;
-                        return false;
-                      })
-                      .map((e) => e.key.toString())
-                      .toList();
+                  final savedSeries = watchlist.where((id) {
+                    final val = seenMap[id];
+                    if (val is List) {
+                      // if the saved seen list explicitly contains 'movie', treat as film
+                      if (seenIndicatesMovie(val)) return false;
+                      return true; // has seen entries (episodes) -> series
+                    }
+                    return false;
+                  }).toList();
 
-                  final watchingFilms =
-                      <String>[]; // no explicit film progress field available
+                  final savedFilms = watchlist.where((id) {
+                    final val = seenMap[id];
+                    if (val is List) {
+                      if (seenIndicatesMovie(val)) return true;
+                      return false;
+                    }
+                    // no seen entries -> treat as film by default
+                    return !seenMap.containsKey(id);
+                  }).toList();
+
+                  final watchingSeries = <String>[];
+                  final watchingFilms = <String>[];
+
+                  for (final e in seenMap.entries) {
+                    final val = e.value;
+                    if (val is List) {
+                      // if list explicitly contains the marker 'movie', treat as film
+                      final hasMovieMarker = val.any((x) => x != null && x.toString().toLowerCase() == 'movie');
+                      if (hasMovieMarker) {
+                        watchingFilms.add(e.key.toString());
+                      } else if (val.isNotEmpty) {
+                        // non-empty list of episode keys -> series
+                        watchingSeries.add(e.key.toString());
+                      }
+                    }
+                  }
 
                   Widget buildList(
                     List<String> items, {
@@ -742,40 +776,49 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                               itemBuilder: (c, i) {
                                                 final id = watchingFilms[i];
                                                 final seenForId = seenMap[id];
-                                                final isSeen =
-                                                    (seenForId is List)
-                                                    ? seenForId
-                                                          .map(
-                                                            (e) => e.toString(),
-                                                          )
-                                                          .contains('s0_e0')
-                                                    : false;
-                                                return ListTile(
-                                                  leading: const Icon(
-                                                    Icons.movie,
-                                                  ),
-                                                  title: Text(id),
-                                                  trailing: Checkbox(
-                                                    value: isSeen,
-                                                    onChanged: (val) async {
-                                                      await _toggleEpisodeSeenForUser(
-                                                        id,
-                                                        's0_e0',
-                                                        val ?? false,
-                                                      );
-                                                    },
-                                                  ),
-                                                  onTap: () =>
-                                                      Navigator.of(
-                                                        context,
-                                                      ).push(
+
+                                                return FutureBuilder(
+                                                  future: MovieRepository.getFullMovie(id),
+                                                  builder: (ctx, snapMovie) {
+                                                    String title = id;
+                                                    // prefer stored metadata from Firestore
+                                                    final meta = metaMap[id];
+                                                    if (meta is Map && meta['title'] != null) {
+                                                      title = meta['title']?.toString() ?? id;
+                                                    } else if (snapMovie.hasData) {
+                                                      try {
+                                                        final md = snapMovie.data as dynamic;
+                                                        final rapid = md.rapid as Map<String, dynamic>?;
+                                                        final omdb = md.omdb as Map<String, dynamic>?;
+                                                        title = (rapid != null && (rapid['title'] ?? rapid['name']) != null)
+                                                            ? (rapid['title'] ?? rapid['name']).toString()
+                                                            : (omdb != null && omdb['Title'] != null)
+                                                                ? omdb['Title'].toString()
+                                                                : id;
+                                                      } catch (_) {}
+                                                    }
+
+                                                    final isSeen = (seenForId is List)
+                                                        ? seenForId.map((e) => e.toString()).contains('movie')
+                                                        : false;
+
+                                                    return ListTile(
+                                                      leading: const Icon(Icons.movie),
+                                                      title: Text(title),
+                                                      trailing: Checkbox(
+                                                        value: isSeen,
+                                                        onChanged: (val) async {
+                                                          final newVal = val ?? false;
+                                                          await _toggleEpisodeSeenForUser(id, 'movie', newVal);
+                                                        },
+                                                      ),
+                                                      onTap: () => Navigator.of(context).push(
                                                         MaterialPageRoute(
-                                                          builder: (_) =>
-                                                              MovieDetailScreen(
-                                                                imdbId: id,
-                                                              ),
+                                                          builder: (_) => MovieDetailScreen(imdbId: id),
                                                         ),
                                                       ),
+                                                    );
+                                                  },
                                                 );
                                               },
                                             ),

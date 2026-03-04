@@ -746,6 +746,54 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
+  Future<void> _toggleMovieSeen(bool seen) async {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) return;
+
+    const epKey = 'movie';
+
+    // Optimistic update
+    setState(() {
+      if (seen) {
+        _seenSet.add(epKey);
+      } else {
+        _seenSet.remove(epKey);
+      }
+    });
+
+    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    try {
+      if (seen) {
+        final meta = {
+          'title': _title ?? '',
+          'overview': _overview ?? '',
+        };
+        await docRef.set({
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
+          'watchlist_meta.${widget.imdbId}': meta,
+        }, SetOptions(merge: true));
+      } else {
+        // When unmarking a movie as seen, remove the entire field so it
+        // doesn't leave an empty array like seenEpisodes.tt123456 (array)
+        await docRef.set({
+          'seenEpisodes.${widget.imdbId}': FieldValue.delete(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e, s) {
+      debugPrint('Error toggling movie seen: $e\n$s');
+      // rollback
+      setState(() {
+        if (seen)
+          _seenSet.remove(epKey);
+        else
+          _seenSet.add(epKey);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kon "Gezien" status niet bijwerken.')),
+      );
+    }
+  }
+
   List<Widget> _buildGroupedStreaming(
     List<dynamic> streaming,
     BuildContext context,
@@ -1210,7 +1258,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ),
 
                         const Spacer(),
-                        // watchlist button
+                        // watchlist button + movie 'Gezien' checkbox underneath
                         _loadingUserData
                             ? const SizedBox(
                                 width: 24,
@@ -1219,45 +1267,78 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                    color: Colors.white,
-                                    width: 1,
-                                  ),
-                                  foregroundColor: isDark
-                                      ? Colors.white
-                                      : Colors.black,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  backgroundColor: Colors.transparent,
-                                ),
-                                icon: Icon(
-                                  _isInWatchlist
-                                      ? Icons.bookmark
-                                      : Icons.bookmark_add_outlined,
-                                  size: 20,
-                                ),
-                                label: Text(
-                                  _isInWatchlist ? 'Verwijder' : 'Opslaan',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                                onPressed: () async {
-                                  if (_user == null) {
-                                    final goToLogin =
-                                        await _ensureLoggedInWithPrompt(
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: Colors.white,
+                                        width: 1,
+                                      ),
+                                      foregroundColor:
+                                          isDark ? Colors.white : Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                    icon: Icon(
+                                      _isInWatchlist
+                                          ? Icons.bookmark
+                                          : Icons.bookmark_add_outlined,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      _isInWatchlist ? 'Verwijder' : 'Opslaan',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    onPressed: () async {
+                                      if (_user == null) {
+                                        final goToLogin =
+                                            await _ensureLoggedInWithPrompt(
                                           context,
                                         );
-                                    if (!goToLogin) return;
-                                    return;
-                                  }
-                                  await _toggleWatchlist();
-                                },
+                                        if (!goToLogin) return;
+                                        return;
+                                      }
+                                      await _toggleWatchlist();
+                                    },
+                                  ),
+                                  const SizedBox(height: 6),
+                                  if (isMovie)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Checkbox(
+                                          value: _seenSet.contains('movie'),
+                                          onChanged: (val) async {
+                                            if (_user == null) {
+                                              final go =
+                                                  await _ensureLoggedInWithPrompt(
+                                                context,
+                                              );
+                                              if (!go) return;
+                                            }
+                                            await _toggleMovieSeen(val ?? false);
+                                            setState(() {});
+                                          },
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Gezien',
+                                          style: TextStyle(
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.black),
+                                        ),
+                                      ],
+                                    ),
+                                ],
                               ),
                       ],
                     ),
