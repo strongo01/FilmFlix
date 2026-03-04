@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
+class MovieApi {
+  //  API Helper class voor alle movie-gerelateerde API calls
   static const String _baseUrl =
       'https://film-flix-olive.vercel.app/api/movies';
 
   // Algemene GET helper die alle API calls afhandelt. Deze functie bouwt de URL op basis van de meegegeven parameters, maakt de HTTP GET request, en decodeert het JSON antwoord. Het resultaat is altijd een Map<String, dynamic>, waarbij de daadwerkelijke data meestal in een 'result' veld zit.
   static Future<Map<String, dynamic>> _get(Map<String, dynamic> params) async {
     final cleanParams = Map<String, dynamic>.from(params);
-    cleanParams.removeWhere((key, value) => value == null || value.toString().isEmpty);
+    cleanParams.removeWhere(
+      (key, value) => value == null || value.toString().isEmpty,
+    );
 
     // Handle cursor separately to avoid double-encoding
     String? cursor;
@@ -24,27 +27,31 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     );
 
     if (cursor != null) {
-      // Use queryParameters to include the cursor correctly, or manually append if needed for specific formatting
-      // But Uri.replace with queryParameters is generally preferred.
-      // However, if the user specifically wants to avoid double-encoding issues they previously had:
       final String connector = uri.query.isEmpty ? '?' : '&';
-      // Use Uri.encodeComponent to ensure the cursor (containing ':') is encoded correctly as '%3A'
-      uri = Uri.parse('${uri.toString()}${connector}cursor=${Uri.encodeComponent(cursor)}');
+      // Ensure cursor is appended with order_by and order_direction to maintain sorting
+      uri = Uri.parse(
+        '${uri.toString()}${connector}cursor=${Uri.encodeComponent(cursor)}&order_by=rating&order_direction=desc',
+      );
     }
 
     debugPrint('API GET Request: $uri');
-
-    final response = await http.get(uri); // Maakt de HTTP GET request naar de API
+    debugPrint('Final API GET Request URL: $uri');
+    final response = await http.get(uri);
+    // Uncomment the following lines to debug the response if needed
+    // final response = await http.get(uri);
     debugPrint('API Response status: ${response.statusCode}');
     debugPrint('API Response body: ${response.body}');
 
-    if (response.statusCode == 200) { // Als de response succesvol is, decodeer het JSON antwoord
+    if (response.statusCode == 200) {
+      // Als de response succesvol is, decodeer het JSON antwoord
       final decoded = jsonDecode(response.body);
       if (decoded is Map<String, dynamic>) {
         return decoded;
       }
       if (decoded is List<dynamic>) {
-        return {'result': decoded}; // Sommige API endpoints kunnen een lijst teruggeven, dus we wrappen dit in een 'result' veld voor consistentie
+        return {
+          'result': decoded,
+        }; // Sommige API endpoints kunnen een lijst teruggeven, dus we wrappen dit in een 'result' veld voor consistentie
       }
       // Als het antwoord niet het verwachte formaat heeft, gooien we een fout
       return {
@@ -62,7 +69,8 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     String showType = '',
     String outputLanguage = 'en',
   }) {
-    return _get({ // Deze functie maakt een zoekopdracht naar films/series op basis van de titel en andere optionele parameters zoals land, type (film/serie), en output taal. De parameters worden doorgegeven aan de _get helper, die de daadwerkelijke API call maakt.
+    return _get({
+      // Deze functie maakt een zoekopdracht naar films/series op basis van de titel en andere optionele parameters zoals land, type (film/serie), en output taal. De parameters worden doorgegeven aan de _get helper, die de daadwerkelijke API call maakt.
       'type': 'search',
       'title': title,
       'country': country,
