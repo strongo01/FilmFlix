@@ -75,21 +75,7 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         const SizedBox(height: 20),
 
-                        /// Header
-                        Center(
-                          child: Text(
-                            "Welkom bij uw Bioscoopomgeving",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: isSmallPhone ? 22 : 28,
-                              fontWeight: FontWeight.w700,
-                              color: textColor,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
 
-                        const SizedBox(height: 40),
 
                         /// Grid
                         GridView.count(
