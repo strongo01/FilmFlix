@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cinetrackr/main.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -62,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.of(context).pop(true); // terug naar MovieDetailScreen
         } else {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+            MaterialPageRoute(builder: (_) => const MainNavigation()),
           );
         }
       }
@@ -89,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       if (!widget.returnAfterLogin) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const MainNavigation()),
         ); //na succesvol inloggen of registreren, navigeren we naar de HomeScreen.
       } // Als returnAfterLogin true is, laat de auth-listener in initState terug poppen naar het vorige scherm.
     } on FirebaseAuthException catch (e) {
@@ -192,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!widget.returnAfterLogin) {
         Navigator.of(
           context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const MainNavigation()));
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('GitHubSignIn: FirebaseAuthException: ${e.code} - ${e.message}');

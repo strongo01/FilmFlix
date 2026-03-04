@@ -186,15 +186,21 @@ class _FoodScreenState extends State<FoodScreen> {
               spacing: 10,
               children: _filterOptions.map((filter) {
                 final bool isSelected = _selectedFilter == filter['slug'];
+                final textColor = MediaQuery.of(context).platformBrightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black87;
+
                 return FilterChip(
                   label: Text(filter['label']!),
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : dieetwensen, // Blauwe tekst in light mode!
+                    color: isSelected ? Colors.white : textColor, // Adjusted for adaptive text color
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                   selected: isSelected,
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : movieBlue.withOpacity(0.08),
+                  backgroundColor: MediaQuery.of(context).platformBrightness == Brightness.dark
+                      ? Colors.white.withOpacity(0.05)
+                      : movieBlue.withOpacity(0.08),
                   selectedColor: movieBlue,
                   checkmarkColor: Colors.white,
                   shape: RoundedRectangleBorder(
