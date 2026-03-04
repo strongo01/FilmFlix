@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// VERGEET DEZE IMPORT NIET:
+import 'package:cinetrackr/views/customer_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -29,13 +31,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          // --- ACCOUNT DASHBOARD ---
           _buildSectionLabel('Mijn Dashboard'),
           _buildAccountCard(cardColor, textColor),
 
           const SizedBox(height: 24),
 
-          // --- VOORKEUREN ---
           _buildSectionLabel('Voorkeuren'),
           _buildProfessionalCard(
             cardColor,
@@ -49,31 +49,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (val) => setState(() => _notificationsEnabled = val),
                 ),
                 _buildDivider(isDark),
-                _buildSimpleTile(Icons.language, 'Taal', 'Nederlands', textColor),
+                // Hier geven we een lege functie mee voor nu
+                _buildSimpleTile(Icons.language, 'Taal', 'Nederlands', textColor, () {}),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // --- SUPPORT (NU MET DE GEVRAAGDE ITEMS) ---
           _buildSectionLabel('Support'),
           _buildProfessionalCard(
             cardColor,
             child: Column(
               children: [
-                _buildSimpleTile(Icons.help_outline, 'Klantenservice', '', textColor),
+                // HIER GEBEURT DE NAVIGATIE:
+                _buildSimpleTile(
+                  Icons.help_outline, 
+                  'Klantenservice', 
+                  '', 
+                  textColor, 
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CustomerServiceScreen()),
+                    );
+                  }
+                ),
                 _buildDivider(isDark),
-                _buildSimpleTile(Icons.info_outline, 'Over CineTrackr', '', textColor),
+                _buildSimpleTile(Icons.info_outline, 'Over CineTrackr', '', textColor, () {}),
                 _buildDivider(isDark),
-                _buildSimpleTile(Icons.lock_outline, 'Privacybeleid', '', textColor),
+                _buildSimpleTile(Icons.lock_outline, 'Privacybeleid', '', textColor, () {}),
               ],
             ),
           ),
 
           const SizedBox(height: 40),
 
-          // --- LOGOUT ---
           Center(
             child: TextButton(
               onPressed: () {},
@@ -91,7 +102,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- ACCOUNT BLOK (MET FIX VOOR WITTE RANDEN) ---
   Widget _buildAccountCard(Color cardColor, Color textColor) {
     return _buildProfessionalCard(
       cardColor,
@@ -150,7 +160,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- ALGEMENE KAART HELPER ---
   Widget _buildProfessionalCard(Color color, {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
@@ -160,13 +169,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Material(
         color: color,
         borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias, // Voorkomt witte randen bij klikken
+        clipBehavior: Clip.antiAlias,
         child: child,
       ),
     );
   }
 
-  Widget _buildSimpleTile(IconData icon, String title, String trailing, Color textColor) {
+  // Aangepaste helper met onTap parameter:
+  Widget _buildSimpleTile(IconData icon, String title, String trailing, Color textColor, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: movieBlue.withOpacity(0.7)),
       title: Text(title, style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500)),
@@ -178,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
         ],
       ),
-      onTap: () {},
+      onTap: onTap, // Nu voert hij de navigatie uit
     );
   }
 

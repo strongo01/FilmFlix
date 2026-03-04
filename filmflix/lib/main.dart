@@ -48,12 +48,12 @@ class CineTrackrApp extends StatelessWidget {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           }
           
-          if (snapshot.hasData) {
+         // if (snapshot.hasData) {
              // Hier kun je nog steeds forceren voor testen als je wilt:
              // return const MovieDetailScreen(imdbId: "tt1632701"); 
              return const MainNavigation(); 
-          }
-          return const LoginScreen();
+          //}
+          //return const LoginScreen();
         },
       ),
       routes: {
