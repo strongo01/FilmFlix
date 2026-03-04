@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
@@ -7,13 +8,35 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
 
   // Algemene GET helper die alle API calls afhandelt. Deze functie bouwt de URL op basis van de meegegeven parameters, maakt de HTTP GET request, en decodeert het JSON antwoord. Het resultaat is altijd een Map<String, dynamic>, waarbij de daadwerkelijke data meestal in een 'result' veld zit.
   static Future<Map<String, dynamic>> _get(Map<String, dynamic> params) async {
-    final uri = Uri.parse(_baseUrl).replace(
-      queryParameters: params.map(
-        (key, value) => MapEntry(key, value?.toString()), // Zorgt dat alle parameters als strings worden toegevoegd, en dat null waarden worden genegeerd
+    final cleanParams = Map<String, dynamic>.from(params);
+    cleanParams.removeWhere((key, value) => value == null || value.toString().isEmpty);
+
+    // Handle cursor separately to avoid double-encoding
+    String? cursor;
+    if (cleanParams.containsKey('cursor')) {
+      cursor = cleanParams.remove('cursor');
+    }
+
+    var uri = Uri.parse(_baseUrl).replace(
+      queryParameters: cleanParams.map(
+        (key, value) => MapEntry(key, value.toString()),
       ),
     );
 
+    if (cursor != null) {
+      // Use queryParameters to include the cursor correctly, or manually append if needed for specific formatting
+      // But Uri.replace with queryParameters is generally preferred.
+      // However, if the user specifically wants to avoid double-encoding issues they previously had:
+      final String connector = uri.query.isEmpty ? '?' : '&';
+      // Use Uri.encodeComponent to ensure the cursor (containing ':') is encoded correctly as '%3A'
+      uri = Uri.parse('${uri.toString()}${connector}cursor=${Uri.encodeComponent(cursor)}');
+    }
+
+    debugPrint('API GET Request: $uri');
+
     final response = await http.get(uri); // Maakt de HTTP GET request naar de API
+    debugPrint('API Response status: ${response.statusCode}');
+    debugPrint('API Response body: ${response.body}');
 
     if (response.statusCode == 200) { // Als de response succesvol is, decodeer het JSON antwoord
       final decoded = jsonDecode(response.body);

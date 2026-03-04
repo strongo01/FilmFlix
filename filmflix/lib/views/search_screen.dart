@@ -20,6 +20,9 @@ class _SearchScreenState extends State<SearchScreen> {
   final controller = TextEditingController();
   List<MovieSearchItem> results = [];
   bool loading = false;
+  String? _nextCursor;
+  bool _hasMore = false;
+  Map<String, dynamic>? _lastFilterParams;
   List<MovieSearchItem> topRated = [];
   List<MovieSearchItem> popular = [];
   bool loadingTopRated = false;
@@ -33,11 +36,19 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         results = [];
         loading = false;
+        _hasMore = false;
+        _nextCursor = null;
+        _lastFilterParams = null;
       });
       return;
     }
 
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      _hasMore = false;
+      _nextCursor = null;
+      _lastFilterParams = null;
+    });
     try {
       results = await MovieRepository.search(
         query,
@@ -62,27 +73,27 @@ class _SearchScreenState extends State<SearchScreen> {
 
   // Available genres for filter
   static const List<Map<String, String>> _availableGenres = [
-    {"id":"action","name":"Action"},
-    {"id":"adventure","name":"Adventure"},
-    {"id":"animation","name":"Animation"},
-    {"id":"comedy","name":"Comedy"},
-    {"id":"crime","name":"Crime"},
-    {"id":"documentary","name":"Documentary"},
-    {"id":"drama","name":"Drama"},
-    {"id":"family","name":"Family"},
-    {"id":"fantasy","name":"Fantasy"},
-    {"id":"history","name":"History"},
-    {"id":"horror","name":"Horror"},
-    {"id":"music","name":"Music"},
-    {"id":"mystery","name":"Mystery"},
-    {"id":"news","name":"News"},
-    {"id":"reality","name":"Reality"},
-    {"id":"romance","name":"Romance"},
-    {"id":"scifi","name":"Science Fiction"},
-    {"id":"talk","name":"Talk Show"},
-    {"id":"thriller","name":"Thriller"},
-    {"id":"war","name":"War"},
-    {"id":"western","name":"Western"},
+    {"id": "action", "name": "Action"},
+    {"id": "adventure", "name": "Adventure"},
+    {"id": "animation", "name": "Animation"},
+    {"id": "comedy", "name": "Comedy"},
+    {"id": "crime", "name": "Crime"},
+    {"id": "documentary", "name": "Documentary"},
+    {"id": "drama", "name": "Drama"},
+    {"id": "family", "name": "Family"},
+    {"id": "fantasy", "name": "Fantasy"},
+    {"id": "history", "name": "History"},
+    {"id": "horror", "name": "Horror"},
+    {"id": "music", "name": "Music"},
+    {"id": "mystery", "name": "Mystery"},
+    {"id": "news", "name": "News"},
+    {"id": "reality", "name": "Reality"},
+    {"id": "romance", "name": "Romance"},
+    {"id": "scifi", "name": "Science Fiction"},
+    {"id": "talk", "name": "Talk Show"},
+    {"id": "thriller", "name": "Thriller"},
+    {"id": "war", "name": "War"},
+    {"id": "western", "name": "Western"},
   ];
 
   Future<void> _openFilterModal(BuildContext context) async {
@@ -107,170 +118,307 @@ class _SearchScreenState extends State<SearchScreen> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        return StatefulBuilder(builder: (ctx, setState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Text('Filter zoeken', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: TextField(
-                      decoration: const InputDecoration(labelText: 'Keyword'),
-                      onChanged: (v) => keyword = v,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: _availableGenres.map((g) {
-                        final id = g['id']!;
-                        final name = g['name']!;
-                        final sel = selectedGenres.contains(id);
-                        return FilterChip(
-                          label: Text(name),
-                          selected: sel,
-                          onSelected: (v) => setState(() => v ? selectedGenres.add(id) : selectedGenres.remove(id)),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            decoration: const InputDecoration(labelText: 'Year min'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (v) => yearMin = int.tryParse(v),
-                          ),
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Text(
+                        'Filter zoeken',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            decoration: const InputDecoration(labelText: 'Year max'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (v) => yearMax = int.tryParse(v),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            decoration: const InputDecoration(labelText: 'Rating min (0-100)'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (v) => ratingMin = int.tryParse(v),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            decoration: const InputDecoration(labelText: 'Rating max (0-100)'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (v) => ratingMax = int.tryParse(v),
-                          ),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: TextField(
+                        decoration: const InputDecoration(labelText: 'Keyword'),
+                        onChanged: (v) => keyword = v,
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (mounted) this.setState(() => loading = true);
-                            // build params
-                            final genresParam = selectedGenres.isEmpty ? null : selectedGenres.join(',');
-                            Map<String, dynamic>? resp;
-                            try {
-                              resp = await MovieApi.filterAdvanced(
-                                country: country,
-                                seriesGranularity: seriesGranularity,
-                                outputLanguage: outputLanguage,
-                                showType: showType.isEmpty ? null : showType,
-                                ratingMin: ratingMin,
-                                ratingMax: ratingMax,
-                                catalogs: catalogs.isEmpty ? null : catalogs,
-                                genres: genresParam,
-                                genresRelation: genresRelation,
-                                keyword: keyword.isEmpty ? null : keyword,
-                                showOriginalLanguage: showOriginalLanguage.isEmpty ? null : showOriginalLanguage,
-                                yearMin: yearMin,
-                                yearMax: yearMax,
-                                orderBy: orderBy.isEmpty ? null : orderBy,
-                                orderDirection: orderDirection.isEmpty ? null : orderDirection,
-                              );
-                            } catch (e) {
-                              // fallback: try the simpler filter endpoint which may accept minimal params (e.g., only genres)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8,
+                      ),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _availableGenres.map((g) {
+                          final id = g['id']!;
+                          final name = g['name']!;
+                          final sel = selectedGenres.contains(id);
+                          return FilterChip(
+                            label: Text(name),
+                            selected: sel,
+                            onSelected: (v) => setState(
+                              () => v
+                                  ? selectedGenres.add(id)
+                                  : selectedGenres.remove(id),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Year min',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => yearMin = int.tryParse(v),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Year max',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => yearMax = int.tryParse(v),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Rating min (0-100)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => ratingMin = int.tryParse(v),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: 'Rating max (0-100)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (v) => ratingMax = int.tryParse(v),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (mounted) this.setState(() => loading = true);
+                              // build params
+                              final genresParam = selectedGenres.isEmpty
+                                  ? null
+                                  : selectedGenres.join(',');
+
+                              final filterParams = {
+                                'country': country,
+                                'series_granularity': seriesGranularity,
+                                'output_language': outputLanguage,
+                                'show_type': showType.isEmpty ? null : showType,
+                                'rating_min': ratingMin,
+                                'rating_max': ratingMax,
+                                'catalogs': catalogs.isEmpty ? null : catalogs,
+                                'genres': genresParam,
+                                'genresRelation': genresRelation,
+                                'keyword': keyword.isEmpty ? null : keyword,
+                                'showOriginalLanguage':
+                                    showOriginalLanguage.isEmpty
+                                        ? null
+                                        : showOriginalLanguage,
+                                'yearMin': yearMin,
+                                'yearMax': yearMax,
+                                'orderBy': 'rating',
+                                'orderDirection': 'desc',
+                              };
+
+                              Map<String, dynamic>? resp;
                               try {
-                                resp = await MovieApi.filter(
+                                resp = await MovieApi.filterAdvanced(
                                   country: country,
-                                  ratingMin: ratingMin ?? 0,
-                                  ratingMax: ratingMax ?? 100,
-                                  genres: genresParam,
+                                  seriesGranularity: seriesGranularity,
+                                  outputLanguage: outputLanguage,
+                                  showType: showType.isEmpty ? null : showType,
+                                  ratingMin: ratingMin,
+                                  ratingMax: ratingMax,
                                   catalogs: catalogs.isEmpty ? null : catalogs,
+                                  genres: genresParam,
+                                  genresRelation: genresRelation,
+                                  keyword: keyword.isEmpty ? null : keyword,
+                                  showOriginalLanguage:
+                                      showOriginalLanguage.isEmpty
+                                          ? null
+                                          : showOriginalLanguage,
                                   yearMin: yearMin,
                                   yearMax: yearMax,
-                                  orderBy: orderBy.isEmpty ? null : orderBy,
+                                  orderBy: 'rating',
+                                  orderDirection: 'desc',
                                 );
-                              } catch (e2) {
-                                debugPrint('Filter failed (advanced & fallback): $e / $e2');
-                                if (mounted) ScaffoldMessenger.of(ctx).showSnackBar(
-                                  const SnackBar(content: Text('Filter mislukte — probeer het later opnieuw')),
-                                );
-                                if (mounted) this.setState(() => loading = false);
-                                return;
+                              } catch (e) {
+                                // fallback: try the simpler filter endpoint which may accept minimal params (e.g., only genres)
+                                try {
+                                  resp = await MovieApi.filter(
+                                    country: country,
+                                    ratingMin: ratingMin ?? 0,
+                                    ratingMax: ratingMax ?? 100,
+                                    genres: genresParam,
+                                    catalogs: catalogs.isEmpty
+                                        ? null
+                                        : catalogs,
+                                    yearMin: yearMin,
+                                    yearMax: yearMax,
+                                    //orderBy: orderBy.isEmpty ? null : orderBy,
+                                    orderBy: 'rating',
+                                    orderDirection: 'desc',
+                                  );
+                                } catch (e2) {
+                                  debugPrint(
+                                    'Filter failed (advanced & fallback): $e / $e2',
+                                  );
+                                  if (mounted)
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Filter mislukte — probeer het later opnieuw',
+                                        ),
+                                      ),
+                                    );
+                                  if (mounted)
+                                    this.setState(() => loading = false);
+                                  return;
+                                }
                               }
-                            }
 
-                            // debug: print raw response from filter endpoint
-                            debugPrint('Filter response keys: ${resp?.keys}');
-                            final resultsList = resp?['shows'] ?? resp?['results'] ?? resp?['result'] ?? (resp is List ? resp : []);
-                            debugPrint('Filter results type: ${resultsList.runtimeType}');
-                            debugPrint('Filter results length: ${(resultsList as Iterable).length}');
+                              // debug: print raw response from filter endpoint
+                              debugPrint('Filter response keys: ${resp?.keys}');
+                              final resultsList =
+                                  resp?['shows'] ??
+                                  resp?['results'] ??
+                                  resp?['result'] ??
+                                  (resp is List ? resp : []);
+                              debugPrint(
+                                'Filter results type: ${resultsList.runtimeType}',
+                              );
+                              debugPrint(
+                                'Filter results length: ${(resultsList as Iterable).length}',
+                              );
 
-                            // map results to MovieSearchItem
-                            final List<dynamic> items = resultsList is List ? resultsList : [];
-                            if (mounted) this.setState(() {
-                              results = items.map((e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-                              loading = false;
-                            });
+                              // map results to MovieSearchItem
+                              final List<dynamic> items =
+                                  resultsList is List ? resultsList : [];
+                              if (mounted)
+                                this.setState(() {
+                                  results =
+                                      items
+                                          .map(
+                                            (e) => MovieSearchItem.fromJson(
+                                              Map<String, dynamic>.from(
+                                                e as Map,
+                                              ),
+                                            ),
+                                          )
+                                          .toList();
+                                  _hasMore = resp != null && resp['hasMore'] == true;
+                                  _nextCursor =
+                                      resp?['nextCursor']?.toString();
+                                  _lastFilterParams = filterParams;
+                                  loading = false;
+                                });
 
-                            Navigator.of(ctx).pop();
-                          },
-                          child: const Text('Apply filters'),
-                        ),
-                        const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          child: const Text('Cancel'),
-                        ),
-                      ],
+                              Navigator.of(ctx).pop();
+                            },
+                            child: const Text('Apply filters'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
+  }
+
+  Future<void> _loadMore() async {
+    if (_nextCursor == null || _lastFilterParams == null) return;
+
+    debugPrint('--- Loading More ---');
+    debugPrint('Cursor used: $_nextCursor');
+    debugPrint('Params: $_lastFilterParams');
+
+    setState(() => loading = true);
+
+    try {
+      final resp = await MovieApi.filterAdvanced(
+        country: _lastFilterParams!['country'],
+        seriesGranularity: _lastFilterParams!['series_granularity'],
+        outputLanguage: _lastFilterParams!['output_language'],
+        showType: _lastFilterParams!['show_type'],
+        ratingMin: _lastFilterParams!['rating_min'],
+        ratingMax: _lastFilterParams!['rating_max'],
+        catalogs: _lastFilterParams!['catalogs'],
+        genres: _lastFilterParams!['genres'],
+        genresRelation: _lastFilterParams!['genres_relation'], // Corrected key from genresRelation
+        keyword: _lastFilterParams!['keyword'],
+        showOriginalLanguage: _lastFilterParams!['show_original_language'], // Corrected key mapping
+        yearMin: _lastFilterParams!['year_min'], // Corrected key mapping
+        yearMax: _lastFilterParams!['year_max'], // Corrected key mapping
+        orderBy: _lastFilterParams!['order_by'], // Corrected key mapping
+        orderDirection: _lastFilterParams!['order_direction'], // Corrected key mapping
+        cursor: _nextCursor,
+      );
+
+      final resultsList =
+          resp['shows'] ?? resp['results'] ?? resp['result'] ?? [];
+      final List<dynamic> items = resultsList is List ? resultsList : [];
+
+      setState(() {
+        results.addAll(
+          items.map(
+            (e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map)),
+          ),
+        );
+        _hasMore = resp != null && resp['hasMore'] == true;
+        _nextCursor = resp?['nextCursor']?.toString();
+        loading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading more results: $e');
+      setState(() => loading = false);
+    }
   }
 
   Future<void> _fetchTopRated({int page = 1}) async {
@@ -545,51 +693,80 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           ),
-          if (loading)
+          if (loading && results.isEmpty)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (controller.text.trim().isNotEmpty || results.isNotEmpty)
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(12),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  childAspectRatio: 0.6,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: results.length,
-                itemBuilder: (_, index) {
-                  final movie = results[index];
+              child: ListView(
+                children: [
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(12),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 0.6,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                    itemCount: results.length,
+                    itemBuilder: (_, index) {
+                      final movie = results[index];
 
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MovieDetailScreen(imdbId: movie.id),
+                      return GestureDetector(
+                        onTap:
+                            () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MovieDetailScreen(
+                                  imdbId: movie.id,
+                                ),
+                              ),
+                            ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: _posterWithFallback(movie),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              movie.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  if (_hasMore)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: _posterWithFallback(movie),
+                      child: loading
+                          ? const Center(child: CircularProgressIndicator())
+                          : ElevatedButton(
+                            onPressed: _loadMore,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey[800],
+                            ),
+                            child: const Text(
+                              'Laad meer resultaten',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          movie.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
                     ),
-                  );
-                },
+                ],
               ),
             )
           else
