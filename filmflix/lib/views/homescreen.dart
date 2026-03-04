@@ -32,10 +32,13 @@ class HomeScreen extends StatelessWidget {
     final itemBackgroundColor = Colors.white;
     final shadowColor = isDarkMode ? Colors.black.withOpacity(0.25) : Colors.grey.withOpacity(0.4);
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
+return Scaffold(
+  extendBodyBehindAppBar: true,
 
-      appBar: AppBar(
+  body: CustomScrollView(
+    slivers: [
+      SliverAppBar(
+        pinned: true, // Zorgt ervoor dat de AppBar vast blijft staan
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -50,20 +53,14 @@ class HomeScreen extends StatelessWidget {
         centerTitle: true,
         foregroundColor: textColor,
       ),
-
-      body: Container(
-        decoration: BoxDecoration(gradient: backgroundGradient),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
+      SliverToBoxAdapter(
+        child: Container(
+          decoration: BoxDecoration(gradient: backgroundGradient),
+          child: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Cruciaal: genoeg ruimte bovenaan zodat content niet onder AppBar komt
-                SizedBox(
-                  height: MediaQuery.of(context).padding.top + kToolbarHeight + 32,
-                ),
-
+                // Verwijder de extra ruimte bovenaan, omdat SliverAppBar dit al afhandelt
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: LayoutBuilder(
@@ -199,7 +196,9 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildItem(
