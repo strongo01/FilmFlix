@@ -52,7 +52,23 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     // Gecentreerde tekst bovenaan (nu met ruimte voor statusbar + knop)
                     SizedBox(height: MediaQuery.of(context).padding.top + 16), // ruimte voor statusbar + marge
-
+                   Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: IconButton(
+                          icon: Icon(Icons.settings, color: textColor, size: 28),
+                          tooltip: 'Instellingen',
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const SettingsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                     /// Header
                     Center(
                       child: Text(
@@ -66,7 +82,8 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
+const SizedBox(height: 32),
+ 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: LayoutBuilder(
@@ -201,22 +218,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // Settings-knop – vast rechtsboven (onder statusbar)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8, // statusbar hoogte + kleine marge
-            right: 8,
-            child: IconButton(
-              icon: Icon(Icons.settings, color: textColor, size: 28),
-              tooltip: 'Instellingen',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(), // ← pas aan als je een aparte SettingsScreen hebt
-                  ),
-                );
-              },
-            ),
-          ),
+          
         ],
       ),
     );
