@@ -36,6 +36,7 @@ export default async function handler(req, res) {
         year_max,
         order_by,
         order_direction = 'asc',
+        cursor,
 
         // OMDB
         i,        // IMDb ID
@@ -114,8 +115,7 @@ export default async function handler(req, res) {
         addParam(params, 'year_min', year_min);
         addParam(params, 'year_max', year_max);
         addParam(params, 'order_by', order_by);
-        addParam(params, 'order_direction', order_direction);
-
+        addParam(params, 'order_direction', order_direction);        add_param(params, 'cursor', cursor);
         url = `https://${RAPID_HOST}/shows/search/filters?` + new URLSearchParams(params);
 
         headers = {

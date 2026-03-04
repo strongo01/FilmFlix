@@ -24,6 +24,47 @@ class _SearchScreenState extends State<SearchScreen> {
   List<MovieSearchItem> popular = [];
   bool loadingTopRated = false;
   bool loadingPopular = false;
+  String? nextCursor;
+  bool hasMore = false;
+  Map<String, dynamic> lastFilterParams = {};
+
+  Future<void> _loadMore() async {
+    if (!hasMore || nextCursor == null || loading) return;
+    setState(() => loading = true);
+    try {
+      final resp = await MovieApi.filterAdvanced(
+        country: lastFilterParams['country'],
+        seriesGranularity: lastFilterParams['seriesGranularity'],
+        outputLanguage: lastFilterParams['outputLanguage'],
+        showType: lastFilterParams['showType'],
+        ratingMin: lastFilterParams['ratingMin'],
+        ratingMax: lastFilterParams['ratingMax'],
+        catalogs: lastFilterParams['catalogs'],
+        genres: lastFilterParams['genres'],
+        genresRelation: lastFilterParams['genresRelation'],
+        keyword: lastFilterParams['keyword'],
+        showOriginalLanguage: lastFilterParams['showOriginalLanguage'],
+        yearMin: lastFilterParams['yearMin'],
+        yearMax: lastFilterParams['yearMax'],
+        orderBy: lastFilterParams['orderBy'],
+        orderDirection: lastFilterParams['orderDirection'],
+        cursor: nextCursor,
+      );
+
+      final resultsList = resp['shows'] ?? resp['results'] ?? resp['result'] ?? [];
+      final List<dynamic> items = resultsList is List ? resultsList : [];
+      
+      setState(() {
+        results.addAll(items.map((e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map))).toList());
+        hasMore = resp['hasMore'] ?? false;
+        nextCursor = resp['nextCursor'];
+      });
+    } catch (e) {
+      debugPrint('Load more failed: $e');
+    } finally {
+      setState(() => loading = false);
+    }
+  }
 
   Future<void> search() async {
     final query = controller.text.trim();
@@ -127,6 +168,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       onChanged: (v) => keyword = v,
                     ),
                   ),
+                  const SizedBox(height: 8),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
                     child: Wrap(
@@ -197,43 +239,64 @@ class _SearchScreenState extends State<SearchScreen> {
                             if (mounted) this.setState(() => loading = true);
                             // build params
                             final genresParam = selectedGenres.isEmpty ? null : selectedGenres.join(',');
+                            lastFilterParams = {
+                              'country': country,
+                              'seriesGranularity': seriesGranularity,
+                              'outputLanguage': outputLanguage,
+                              'showType': showType.isEmpty ? null : showType,
+                              'ratingMin': ratingMin,
+                              'ratingMax': ratingMax,
+                              'catalogs': catalogs.isEmpty ? null : catalogs,
+                              'genres': genresParam,
+                              'genresRelation': genresRelation,
+                              'keyword': keyword.isEmpty ? null : keyword,
+                              'showOriginalLanguage': showOriginalLanguage.isEmpty ? null : showOriginalLanguage,
+                              'yearMin': yearMin,
+                              'yearMax': yearMax,
+                              'orderBy': 'rating',
+                              'orderDirection': 'desc'
+                            };
+
                             Map<String, dynamic>? resp;
                             try {
                               resp = await MovieApi.filterAdvanced(
-                                country: country,
-                                seriesGranularity: seriesGranularity,
-                                outputLanguage: outputLanguage,
-                                showType: showType.isEmpty ? null : showType,
-                                ratingMin: ratingMin,
-                                ratingMax: ratingMax,
-                                catalogs: catalogs.isEmpty ? null : catalogs,
-                                genres: genresParam,
-                                genresRelation: genresRelation,
-                                keyword: keyword.isEmpty ? null : keyword,
-                                showOriginalLanguage: showOriginalLanguage.isEmpty ? null : showOriginalLanguage,
-                                yearMin: yearMin,
-                                yearMax: yearMax,
-                                orderBy: orderBy.isEmpty ? null : orderBy,
-                                orderDirection: orderDirection.isEmpty ? null : orderDirection,
+                                country: lastFilterParams['country'],
+                                seriesGranularity: lastFilterParams['seriesGranularity'],
+                                outputLanguage: lastFilterParams['outputLanguage'],
+                                showType: lastFilterParams['showType'],
+                                ratingMin: lastFilterParams['ratingMin'],
+                                ratingMax: lastFilterParams['ratingMax'],
+                                catalogs: lastFilterParams['catalogs'],
+                                genres: lastFilterParams['genres'],
+                                genresRelation: lastFilterParams['genresRelation'],
+                                keyword: lastFilterParams['keyword'],
+                                showOriginalLanguage: lastFilterParams['showOriginalLanguage'],
+                                yearMin: lastFilterParams['yearMin'],
+                                yearMax: lastFilterParams['yearMax'],
+                                orderBy: lastFilterParams['orderBy'],
+                                orderDirection: lastFilterParams['orderDirection'],
                               );
                             } catch (e) {
                               // fallback: try the simpler filter endpoint which may accept minimal params (e.g., only genres)
                               try {
                                 resp = await MovieApi.filter(
-                                  country: country,
-                                  ratingMin: ratingMin ?? 0,
-                                  ratingMax: ratingMax ?? 100,
-                                  genres: genresParam,
-                                  catalogs: catalogs.isEmpty ? null : catalogs,
-                                  yearMin: yearMin,
-                                  yearMax: yearMax,
-                                  orderBy: orderBy.isEmpty ? null : orderBy,
+                                  country: lastFilterParams['country'],
+                                  ratingMin: lastFilterParams['ratingMin'] ?? 0,
+                                  ratingMax: lastFilterParams['ratingMax'] ?? 100,
+                                  genres: lastFilterParams['genres'],
+                                  catalogs: lastFilterParams['catalogs'],
+                                  yearMin: lastFilterParams['yearMin'],
+                                  yearMax: lastFilterParams['yearMax'],
+                                  orderBy: lastFilterParams['orderBy'],
+                                  orderDirection: lastFilterParams['orderDirection'],
                                 );
                               } catch (e2) {
                                 debugPrint('Filter failed (advanced & fallback): $e / $e2');
-                                if (mounted) ScaffoldMessenger.of(ctx).showSnackBar(
-                                  const SnackBar(content: Text('Filter mislukte — probeer het later opnieuw')),
-                                );
+                                if (mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    const SnackBar(content: Text('Filter mislukte — probeer het later opnieuw')),
+                                  );
+                                }
                                 if (mounted) this.setState(() => loading = false);
                                 return;
                               }
@@ -247,10 +310,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
                             // map results to MovieSearchItem
                             final List<dynamic> items = resultsList is List ? resultsList : [];
-                            if (mounted) this.setState(() {
-                              results = items.map((e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
-                              loading = false;
-                            });
+                            if (mounted) {
+                              this.setState(() {
+                                hasMore = resp?['hasMore'] ?? false;
+                                nextCursor = resp?['nextCursor'];
+                                results = items.map((e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+                                loading = false;
+                              });
+                            }
 
                             Navigator.of(ctx).pop();
                           },
@@ -557,8 +624,16 @@ class _SearchScreenState extends State<SearchScreen> {
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                 ),
-                itemCount: results.length,
+                itemCount: results.length + (hasMore ? 1 : 0),
                 itemBuilder: (_, index) {
+                  if (index == results.length) {
+                    return Center(
+                      child: IconButton(
+                        icon: const Icon(Icons.add_circle_outline, size: 40),
+                        onPressed: _loadMore,
+                      ),
+                    );
+                  }
                   final movie = results[index];
 
                   return GestureDetector(

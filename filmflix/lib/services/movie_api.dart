@@ -72,6 +72,7 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     int? yearMin,
     int? yearMax,
     String? orderBy,
+    String? orderDirection,
   }) {
     return _get({
       'type': 'filter',
@@ -83,6 +84,7 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
       'year_min': yearMin,
       'year_max': yearMax,
       'order_by': orderBy,
+      'order_direction': orderDirection,
     });
   }
 
@@ -103,6 +105,7 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
     int? yearMax,
     String? orderBy,
     String? orderDirection,
+    String? cursor,
   }) {
     return _get({
       'type': 'filter',
@@ -121,6 +124,7 @@ class MovieApi { //  API Helper class voor alle movie-gerelateerde API calls
       'year_max': yearMax,
       'order_by': orderBy,
       'order_direction': orderDirection,
+      'cursor': cursor,
     });
   }
 
