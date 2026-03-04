@@ -29,19 +29,16 @@ class HomeScreen extends StatelessWidget {
           );
 
     final textColor = isDarkMode ? Colors.white : Colors.black;
-
     final itemBackgroundColor = Colors.white;
-    final shadowColor = isDarkMode
-        ? Colors.black.withOpacity(0.25)
-        : Colors.grey.withOpacity(0.4);
+    final shadowColor = isDarkMode ? Colors.black.withOpacity(0.25) : Colors.grey.withOpacity(0.4);
 
     return Scaffold(
-      extendBodyBehindAppBar: true, // ← Dit zorgt ervoor dat de body achter de AppBar doorloopt
+      extendBodyBehindAppBar: true,
 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        scrolledUnderElevation: 0, // voorkomt schaduw bij scrollen
+        scrolledUnderElevation: 0,
         title: Text(
           "Welkom bij uw Bioscoopomgeving",
           style: TextStyle(
@@ -57,24 +54,25 @@ class HomeScreen extends StatelessWidget {
       body: Container(
         decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final screenWidth = constraints.maxWidth;
-              final isSmallPhone = screenWidth < 360;
-              final crossAxisCount = screenWidth < 600 ? 2 : 3;
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Cruciaal: genoeg ruimte bovenaan zodat content niet onder AppBar komt
+                SizedBox(
+                  height: MediaQuery.of(context).padding.top + kToolbarHeight + 32,
+                ),
 
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Ruimte maken zodat de content onder de AppBar begint
-                      SizedBox(height: kToolbarHeight + 24),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final screenWidth = constraints.maxWidth;
+                      final isSmallPhone = screenWidth < 360;
+                      final crossAxisCount = screenWidth < 600 ? 2 : 3;
 
-                      // Je grid
-                      GridView.count(
+                      return GridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisCount: crossAxisCount,
@@ -149,7 +147,6 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ),
 
-                          // Admin knop alleen voor admins
                           FutureBuilder<bool>(
                             future: () async {
                               try {
@@ -172,7 +169,9 @@ class HomeScreen extends StatelessWidget {
                               }
                             }(),
                             builder: (context, snapshot) {
-                              if (snapshot.hasData && snapshot.data == true) {
+                              if (snapshot.connectionState == ConnectionState.done &&
+                                  snapshot.hasData &&
+                                  snapshot.data == true) {
                                 return _buildItem(
                                   "assets/icons/appicon.png",
                                   "Admin",
@@ -189,14 +188,14 @@ class HomeScreen extends StatelessWidget {
                             },
                           ),
                         ],
-                      ),
-
-                      const SizedBox(height: 40), // onderkant ruimte
-                    ],
+                      );
+                    },
                   ),
                 ),
-              );
-            },
+
+                const SizedBox(height: 40),
+              ],
+            ),
           ),
         ),
       ),
@@ -243,10 +242,9 @@ class HomeScreen extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: textColor,
               letterSpacing: 0.3,
             ),
           ),
