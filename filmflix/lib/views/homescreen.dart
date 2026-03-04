@@ -4,6 +4,7 @@ import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
 import 'package:cinetrackr/views/kaart.dart';
 import 'package:cinetrackr/views/search_screen.dart';
+import 'package:cinetrackr/views/settingscreen.dart';
 import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,6 +31,8 @@ class HomeScreen extends StatelessWidget {
 
     final textColor = isDarkMode ? Colors.white : Colors.black;
 
+    // Ensure 'isSmallPhone', 'itemBackgroundColor', and 'shadowColor' are defined in the correct scope
+    final isSmallPhone = MediaQuery.of(context).size.width < 360;
     final itemBackgroundColor = Colors.white;
     final shadowColor = isDarkMode
         ? Colors.black.withOpacity(0.25)
@@ -50,19 +53,16 @@ class HomeScreen extends StatelessWidget {
                     // Gecentreerde tekst bovenaan (nu met ruimte voor statusbar + knop)
                     SizedBox(height: MediaQuery.of(context).padding.top + 16), // ruimte voor statusbar + marge
 
-                        /// Header
-                        Center(
-                          child: Text(
-                            "Welkom bij CineTrackr",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: isSmallPhone ? 22 : 28,
-                              fontWeight: FontWeight.w700,
-                              color: textColor,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          textAlign: TextAlign.center,
+                    /// Header
+                    Center(
+                      child: Text(
+                        "Welkom bij CineTrackr",
+                        textAlign: TextAlign.center, // Corrected parameter
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
@@ -72,7 +72,6 @@ class HomeScreen extends StatelessWidget {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final screenWidth = constraints.maxWidth;
-                          final isSmallPhone = screenWidth < 360;
                           final crossAxisCount = screenWidth < 600 ? 2 : 3;
 
                           return GridView.count(
@@ -212,7 +211,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const AdminScreen(), // ← pas aan als je een aparte SettingsScreen hebt
+                    builder: (context) => const SettingsScreen(), // ← pas aan als je een aparte SettingsScreen hebt
                   ),
                 );
               },
