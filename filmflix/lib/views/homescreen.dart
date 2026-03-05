@@ -10,12 +10,108 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureDisplayName());
+  }
+
+  Future<void> _ensureDisplayName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return; // not logged in
+
+      final uid = user.uid;
+      final docRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      final doc = await docRef.get();
+      final data = doc.data();
+      final displayNameFromDoc = data != null ? (data['displayName'] as String?) : null;
+
+      // ONLY check the Firestore user document — ignore Firebase Auth displayName.
+      if (displayNameFromDoc == null || displayNameFromDoc.trim().isEmpty) {
+        // require user to enter a display name stored in the users/{uid} doc
+        await _promptForDisplayName(uid);
+      }
+    } catch (e) {
+      debugPrint('Error ensuring displayName: $e');
+    }
+  }
+
+  Future<void> _promptForDisplayName(String uid) async {
+    final formKey = GlobalKey<FormState>();
+    final ctrl = TextEditingController();
+
+    // showDialog with barrierDismissible false and prevent back button
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+              title: const Text('Voer je naam in.'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.'),
+                  const SizedBox(height: 12),
+                  Form(
+                    key: formKey,
+                    child: TextFormField(
+                      controller: ctrl,
+                      autofocus: true,
+                      decoration: const InputDecoration(labelText: 'Je naam'),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Vul je naam in';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+                    final name = ctrl.text.trim();
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await user.updateDisplayName(name);
+                        await user.reload();
+                      }
+                      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+                      await usersRef.set({
+                        'displayName': name,
+                        'email': user?.email,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      }, SetOptions(merge: true));
+                    } catch (e) {
+                      debugPrint('Failed saving displayName from dialog: $e');
+                    }
+                    if (mounted) Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Opslaan en doorgaan'),
+                ),
+              ],
+            ),
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     final backgroundGradient = isDarkMode
         ? const LinearGradient(
@@ -45,27 +141,55 @@ class HomeScreen extends StatelessWidget {
           Container(
             decoration: BoxDecoration(gradient: backgroundGradient),
             child: SafeArea(
-              child: SingleChildScrollView(  // ← scroll alleen de inhoud
+              child: SingleChildScrollView(
+                // ← scroll alleen de inhoud
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Gecentreerde tekst bovenaan (nu met ruimte voor statusbar + knop)
-                    SizedBox(height: MediaQuery.of(context).padding.top + 16), // ruimte voor statusbar + marge
-
-                    /// Header
-                    Center(
-                      child: Text(
-                        "Welkom bij CineTrackr",
-                        textAlign: TextAlign.center, // Corrected parameter
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                          letterSpacing: 0.5,
+                    //SizedBox(
+                      //height: MediaQuery.of(context).padding.top + 16,
+                    //), // ruimte voor statusbar + marge
+                    Row(
+                      children: [
+                        const SizedBox(width: 44), // Ruimte voor de knop aan de linkerkant
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              "Welkom bij CineTrackr",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: textColor,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.settings,
+                              color: textColor,
+                              size: 28,
+                            ),
+                            tooltip: 'Instellingen',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
+
+                    const SizedBox(height: 32),
 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -90,7 +214,9 @@ class HomeScreen extends StatelessWidget {
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const FilmNowScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const FilmNowScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -101,7 +227,9 @@ class HomeScreen extends StatelessWidget {
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const FoodScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const FoodScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -112,7 +240,9 @@ class HomeScreen extends StatelessWidget {
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const SearchScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -123,7 +253,9 @@ class HomeScreen extends StatelessWidget {
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const WatchlistScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const WatchlistScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -134,7 +266,10 @@ class HomeScreen extends StatelessWidget {
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const CustomerServiceScreen()),
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const CustomerServiceScreen(),
+                                  ),
                                 ),
                               ),
                               _buildItem(
@@ -145,13 +280,16 @@ class HomeScreen extends StatelessWidget {
                                 shadowColor,
                                 () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (_) => const CinemasMapView()),
+                                  MaterialPageRoute(
+                                    builder: (_) => const CinemasMapView(),
+                                  ),
                                 ),
                               ),
                               FutureBuilder<bool>(
                                 future: () async {
                                   try {
-                                    final user = FirebaseAuth.instance.currentUser;
+                                    final user =
+                                        FirebaseAuth.instance.currentUser;
                                     if (user == null) return false;
                                     final doc = await FirebaseFirestore.instance
                                         .collection('users')
@@ -160,9 +298,15 @@ class HomeScreen extends StatelessWidget {
                                     final data = doc.data();
                                     if (data == null) return false;
                                     final role = data['role'];
-                                    if (role is String) return role.toLowerCase() == 'admin';
+                                    if (role is String)
+                                      return role.toLowerCase() == 'admin';
                                     if (role is List) {
-                                      return role.any((e) => (e?.toString().toLowerCase() ?? '') == 'admin');
+                                      return role.any(
+                                        (e) =>
+                                            (e?.toString().toLowerCase() ??
+                                                '') ==
+                                            'admin',
+                                      );
                                     }
                                     return false;
                                   } catch (_) {
@@ -170,7 +314,8 @@ class HomeScreen extends StatelessWidget {
                                   }
                                 }(),
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.done &&
+                                  if (snapshot.connectionState ==
+                                          ConnectionState.done &&
                                       snapshot.hasData &&
                                       snapshot.data == true) {
                                     return _buildItem(
@@ -181,7 +326,9 @@ class HomeScreen extends StatelessWidget {
                                       shadowColor,
                                       () => Navigator.push(
                                         context,
-                                        MaterialPageRoute(builder: (_) => const AdminScreen()),
+                                        MaterialPageRoute(
+                                          builder: (_) => const AdminScreen(),
+                                        ),
                                       ),
                                     );
                                   }
@@ -198,23 +345,6 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-          ),
-
-          // Settings-knop – vast rechtsboven (onder statusbar)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8, // statusbar hoogte + kleine marge
-            right: 8,
-            child: IconButton(
-              icon: Icon(Icons.settings, color: textColor, size: 28),
-              tooltip: 'Instellingen',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(), // ← pas aan als je een aparte SettingsScreen hebt
-                  ),
-                );
-              },
             ),
           ),
         ],
