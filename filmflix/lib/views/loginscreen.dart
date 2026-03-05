@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cinetrackr/main.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -35,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   StreamSubscription<User?>?
   _authSub; // voor de auth state listener dat is om automatisch te navigeren als de gebruiker succesvol inlogt
   final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
@@ -45,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     // dispose is een functie die wordt aangeroepen wanneer deze pagina wordt gesloten. Hierin zorgen we ervoor dat we de auth state listener annuleren, en dat we de tekstcontrollers opruimen om geheugen
     _authSub?.cancel();
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
@@ -82,10 +85,25 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordCtrl.text,
         );
       } else {
-        await auth.createUserWithEmailAndPassword(
+        final cred = await auth.createUserWithEmailAndPassword(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+        await cred.user?.updateDisplayName(_nameCtrl.text.trim());
+        // Save user profile to Firestore user document
+        try {
+          final user = cred.user;
+          if (user != null) {
+            final usersRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+            await usersRef.set({
+              'displayName': _nameCtrl.text.trim(),
+              'email': _emailCtrl.text.trim(),
+              'createdAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        } catch (e) {
+          debugPrint('Failed to write user doc after registration: $e');
+        }
       }
       if (!mounted) return;
       if (!widget.returnAfterLogin) {
@@ -111,9 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
       googleProvider.setCustomParameters({
         'prompt': 'select_account',
       }); //vraag account selectie
-      return await FirebaseAuth.instance.signInWithPopup(
+      final userCred = await FirebaseAuth.instance.signInWithPopup(
         googleProvider,
       ); //inloggen met popup
+      await _saveUserDoc(userCred.user);
+      return userCred;
     }
 
     try {
@@ -156,9 +176,11 @@ class _LoginScreenState extends State<LoginScreen> {
         accessToken: accessToken,
       );
 
-      return await FirebaseAuth.instance.signInWithCredential(
+      final userCred = await FirebaseAuth.instance.signInWithCredential(
         credential,
       ); //log in met credential
+      await _saveUserDoc(userCred.user);
+      return userCred;
     } on PlatformException catch (e, s) {
       //specifieke foutafhandeling voor platform exceptions
       if (e.code.toLowerCase().contains('cancel')) {
@@ -182,13 +204,15 @@ class _LoginScreenState extends State<LoginScreen> {
       provider.addScope('user:email');
 
       debugPrint('GitHubSignIn: Requesting sign-in from Firebase...');
+      UserCredential? userCred;
       if (kIsWeb) {
-        await FirebaseAuth.instance.signInWithPopup(provider);
+        userCred = await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
-        await FirebaseAuth.instance.signInWithProvider(provider);
+        userCred = await FirebaseAuth.instance.signInWithProvider(provider);
       }
 
       debugPrint('GitHubSignIn: Sign-in successful');
+      await _saveUserDoc(userCred.user);
       if (!mounted) return;
       if (!widget.returnAfterLogin) {
         Navigator.of(
@@ -296,6 +320,27 @@ Future<UserCredential> signInWithApple() async {
       'AppleSignIn: providerData=${userAfter?.providerData.map((p) => "${p.providerId}:${p.displayName}").toList()}',
     );
 
+    // Ensure we save the user's name into Firestore user document (only if Apple provided a name)
+    try {
+      final uid = userAfter?.uid;
+      final given = appleCredential.givenName?.trim();
+      if (uid != null && given != null && given.isNotEmpty) {
+        final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+        final doc = await usersRef.get();
+        final shouldSet = !doc.exists ||
+            (doc.data()?['displayName'] == null || (doc.data()?['displayName'] as String).trim().isEmpty);
+        if (shouldSet) {
+          await usersRef.set({
+            'displayName': given,
+            'email': appleCredential.email ?? userAfter?.email,
+            'createdAt': doc.exists ? FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+      }
+    } catch (e) {
+      debugPrint('AppleSignIn: failed to write user doc: $e');
+    }
+
     return userCredential;
   }
 
@@ -344,6 +389,22 @@ Future<UserCredential> signInWithApple() async {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        if (!_isLogin) ...[
+                          TextFormField(
+                            controller: _nameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Naam',
+                              prefixIcon: Icon(Icons.person_outline),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Vul je naam in';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         TextFormField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
@@ -496,3 +557,19 @@ Future<UserCredential> signInWithApple() async {
     }
   }
 }
+
+  Future<void> _saveUserDoc(User? user, {String? displayName}) async {
+    if (user == null) return;
+    final uid = user.uid;
+    final name = (displayName ?? user.displayName)?.trim();
+    try {
+      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      await usersRef.set({
+        if (name != null && name.isNotEmpty) 'displayName': name,
+        'email': user.email,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('saveUserDoc failed: $e');
+    }
+  }

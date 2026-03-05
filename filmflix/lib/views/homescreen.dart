@@ -10,8 +10,103 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureDisplayName());
+  }
+
+  Future<void> _ensureDisplayName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return; // not logged in
+
+      final uid = user.uid;
+      final docRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      final doc = await docRef.get();
+      final data = doc.data();
+      final displayNameFromDoc = data != null ? (data['displayName'] as String?) : null;
+
+      // ONLY check the Firestore user document — ignore Firebase Auth displayName.
+      if (displayNameFromDoc == null || displayNameFromDoc.trim().isEmpty) {
+        // require user to enter a display name stored in the users/{uid} doc
+        await _promptForDisplayName(uid);
+      }
+    } catch (e) {
+      debugPrint('Error ensuring displayName: $e');
+    }
+  }
+
+  Future<void> _promptForDisplayName(String uid) async {
+    final formKey = GlobalKey<FormState>();
+    final ctrl = TextEditingController();
+
+    // showDialog with barrierDismissible false and prevent back button
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+              title: const Text('Voer je naam in.'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.'),
+                  const SizedBox(height: 12),
+                  Form(
+                    key: formKey,
+                    child: TextFormField(
+                      controller: ctrl,
+                      autofocus: true,
+                      decoration: const InputDecoration(labelText: 'Je naam'),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Vul je naam in';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+                    final name = ctrl.text.trim();
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await user.updateDisplayName(name);
+                        await user.reload();
+                      }
+                      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+                      await usersRef.set({
+                        'displayName': name,
+                        'email': user?.email,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      }, SetOptions(merge: true));
+                    } catch (e) {
+                      debugPrint('Failed saving displayName from dialog: $e');
+                    }
+                    if (mounted) Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Opslaan en doorgaan'),
+                ),
+              ],
+            ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +148,9 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Gecentreerde tekst bovenaan (nu met ruimte voor statusbar + knop)
-                    SizedBox(
-                      height: MediaQuery.of(context).padding.top + 16,
-                    ), // ruimte voor statusbar + marge
+                    //SizedBox(
+                      //height: MediaQuery.of(context).padding.top + 16,
+                    //), // ruimte voor statusbar + marge
                     Row(
                       children: [
                         const SizedBox(width: 44), // Ruimte voor de knop aan de linkerkant

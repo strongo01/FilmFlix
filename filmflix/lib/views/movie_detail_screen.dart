@@ -19,33 +19,10 @@ class MovieDetailScreen extends StatefulWidget {
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
+
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
-  static const Map<String, String> _serviceAssetMap = {
-    // Deze map bevat een mapping van streaming service namen naar de corresponderende asset bestandsnamen voor hun logo's. We gebruiken deze map om het juiste logo te tonen voor elke streaming optie die we van de API krijgen. De keys in deze map zijn de mogelijke waarden van 'serviceName' die we in de streaming opties kunnen tegenkomen, en de values zijn de bestandsnamen van de logo
-    'Netflix': 'netflix',
-    'Amazon Prime Video': 'prime_video',
-    'Prime Video': 'prime_video',
-    'Disney+': 'disney+',
-    'HBO Max': 'hbo_max',
-    'Hulu': 'hulu',
-    'Apple TV': 'apple_tv',
-    'Google Play': 'googleplay',
-    'YouTube': 'youtube',
-    'Crunchyroll': 'crunchyroll',
-    'Curiosity Stream': 'curiosity_stream',
-    'Mejane': 'mejane',
-    'MUBI': 'mubi',
-    'SkyShowtime': 'skyshowtime',
-    'Zee5': 'zee5',
-  };
-
-  Map<String, dynamic>? _rapidData;
-  Map<String, dynamic>? _omdbData;
-  String? _poster;
-  String? _title;
-  String? _overview;
   String? _rating;
   List<String> _genres = [];
   List<String> _creators = [];
@@ -62,9 +39,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   User? _user;
   StreamSubscription<User?>? _authSub;
   bool _isInWatchlist = false;
-  final Set<String> _seenSet =
-      {}; // Deze set bevat de identifiers van de afleveringen die de gebruiker heeft gezien. Voor films kan dit leeg blijven, maar voor series kunnen we hier bijvoorbeeld strings in opslaan zoals "S1E3" om aan te geven dat de gebruiker seizoen 1, aflevering 3 heeft gezien. We gebruiken een set omdat we snel willen kunnen controleren of een bepaalde aflevering al als gezien is gemarkeerd.
+  final Set<String> _seenSet = {};
   bool _loadingUserData = false;
+  bool _isSeenFilm = false;
+  Map<String, dynamic>? _rapidData;
+  Map<String, dynamic>? _omdbData;
+  String? _poster;
+  String? _title;
+  String? _overview;
+  final Map<String, String> _serviceAssetMap = {};
 
   String _formatStreamingType(Map<String, dynamic> option) {
     // Deze functie neemt een streaming optie (zoals die we van de API krijgen) en formatteert het type van de optie in een leesbaar formaat. We kijken naar het 'type' veld van de optie, en afhankelijk van of het een abonnement, koopoptie, of huur optie is, formatteren we het label dienovereenkomstig. Voor koop- en huur opties voegen we ook de prijs toe als deze beschikbaar is. Dit maakt het duidelijker voor de gebruiker wat voor soort streaming optie het is en wat de kosten zijn.
@@ -82,6 +65,30 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         return price != null ? 'Rent • $price' : 'Rent';
       default:
         return type ?? '';
+    }
+  }
+
+  Future<void> _markFilmSeen() async {
+    final u = FirebaseAuth.instance.currentUser;
+    if (u == null) {
+      final go = await _ensureLoggedInWithPrompt(context);
+      if (!go) return;
+    }
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    setState(() => _loadingUserData = true);
+    try {
+      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      await usersRef.set({
+        'seenFilm': {widget.imdbId: true},
+      }, SetOptions(merge: true));
+      setState(() => _isSeenFilm = true);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gemarkeerd als gezien')));
+    } catch (e, s) {
+      debugPrint('Error marking film seen: $e\n$s');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kon status niet bijwerken')));
+    } finally {
+      setState(() => _loadingUserData = false);
     }
   }
 
@@ -596,11 +603,36 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       final imdbSeenList = rawSeen.map((e) => e.toString().trim()).toList();
       debugPrint('Found seen items: $imdbSeenList');
 
+      // check seenFilm.<imdbId> as nested map or dotted key
+      bool isSeenFilm = false;
+      try {
+        if (data.containsKey('seenFilm') && data['seenFilm'] is Map) {
+          final sf = data['seenFilm'] as Map;
+          if (sf.containsKey(widget.imdbId)) {
+            isSeenFilm = sf[widget.imdbId] == true;
+          }
+        }
+        // fallback: dotted key
+        if (!isSeenFilm && data.containsKey('seenFilm.${widget.imdbId}')) {
+          isSeenFilm = data['seenFilm.${widget.imdbId}'] == true;
+        }
+      } catch (e) {
+        debugPrint('Error reading seenFilm flag: $e');
+      }
+
       setState(() {
         // Nadat we de watchlist en seen episodes hebben verwerkt, updaten we onze state variabelen. We zetten _isInWatchlist op true als de imdbId van de huidige film/serie voorkomt in de watchlist van de gebruiker. We vullen _seenSet met de lijst van gezien afleveringen die we hebben gevonden, zodat we deze kunnen gebruiken om te controleren welke afleveringen als gezien moeten worden gemarkeerd in de UI.
         _isInWatchlist = watchlist.contains(widget.imdbId);
         _seenSet.clear();
         _seenSet.addAll(imdbSeenList);
+        // Ensure movie-level "movie" key reflects seenFilm flag so the
+        // movie 'Gezien' checkbox reads correct state regardless of how
+        // the data was stored (seenFilm map vs seenEpisodes list).
+        if (isSeenFilm)
+          _seenSet.add('movie');
+        else
+          _seenSet.remove('movie');
+        _isSeenFilm = isSeenFilm;
       });
     } catch (e, s) {
       debugPrint('Error loading user data: $e\n$s');
@@ -1177,7 +1209,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       return Scaffold(body: Center(child: Text('Error: $_error')));
     }
     final isMovie =
-        (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie';
+      (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie' ||
+      (_rapidData?['itemType']?.toString().toLowerCase() ?? '') == 'movie' ||
+      (_rapidData?['type']?.toString().toLowerCase() ?? '') == 'movie' ||
+      (_rapidData?['showType']?.toString().toLowerCase() ?? '') == 'movie' ||
+      (_rapidData?['titleType']?.toString().toLowerCase() ?? '') == 'movie';
 
     final rapid = _rapidData!;
     final poster = _poster;
