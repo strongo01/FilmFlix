@@ -115,7 +115,7 @@ export default async function handler(req, res) {
         addParam(params, 'year_min', year_min);
         addParam(params, 'year_max', year_max);
         addParam(params, 'order_by', order_by);
-        addParam(params, 'order_direction', order_direction);        
+        addParam(params, 'order_direction', order_direction);
         addParam(params, 'cursor', cursor);
         url = `https://${RAPID_HOST}/shows/search/filters?` + new URLSearchParams(params);
 

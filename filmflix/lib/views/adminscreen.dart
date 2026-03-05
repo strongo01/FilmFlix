@@ -320,7 +320,22 @@ class _AdminScreenState extends State<AdminScreen> {
             return ListTile(
               leading: const CircleAvatar(child: Icon(Icons.person)),
               title: Text(question, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 6),
+                  Builder(builder: (_) {
+                    final userName = (data['name'] ?? 'Gebruiker').toString();
+                    final adminNames = (data['adminNames'] as List?) ?? [];
+                    final adminText = adminNames.isNotEmpty ? 'Admins: ${adminNames.map((e) => e.toString()).join(', ')}' : '';
+                    return adminText.isNotEmpty
+                        ? Text(adminText, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.grey))
+                        : const SizedBox.shrink();
+                  }),
+                ],
+              ),
               trailing: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -354,17 +369,28 @@ class _AdminScreenState extends State<AdminScreen> {
     final TextEditingController replyCtrl = TextEditingController();
     final ScrollController scrollCtrl = ScrollController();
 
-    // build message list
+    // build message list (include sender names)
     final List<Map<String, dynamic>> messages = [];
-    messages.add({'text': questionText, 'isAdmin': false, 'ts': data['createdAt']});
-    if (answerText.isNotEmpty) messages.add({'text': answerText, 'isAdmin': true, 'ts': data['answerAt'] ?? data['updatedAt']});
+    final ownerName = (data['name'] ?? 'Gebruiker').toString();
+    messages.add({'text': questionText, 'isAdmin': false, 'ts': data['createdAt'], 'name': ownerName});
+    if (answerText.isNotEmpty) messages.add({'text': answerText, 'isAdmin': true, 'ts': data['answerAt'] ?? data['updatedAt'], 'name': (data['answerAdminName'] ?? 'Admin').toString()});
     for (final ar in adminReplies) {
-      if (ar is Map && ar['text'] != null) messages.add({'text': ar['text'].toString(), 'isAdmin': true, 'ts': ar['createdAt']});
-      else messages.add({'text': ar?.toString() ?? '', 'isAdmin': true, 'ts': null});
+      if (ar is Map) {
+        final textVal = (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ?? ar.toString();
+        final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin').toString();
+        messages.add({'text': textVal, 'isAdmin': true, 'ts': ar['createdAt'], 'name': adminName});
+      } else {
+        messages.add({'text': ar?.toString() ?? '', 'isAdmin': true, 'ts': null, 'name': 'Admin'});
+      }
     }
     for (final ur in userReplies) {
-      if (ur is Map && ur['text'] != null) messages.add({'text': ur['text'].toString(), 'isAdmin': false, 'ts': ur['createdAt']});
-      else messages.add({'text': ur?.toString() ?? '', 'isAdmin': false, 'ts': null});
+      if (ur is Map) {
+        final textVal = (ur['text'] ?? ur['message'])?.toString() ?? ur.toString();
+        final uName = (ur['name'] ?? ownerName).toString();
+        messages.add({'text': textVal, 'isAdmin': false, 'ts': ur['createdAt'], 'name': uName});
+      } else {
+        messages.add({'text': ur?.toString() ?? '', 'isAdmin': false, 'ts': null, 'name': ownerName});
+      }
     }
 
     // sort messages by timestamp (oldest -> newest). support Timestamp, DateTime, int, String
@@ -396,17 +422,28 @@ class _AdminScreenState extends State<AdminScreen> {
         final aText = (d['answer'] ?? '').toString();
         final aReplies = (d['adminReplies'] as List?) ?? [];
         final uReplies = (d['userReplies'] as List?) ?? [];
+        final ownerName = (d['name'] ?? 'Gebruiker').toString();
 
         final List<Map<String, dynamic>> newMessages = [];
-        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt']});
-        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt']});
+        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt'], 'name': ownerName});
+        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt'], 'name': (d['answerAdminName'] ?? 'Admin').toString()});
         for (final ar in aReplies) {
-          if (ar is Map) newMessages.add({'text': ar['text']?.toString() ?? ar.toString(), 'isAdmin': true, 'ts': ar['createdAt']});
-          else newMessages.add({'text': ar?.toString() ?? '', 'isAdmin': true, 'ts': null});
+          if (ar is Map) {
+            final textVal = (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ?? ar.toString();
+            final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin').toString();
+            newMessages.add({'text': textVal, 'isAdmin': true, 'ts': ar['createdAt'], 'name': adminName});
+          } else {
+            newMessages.add({'text': ar?.toString() ?? '', 'isAdmin': true, 'ts': null, 'name': 'Admin'});
+          }
         }
         for (final ur in uReplies) {
-          if (ur is Map) newMessages.add({'text': ur['text']?.toString() ?? ur.toString(), 'isAdmin': false, 'ts': ur['createdAt']});
-          else newMessages.add({'text': ur?.toString() ?? '', 'isAdmin': false, 'ts': null});
+          if (ur is Map) {
+            final textVal = (ur['text'] ?? ur['message'])?.toString() ?? ur.toString();
+            final uName = (ur['name'] ?? ownerName).toString();
+            newMessages.add({'text': textVal, 'isAdmin': false, 'ts': ur['createdAt'], 'name': uName});
+          } else {
+            newMessages.add({'text': ur?.toString() ?? '', 'isAdmin': false, 'ts': null, 'name': ownerName});
+          }
         }
 
         int _tsToMs(dynamic ts) {
@@ -455,19 +492,34 @@ class _AdminScreenState extends State<AdminScreen> {
                         final m = messages[i];
                         final isAdmin = m['isAdmin'] == true;
                         final txt = (m['text'] ?? '').toString();
+                        final senderName = (m['name'] ?? (isAdmin ? 'Admin' : 'Gebruiker')).toString();
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                          child: Row(
-                            mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
+                          child: Column(
+                            crossAxisAlignment: isAdmin ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
-                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                decoration: BoxDecoration(
-                                  color: isAdmin ? Theme.of(context).colorScheme.primary : Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(12),
+                              Text(
+                                senderName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isAdmin ? Colors.white70 : Colors.grey.shade700,
                                 ),
-                                child: Text(txt, style: TextStyle(color: isAdmin ? Colors.white : Colors.black87)),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
+                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: isAdmin ? Theme.of(context).colorScheme.primary : Colors.grey.shade200,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(txt, style: TextStyle(color: isAdmin ? Colors.white : Colors.black87)),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -484,29 +536,45 @@ class _AdminScreenState extends State<AdminScreen> {
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
-                          final text = replyCtrl.text.trim();
-                          if (text.isEmpty) return;
-                          final reply = {
-                            'text': text,
-                            'createdAt': Timestamp.now(),
-                            'seenBy': <String>[],
-                          };
-                          try {
-                            await docRef.update({
-                              'adminReplies': FieldValue.arrayUnion([reply]),
-                              'updatedAt': FieldValue.serverTimestamp(),
-                              'userRead': false,
-                            });
-                            setStateDialog?.call(() {
-                              messages.add({'text': text, 'isAdmin': true, 'ts': Timestamp.now()});
-                              replyCtrl.clear();
-                            });
-                            await Future.delayed(const Duration(milliseconds: 100));
-                            if (scrollCtrl.hasClients) scrollCtrl.jumpTo(scrollCtrl.position.maxScrollExtent);
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
-                          }
-                        },
+                            final text = replyCtrl.text.trim();
+                            if (text.isEmpty) return;
+                            String adminName = 'Admin';
+                            String? adminId = FirebaseAuth.instance.currentUser?.uid;
+                            try {
+                              final currentUser = FirebaseAuth.instance.currentUser;
+                              if (adminId != null) {
+                                final udoc = await FirebaseFirestore.instance.collection('users').doc(adminId).get();
+                                final udata = udoc.data();
+                                adminName = (udata != null && udata['name'] != null) ? udata['name'].toString() : (currentUser?.displayName ?? 'Admin');
+                              } else {
+                                adminName = FirebaseAuth.instance.currentUser?.displayName ?? 'Admin';
+                              }
+                            } catch (_) {}
+
+                            final reply = {
+                              'text': text,
+                              'createdAt': Timestamp.now(),
+                              'seenBy': <String>[],
+                              'adminName': adminName,
+                              'adminId': adminId,
+                            };
+                            try {
+                              await docRef.update({
+                                'adminReplies': FieldValue.arrayUnion([reply]),
+                                'adminNames': FieldValue.arrayUnion([adminName]),
+                                'updatedAt': FieldValue.serverTimestamp(),
+                                'userRead': false,
+                              });
+                              setStateDialog?.call(() {
+                                //messages.add({'text': text, 'isAdmin': true, 'ts': Timestamp.now(), 'name': adminName});
+                                replyCtrl.clear();
+                              });
+                              await Future.delayed(const Duration(milliseconds: 100));
+                              if (scrollCtrl.hasClients) scrollCtrl.jumpTo(scrollCtrl.position.maxScrollExtent);
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
+                            }
+                          },
                         child: const Text('Verstuur'),
                       ),
                     ],

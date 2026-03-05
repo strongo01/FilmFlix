@@ -1137,11 +1137,17 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: const Text('Open'),
-                            onPressed: () => _openChatDialog(d.id),
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              _openChatDialog(d.id);
+                            },
                           ),
                         ],
                       ),
-                      onTap: () => _openChatDialog(d.id),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _openChatDialog(d.id);
+                      },
                     );
                   },
                 ),
@@ -1210,6 +1216,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final answerText = (data['answer'] ?? '').toString();
     final adminReplies = (data['adminReplies'] as List?) ?? [];
     final userReplies = (data['userReplies'] as List?) ?? [];
+    final userName = (data['name'] ?? 'Gebruiker').toString();
 
     final TextEditingController replyCtrl = TextEditingController();
     final ScrollController scrollCtrl = ScrollController();
@@ -1221,12 +1228,14 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       'text': questionText,
       'isAdmin': false,
       'ts': data['createdAt'],
+      'name': userName,
     });
     if (answerText.isNotEmpty)
       messages.add({
         'text': answerText,
         'isAdmin': true,
         'ts': data['answerAt'] ?? data['updatedAt'],
+        'name': 'Admin', // older answers may not have a name
       });
     for (final ar in adminReplies) {
       if (ar is Map) {
@@ -1249,9 +1258,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           }
         }
         final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
-        messages.add({'text': text, 'isAdmin': true, 'ts': ts});
+        final adminName = (ar['adminName'] ?? 'Admin').toString();
+        messages.add({'text': text, 'isAdmin': true, 'ts': ts, 'name': adminName});
       } else {
-        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null});
+        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': 'Admin'});
       }
     }
     for (final ur in userReplies) {
@@ -1266,9 +1276,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           );
           text = firstString?.toString() ?? ur.toString();
         }
-        messages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt']});
+        messages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt'], 'name': userName});
       } else {
-        messages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
+        messages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null, 'name': userName});
       }
     }
 
@@ -1309,10 +1319,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         final aText = (d['answer'] ?? '').toString();
         final aReplies = (d['adminReplies'] as List?) ?? [];
         final uReplies = (d['userReplies'] as List?) ?? [];
+        final uName = (d['name'] ?? 'Gebruiker').toString();
 
         final List<Map<String, dynamic>> newMessages = [];
-        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt']});
-        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt']});
+        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt'], 'name': uName});
+        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt'], 'name': 'Admin'});
         for (final ar in aReplies) {
           if (ar is Map) {
             String text;
@@ -1324,9 +1335,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
               text = firstString?.toString() ?? ar.toString();
             }
             final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
-            newMessages.add({'text': text, 'isAdmin': true, 'ts': ts});
+            final adminName = (ar['adminName'] ?? 'Admin').toString();
+            newMessages.add({'text': text, 'isAdmin': true, 'ts': ts, 'name': adminName});
           } else {
-            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null});
+            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': 'Admin'});
           }
         }
         for (final ur in uReplies) {
@@ -1334,12 +1346,15 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
             String text;
             if (ur['text'] != null && ur['text'].toString().trim().isNotEmpty) text = ur['text'].toString();
             else {
-              final firstString = ur.values.firstWhere((v) => v != null && v is String && v.toString().trim().isNotEmpty, orElse: () => null);
+              final firstString = ur.values.firstWhere(
+                (v) => v != null && v is String && v.toString().trim().isNotEmpty,
+                orElse: () => null,
+              );
               text = firstString?.toString() ?? ur.toString();
             }
-            newMessages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt']});
+            newMessages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt'], 'name': uName});
           } else {
-            newMessages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
+            newMessages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null, 'name': uName});
           }
         }
 
@@ -1391,17 +1406,36 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                           final txt = (m['text'] ?? '').toString();
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                            child: Row(
-                              mainAxisAlignment: isAdmin ? MainAxisAlignment.start : MainAxisAlignment.end,
+                            child: Column(
+                              crossAxisAlignment: isAdmin ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                               children: [
-                                Container(
-                                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
-                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(12),
+                                Text(
+                                  m['name'] ?? (isAdmin ? 'Admin' : 'Gebruiker'),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isAdmin ? Colors.grey.shade700 : Colors.grey.shade500,
                                   ),
-                                  child: Text(txt, style: TextStyle(color: isAdmin ? Colors.black87 : Colors.white)),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: isAdmin ? MainAxisAlignment.start : MainAxisAlignment.end,
+                                  children: [
+                                    Container(
+                                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
+                                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        txt,
+                                        style: TextStyle(
+                                          color: isAdmin ? Colors.black87 : Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -1432,7 +1466,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                                 'userRead': true,
                               });
                               setStateDialog?.call(() {
-                                messages.add({'text': text, 'isAdmin': false, 'ts': Timestamp.now()});
+                                // Do not append the message locally here — the realtime
+                                // document listener will deliver the new message and
+                                // prevent showing it twice.
                                 replyCtrl.clear();
                               });
                               _moveQuestionToTop(docId);
