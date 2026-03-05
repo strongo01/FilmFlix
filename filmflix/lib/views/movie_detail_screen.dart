@@ -51,7 +51,23 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   String? _poster;
   String? _title;
   String? _overview;
-  final Map<String, String> _serviceAssetMap = {};
+  static const Map<String, String> _serviceAssetMap = {
+    'Netflix': 'netflix',
+    'Amazon Prime Video': 'prime_video',
+    'Prime Video': 'prime_video',
+    'Disney+': 'disney+',
+    'HBO Max': 'hbo_max',
+    'Hulu': 'hulu',
+    'Apple TV': 'apple_tv',
+    'Google Play': 'googleplay',
+    'YouTube': 'youtube',
+    'Crunchyroll': 'crunchyroll',
+    'Curiosity Stream': 'curiosity_stream',
+    'Mejane': 'mejane',
+    'MUBI': 'mubi',
+    'SkyShowtime': 'skyshowtime',
+    'Zee5': 'zee5',
+  };
 
   String _formatStreamingType(Map<String, dynamic> option) {
     // Deze functie neemt een streaming optie (zoals die we van de API krijgen) en formatteert het type van de optie in een leesbaar formaat. We kijken naar het 'type' veld van de optie, en afhankelijk van of het een abonnement, koopoptie, of huur optie is, formatteren we het label dienovereenkomstig. Voor koop- en huur opties voegen we ook de prijs toe als deze beschikbaar is. Dit maakt het duidelijker voor de gebruiker wat voor soort streaming optie het is en wat de kosten zijn.
