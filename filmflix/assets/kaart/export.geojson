@@ -2352,40 +2352,6 @@
     {
       "type": "Feature",
       "properties": {
-        "@id": "way/299264855",
-        "addr:city": "Essen",
-        "addr:country": "DE",
-        "addr:housenumber": "22",
-        "addr:postcode": "45127",
-        "addr:street": "Vereinstraße",
-        "amenity": "cinema",
-        "building": "yes",
-        "building:levels": "3",
-        "designation": "Pornokino",
-        "lgbtq": "primary",
-        "lgbtq:men": "only",
-        "name": "Man Moviethek",
-        "roof:colour": "black",
-        "roof:levels": "1",
-        "roof:material": "roof_tiles",
-        "roof:orientation": "along",
-        "roof:shape": "gabled",
-        "toilets:wheelchair": "no",
-        "wheelchair": "limited",
-        "@geometry": "center"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          7.0074085,
-          51.4561535
-        ]
-      },
-      "id": "way/299264855"
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "@id": "node/299290255",
         "addr:city": "Bonn",
         "addr:housenumber": "7",
@@ -7467,29 +7433,6 @@
     {
       "type": "Feature",
       "properties": {
-        "@id": "node/3354691743",
-        "amenity": "cinema",
-        "designation": "Pornokino",
-        "email": "info@kino-hole.de",
-        "lgbtq": "welcome",
-        "min_age": "18",
-        "name": "Kino-Hole",
-        "opening_hours": "Su-Th 12:00-24:00; Fr-Sa 12:00-01:00",
-        "phone": "+49 221 369134",
-        "website": "https://www.kino-hole.de/"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          6.9402665,
-          50.9203234
-        ]
-      },
-      "id": "node/3354691743"
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "@id": "node/3556734392",
         "addr:city": "Wijk bij Duurstede",
         "addr:housenumber": "4",
@@ -8435,22 +8378,6 @@
     {
       "type": "Feature",
       "properties": {
-        "@id": "node/4831060975",
-        "amenity": "cinema",
-        "name": "Blind Date Sex Bios"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          4.5086771,
-          51.9066843
-        ]
-      },
-      "id": "node/4831060975"
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "@id": "node/4837696322",
         "amenity": "cinema",
         "email": "info@koenigsburg.org",
@@ -9123,27 +9050,6 @@
     {
       "type": "Feature",
       "properties": {
-        "@id": "node/6613025400",
-        "amenity": "cinema",
-        "cinema": "erotic",
-        "name": "Sexy World",
-        "opening_hours": "Mo-Su 11:00-23:00;PH open",
-        "phone": "+32 9 228 28 37",
-        "service:private_video_booth": "yes",
-        "website": "https://www.sexy-world.be/"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          3.7420361,
-          51.056428
-        ]
-      },
-      "id": "node/6613025400"
-    },
-    {
-      "type": "Feature",
-      "properties": {
         "@id": "node/6634268117",
         "addr:city": "'s-Gravenhage",
         "addr:housenumber": "5",
@@ -9688,28 +9594,6 @@
         ]
       },
       "id": "node/9208730518"
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "@id": "node/9211718930",
-        "addr:city": "Amersfoort",
-        "addr:housenumber": "4",
-        "addr:postcode": "3811WJ",
-        "addr:street": "Coninckstraat",
-        "amenity": "cinema",
-        "name": "Erotic Cinema",
-        "opening_hours": "Mo-Fr 11:00-21:00; Sa 11:00-18:00",
-        "website": "https://www.eroticcinema.nl/"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          5.3932696,
-          52.1576925
-        ]
-      },
-      "id": "node/9211718930"
     },
     {
       "type": "Feature",
