@@ -40,7 +40,7 @@ class MovieApi {
     // Uncomment the following lines to debug the response if needed
     // final response = await http.get(uri);
     debugPrint('API Response status: ${response.statusCode}');
-    debugPrint('API Response body: ${response.body}');
+    //debugPrint('API Response body: ${response.body}');
 
     if (response.statusCode == 200) {
       // Als de response succesvol is, decodeer het JSON antwoord
