@@ -116,6 +116,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
   _customerQuestionsSub;
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _customerQuestions = [];
   int _customerRepliesUnread = 0;
+  // Track whether the user opened an individual chat while on this screen.
+  bool _openedChat = false;
 
   List<Map<String, String>> get _filteredFaqs {
     final q = _query.trim().toLowerCase();
@@ -818,7 +820,12 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final faqs = _filteredFaqs;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_openedChat);
+        return false;
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Klantenservice'),
         actions: [
@@ -971,7 +978,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           ],
         ),
       ),
-    );
+    ));
   }
 
   // Open a dialog showing user's customer questions and admin replies; allow reply.
@@ -982,21 +989,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       if (!ok) return;
     }
 
-    // mark unread items as read when opened
-    for (final d in _customerQuestions) {
-      final data = d.data();
-      final hasAdminAnswer =
-          (data['answer'] != null && data['answer'].toString().isNotEmpty) ||
-          (data['adminReplies'] != null &&
-              (data['adminReplies'] as List).isNotEmpty);
-      final userRead = data['userRead'] == true;
-      if (hasAdminAnswer && !userRead) {
-        FirebaseFirestore.instance
-            .collection('customerquestions')
-            .doc(d.id)
-            .update({'userRead': true});
-      }
-    }
+    // Do NOT mark threads as read when opening the list. Marking occurs
+    // only when the user opens an individual chat (_openChatDialog).
 
     await showDialog<void>(
       context: context,
@@ -1174,6 +1168,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
 
     // move this question to the top immediately so the list updates live
     _moveQuestionToTop(docId);
+
+    // mark that the user explicitly opened a chat (used when returning to HomeScreen)
+    if (mounted) setState(() => _openedChat = true);
 
     // mark admin replies as seen for this user and set userRead=true
     final currentUser = FirebaseAuth.instance.currentUser;

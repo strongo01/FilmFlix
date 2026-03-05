@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -29,6 +33,8 @@ class FilmNowScreen extends StatefulWidget {
 
 class _FilmNowScreenState extends State<FilmNowScreen> {
   final String baseApi = 'https://film-flix-olive.vercel.app/api/movies';
+  String? _xAppApiKey;
+  final Map<String, Uint8List> _imageCache = {};
   List<FilmNowItem> films = [];
   bool loading = true;
   bool error = false;
@@ -62,7 +68,10 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
           'region': 'NL',
         },
       );
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200)
         throw Exception('Upstream status ${resp.statusCode}');
 
@@ -151,7 +160,10 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
         },
       );
 
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return;
 
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
@@ -170,13 +182,59 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
     return '$baseApi?type=image-proxy&imageUrl=${Uri.encodeComponent(url)}';
   }
 
+  Future<void> _ensureEnvLoaded() async {
+    if (_xAppApiKey != null) return;
+    try {
+      final content = await rootBundle.loadString('assets/env/.env');
+      final lines = const LineSplitter().convert(content);
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        final idx = trimmed.indexOf('=');
+        if (idx <= 0) continue;
+        final key = trimmed.substring(0, idx).trim();
+        final value = trimmed.substring(idx + 1).trim();
+        if (key == 'X_APP_API_KEY') {
+          _xAppApiKey = value;
+          break;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to load .env: $e');
+    }
+  }
+
+  Future<Uint8List?> _fetchProxiedImageBytes(String url) async {
+    if (_imageCache.containsKey(url)) return _imageCache[url];
+    await _ensureEnvLoaded();
+    try {
+      final uri = Uri.parse(baseApi).replace(queryParameters: {
+        'type': 'image-proxy',
+        'imageUrl': url,
+      });
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode == 200) {
+        _imageCache[url] = resp.bodyBytes;
+        return resp.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('Error fetching proxied image: $e');
+    }
+    return null;
+  }
+
   /// Fallback: als poster missing of mislukte proxy -> probeer TMDb images endpoint
   Future<String?> _fetchTmdbPoster(String tmdbId) async {
     try {
       final uri = Uri.parse(
         baseApi,
       ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': tmdbId});
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return null;
 
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;

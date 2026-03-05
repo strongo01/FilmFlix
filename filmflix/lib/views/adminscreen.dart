@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as Math;
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -317,8 +318,59 @@ class _AdminScreenState extends State<AdminScreen> {
               }
             } catch (_) {}
 
+            // determine if there are unread user messages for admins
+            int _tsToMs(dynamic ts) {
+              try {
+                if (ts == null) return 0;
+                if (ts is Timestamp) return ts.millisecondsSinceEpoch;
+                if (ts is DateTime) return ts.millisecondsSinceEpoch;
+                if (ts is int) return ts;
+                if (ts is String) return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
+              } catch (_) {}
+              return 0;
+            }
+
+            int lastUserMs = _tsToMs(data['createdAt']);
+            for (final ur in userReplies) {
+              try {
+                final ts = ur is Map ? (ur['createdAt'] ?? ur['updatedAt']) : null;
+                lastUserMs = Math.max(lastUserMs, _tsToMs(ts));
+              } catch (_) {}
+            }
+
+            int lastAdminMs = _tsToMs(data['answerAt'] ?? data['updatedAt']);
+            if (answer.isNotEmpty) lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['answerAt'] ?? data['updatedAt']));
+            // consider admin's last seen timestamp (set when admin opens the chat)
+            lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['adminSeenAt']));
+            for (final ar in adminReplies) {
+              try {
+                final ts = ar is Map ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt']) : null;
+                lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts));
+              } catch (_) {}
+            }
+
+            final bool unreadForAdmin = lastUserMs > lastAdminMs;
+
             return ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person)),
+              leading: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const CircleAvatar(child: Icon(Icons.person)),
+                  if (unreadForAdmin)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.2)),
+                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                        child: const Center(
+                          child: Text('1', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               title: Text(question, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,6 +412,12 @@ class _AdminScreenState extends State<AdminScreen> {
     final docRef = FirebaseFirestore.instance.collection('customerquestions').doc(docId);
     final snap = await docRef.get();
     if (!snap.exists) return;
+    // mark chat as seen by this admin
+    try {
+      await docRef.set({'adminSeenAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('Failed to set adminSeenAt: $e');
+    }
     final data = snap.data()!;
     final questionText = (data['question'] ?? '').toString();
     final answerText = (data['answer'] ?? '').toString();

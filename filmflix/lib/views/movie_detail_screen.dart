@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
@@ -23,6 +25,8 @@ class MovieDetailScreen extends StatefulWidget {
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
+  String? _xAppApiKey;
+  final Map<String, Uint8List> _imageCache = {};
   String? _rating;
   List<String> _genres = [];
   List<String> _creators = [];
@@ -222,7 +226,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': movieId});
 
       debugPrint('Fetching TMDb images from backend: $uri');
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
 
       if (resp.statusCode != 200) {
         debugPrint('tmdb-images request failed: ${resp.statusCode}');
@@ -289,7 +296,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             },
           );
 
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         final translated = data['translation'] ?? data['translatedText'] ?? '';
@@ -310,6 +320,84 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return 'https://film-flix-olive.vercel.app/api/movies'
         '?type=image-proxy'
         '&imageUrl=${Uri.encodeComponent(url)}';
+  }
+
+  Future<void> _ensureEnvLoaded() async {
+    if (_xAppApiKey != null) return;
+    try {
+      final content = await rootBundle.loadString('assets/env/.env');
+      final lines = const LineSplitter().convert(content);
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        final idx = trimmed.indexOf('=');
+        if (idx <= 0) continue;
+        final key = trimmed.substring(0, idx).trim();
+        final value = trimmed.substring(idx + 1).trim();
+        if (key == 'X_APP_API_KEY') {
+          _xAppApiKey = value;
+          break;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to load .env: $e');
+    }
+  }
+
+  Future<Uint8List?> _fetchProxiedImageBytes(String originalUrl) async {
+    if (_imageCache.containsKey(originalUrl)) return _imageCache[originalUrl];
+    await _ensureEnvLoaded();
+    try {
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+          .replace(queryParameters: {
+        'type': 'image-proxy',
+        'imageUrl': originalUrl,
+      });
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) {
+        headers['x-app-api-key'] = _xAppApiKey!;
+      }
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode == 200) {
+        _imageCache[originalUrl] = resp.bodyBytes;
+        return resp.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('Error fetching proxied image: $e');
+    }
+    return null;
+  }
+
+  Widget _imageFromProxied(String originalUrl,
+      {BoxFit fit = BoxFit.cover, double? width, double? height}) {
+    return FutureBuilder<Uint8List?>(
+      future: _fetchProxiedImageBytes(originalUrl),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey.shade200,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        final bytes = snap.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          return Image.memory(
+            bytes,
+            fit: fit,
+            width: width,
+            height: height,
+          );
+        }
+        return Container(
+          width: width,
+          height: height,
+          color: Colors.grey.shade300,
+          child: const Center(child: Icon(Icons.broken_image, size: 48)),
+        );
+      },
+    );
   }
 
   Widget _posterWithFallback(
@@ -333,23 +421,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             );
           }
           final url = snap.data;
-          if (url != null && url.isNotEmpty) {
+            if (url != null && url.isNotEmpty) {
             return ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                proxiedUrl(url),
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) {
-                  debugPrint('TMDb poster load error: $e');
-                  return Container(
-                    height: 220,
-                    color: Colors.grey.shade300,
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 48),
-                    ),
-                  );
-                },
-              ),
+              child: _imageFromProxied(url, fit: BoxFit.cover, height: 220),
             );
           }
           return Container(
@@ -364,41 +439,35 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // We have an initial poster URL. Try to load it; on error fetch TMDb fallback.
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        proxiedUrl(initialPoster),
-        fit: BoxFit.cover,
-        // We proberen eerst de originele poster te laden. Als er een fout optreedt bij het laden van deze afbeelding (bijvoorbeeld vanwege een ongeldige URL of netwerkfout), gebruiken we de errorBuilder om een fallback te implementeren. In de errorBuilder maken we een FutureBuilder die asynchroon de TMDb poster ophaalt via onze backend. Terwijl we wachten op het resultaat, tonen we een loading indicator. Zodra we de TMDb poster URL hebben, proberen we deze te laden. Als dat ook mislukt, tonen we een "broken image" icoon. Op deze manier zorgen we ervoor dat we altijd ons best doen om een poster te tonen, zelfs als de originele bron niet beschikbaar is.
-        errorBuilder: (context, error, stackTrace) {
-          debugPrint(
-            'Primary poster load error: $error — trying TMDb fallback',
-          );
+      child: FutureBuilder<Uint8List?>(
+        future: _fetchProxiedImageBytes(initialPoster ?? ''),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return Container(
+              height: 220,
+              color: Colors.grey.shade200,
+              child: const Center(child: CircularProgressIndicator()),
+            );
+          }
+          final bytes = snap.data;
+          if (bytes != null && bytes.isNotEmpty) {
+            return Image.memory(bytes, fit: BoxFit.cover);
+          }
+
+          // fallback to TMDb
           return FutureBuilder<String?>(
             future: _fetchTmdbPosterFromRapid(rapid),
-            builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
+            builder: (ctx2, snap2) {
+              if (snap2.connectionState == ConnectionState.waiting) {
                 return Container(
                   height: 220,
                   color: Colors.grey.shade200,
                   child: const Center(child: CircularProgressIndicator()),
                 );
               }
-              final url = snap.data;
-              if (url != null && url.isNotEmpty) {
-                // Als we een geldige TMDb poster URL hebben ontvangen, proberen we deze te laden. We gebruiken ook hier een errorBuilder om eventuele fouten bij het laden van de TMDb poster af te handelen, en tonen een "broken image" icoon als dat gebeurt.
-                return Image.network(
-                  proxiedUrl(url),
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) {
-                    debugPrint('TMDb fallback load error: $e');
-                    return Container(
-                      height: 220,
-                      color: Colors.grey.shade300,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 48),
-                      ),
-                    );
-                  },
-                );
+              final url2 = snap2.data;
+              if (url2 != null && url2.isNotEmpty) {
+                return _imageFromProxied(url2, fit: BoxFit.cover, height: 220);
               }
               return Container(
                 height: 220,
@@ -1015,13 +1084,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   borderRadius: BorderRadius.circular(
                     6,
                   ), // We gebruiken ClipRRect om de thumbnail van de aflevering weer te geven met afgeronde hoeken. We controleren eerst of er een thumbnail beschikbaar is (epThumb is niet null), en als dat het geval is, tonen we deze in de leading positie van de ListTile. We stellen de breedte en hoogte van de afbeelding in op 84x48 pixels, en we gebruiken BoxFit.cover om ervoor te zorgen dat de afbeelding goed past binnen deze afmetingen. We voegen ook een errorBuilder toe om een fallback icoon weer te geven als er een fout optreedt bij het laden van de afbeelding, zoals wanneer de URL ongeldig is of wanneer er netwerkproblemen zijn.
-                  child: Image.network(
-                    proxiedUrl(epThumb.toString()),
+                  child: SizedBox(
                     width: 84,
                     height: 48,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.broken_image),
+                    child: _imageFromProxied(epThumb.toString(), fit: BoxFit.cover, width: 84, height: 48),
                   ),
                 )
               : null,

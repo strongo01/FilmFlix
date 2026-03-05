@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as Math;
+
 import 'package:cinetrackr/views/adminscreen.dart';
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
@@ -18,10 +21,155 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _cachedUnreadCustomerReplies = 0;
+  int _cachedUnreadAdminChats = 0;
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _customerQuestionsSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _allCustomerQuestionsSub;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureDisplayName());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUnreadCustomerReplies().then((v) {
+        if (mounted) setState(() => _cachedUnreadCustomerReplies = v);
+      });
+    });
+    // subscribe to auth changes so we can keep badge updated realtime
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        _subscribeCustomerQuestions(user.uid);
+        _maybeSubscribeAdmin(user.uid);
+      } else {
+        _customerQuestionsSub?.cancel();
+        _customerQuestionsSub = null;
+        _allCustomerQuestionsSub?.cancel();
+        _allCustomerQuestionsSub = null;
+        if (mounted) setState(() {
+          _cachedUnreadCustomerReplies = 0;
+          _cachedUnreadAdminChats = 0;
+        });
+      }
+    });
+  }
+
+  void _maybeSubscribeAdmin(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      bool isAdmin = false;
+      if (data != null) {
+        final role = data['role'];
+        if (role is String) isAdmin = role.toLowerCase() == 'admin';
+        if (role is List) isAdmin = role.any((e) => (e?.toString().toLowerCase() ?? '') == 'admin');
+      }
+      if (isAdmin) {
+        _subscribeAllCustomerQuestions();
+      } else {
+        _allCustomerQuestionsSub?.cancel();
+        _allCustomerQuestionsSub = null;
+        if (mounted) setState(() => _cachedUnreadAdminChats = 0);
+      }
+    } catch (e) {
+      debugPrint('Failed to determine admin role (home): $e');
+    }
+  }
+
+  void _subscribeAllCustomerQuestions() {
+    _allCustomerQuestionsSub?.cancel();
+    _allCustomerQuestionsSub = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .snapshots()
+        .listen((snap) {
+      try {
+        int adminUnread = 0;
+        for (final d in snap.docs) {
+          final data = d.data();
+
+          int _tsToMs(dynamic ts) {
+            try {
+              if (ts == null) return 0;
+              if (ts is Timestamp) return ts.millisecondsSinceEpoch;
+              if (ts is DateTime) return ts.millisecondsSinceEpoch;
+              if (ts is int) return ts;
+              if (ts is String) return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
+            } catch (_) {}
+            return 0;
+          }
+
+          final adminReplies = (data['adminReplies'] as List?) ?? [];
+          final userReplies = (data['userReplies'] as List?) ?? [];
+          final answer = (data['answer'] ?? '').toString();
+
+          int lastUserMs = _tsToMs(data['createdAt']);
+          for (final ur in userReplies) {
+            try {
+              final ts = ur is Map ? (ur['createdAt'] ?? ur['updatedAt']) : null;
+              lastUserMs = Math.max(lastUserMs, _tsToMs(ts));
+            } catch (_) {}
+          }
+
+          int lastAdminMs = _tsToMs(data['answerAt'] ?? data['updatedAt']);
+          if (answer.isNotEmpty) lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['answerAt'] ?? data['updatedAt']));
+          lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['adminSeenAt']));
+          for (final ar in adminReplies) {
+            try {
+              final ts = ar is Map ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt']) : null;
+              lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts));
+            } catch (_) {}
+          }
+
+          final bool unreadForAdmin = lastUserMs > lastAdminMs;
+          if (unreadForAdmin) adminUnread += 1;
+        }
+        if (mounted) setState(() => _cachedUnreadAdminChats = adminUnread);
+      } catch (e) {
+        debugPrint('Failed to compute admin unread count in HomeScreen: $e');
+      }
+    }, onError: (e) {
+      debugPrint('customerquestions listen error (home admin): $e');
+    });
+  }
+
+  void _subscribeCustomerQuestions(String uid) {
+    _customerQuestionsSub?.cancel();
+    _customerQuestionsSub = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .where('userId', isEqualTo: uid)
+        .snapshots()
+        .listen((snap) {
+      try {
+        int unread = 0;
+        for (final d in snap.docs) {
+          final data = d.data();
+          final adminReplies = (data['adminReplies'] as List?) ?? [];
+          final userRead = data['userRead'] == true;
+
+          if (!userRead) {
+            unread += 1;
+            continue;
+          }
+
+          for (final ar in adminReplies) {
+            if (ar is Map) {
+              final seenBy = (ar['seenBy'] as List?)
+                      ?.map((e) => e.toString())
+                      .toList() ??
+                  [];
+              if (!seenBy.contains(uid)) {
+                unread += 1;
+                break;
+              }
+            }
+          }
+        }
+        if (mounted) setState(() => _cachedUnreadCustomerReplies = unread);
+      } catch (e) {
+        debugPrint('Failed to compute unread count in HomeScreen: $e');
+      }
+    }, onError: (e) {
+      debugPrint('customerquestions listen error (home): $e');
+    });
   }
 
   Future<void> _ensureDisplayName() async {
@@ -106,6 +254,47 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  // Fetch number of unread customer replies for current user.
+  Future<int> _fetchUnreadCustomerReplies() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return 0;
+      final uid = user.uid;
+      final snap = await FirebaseFirestore.instance
+          .collection('customerquestions')
+          .where('userId', isEqualTo: uid)
+          .get();
+      int unread = 0;
+      for (final d in snap.docs) {
+        final data = d.data();
+        final adminReplies = (data['adminReplies'] as List?) ?? [];
+        final userRead = data['userRead'] == true;
+
+        if (!userRead) {
+          unread += 1;
+          continue;
+        }
+
+        for (final ar in adminReplies) {
+          if (ar is Map) {
+            final seenBy = (ar['seenBy'] as List?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                [];
+            if (!seenBy.contains(uid)) {
+              unread += 1;
+              break;
+            }
+          }
+        }
+      }
+      return unread;
+    } catch (e) {
+      debugPrint('Failed fetching unread customer replies: $e');
+      return 0;
+    }
   }
 
   @override
@@ -258,20 +447,72 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                              _buildItem(
-                                "assets/images/AfbeeldingVragen.png",
-                                "Klantenservice",
-                                itemBackgroundColor,
-                                textColor,
-                                shadowColor,
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const CustomerServiceScreen(),
-                                  ),
-                                ),
-                              ),
+                              Builder(builder: (ctx) {
+                                final count = _cachedUnreadCustomerReplies;
+                                void _onTap() {
+                                  Navigator.push<bool>(
+                                    ctx,
+                                    MaterialPageRoute(
+                                      builder: (_) => const CustomerServiceScreen(),
+                                    ),
+                                  ).then((opened) {
+                                    if (opened == true) {
+                                      if (mounted) setState(() => _cachedUnreadCustomerReplies = 0);
+                                    } else {
+                                      // refresh cached value
+                                      _fetchUnreadCustomerReplies().then((v) {
+                                        if (mounted) setState(() => _cachedUnreadCustomerReplies = v);
+                                      });
+                                    }
+                                  });
+                                }
+
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    _buildItem(
+                                      "assets/images/AfbeeldingVragen.png",
+                                      "Klantenservice",
+                                      itemBackgroundColor,
+                                      textColor,
+                                      shadowColor,
+                                      _onTap,
+                                    ),
+                                    if (count > 0)
+                                      Positioned(
+                                        right: 6,
+                                        top: -6,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.2),
+                                                blurRadius: 4,
+                                              ),
+                                            ],
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 22,
+                                            minHeight: 22,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              count > 99 ? '99+' : '$count',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              }),
                               _buildItem(
                                 "assets/images/AfbeeldingKaart.png",
                                 "Bioscoopkaart",
@@ -315,24 +556,67 @@ class _HomeScreenState extends State<HomeScreen> {
                                 }(),
                                 builder: (context, snapshot) {
                                   if (snapshot.connectionState ==
-                                          ConnectionState.done &&
-                                      snapshot.hasData &&
-                                      snapshot.data == true) {
-                                    return _buildItem(
-                                      "assets/icons/appicon.png",
-                                      "Admin",
-                                      itemBackgroundColor,
-                                      textColor,
-                                      shadowColor,
-                                      () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const AdminScreen(),
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
+                                            ConnectionState.done &&
+                                        snapshot.hasData &&
+                                        snapshot.data == true) {
+                                      return Builder(builder: (ctx2) {
+                                        final adminCount = _cachedUnreadAdminChats;
+                                        void _onTapAdmin() {
+                                          Navigator.push(
+                                            ctx2,
+                                            MaterialPageRoute(
+                                              builder: (_) => const AdminScreen(),
+                                            ),
+                                          );
+                                        }
+                                        return Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            _buildItem(
+                                              "assets/icons/appicon.png",
+                                              "Admin",
+                                              itemBackgroundColor,
+                                              textColor,
+                                              shadowColor,
+                                              _onTapAdmin,
+                                            ),
+                                            if (adminCount > 0)
+                                              Positioned(
+                                                right: 6,
+                                                top: -6,
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(4),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    shape: BoxShape.circle,
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black.withOpacity(0.2),
+                                                        blurRadius: 4,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  constraints: const BoxConstraints(
+                                                    minWidth: 18,
+                                                    minHeight: 18,
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      adminCount > 99 ? '99+' : '$adminCount',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 11,
+                                                        fontWeight: FontWeight.w700,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        );
+                                      });
+                                    }
+                                    return const SizedBox.shrink();
                                 },
                               ),
                             ],
@@ -350,6 +634,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _customerQuestionsSub?.cancel();
+    _allCustomerQuestionsSub?.cancel();
+    super.dispose();
   }
 
   Widget _buildItem(

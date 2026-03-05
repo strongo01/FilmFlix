@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 
 class MovieApi {
@@ -9,6 +10,7 @@ class MovieApi {
 
   // Algemene GET helper die alle API calls afhandelt. Deze functie bouwt de URL op basis van de meegegeven parameters, maakt de HTTP GET request, en decodeert het JSON antwoord. Het resultaat is altijd een Map<String, dynamic>, waarbij de daadwerkelijke data meestal in een 'result' veld zit.
   static Future<Map<String, dynamic>> _get(Map<String, dynamic> params) async {
+    await _ensureEnvLoaded();
     final cleanParams = Map<String, dynamic>.from(params);
     cleanParams.removeWhere(
       (key, value) => value == null || value.toString().isEmpty,
@@ -36,7 +38,12 @@ class MovieApi {
 
     debugPrint('API GET Request: $uri');
     debugPrint('Final API GET Request URL: $uri');
-    final response = await http.get(uri);
+    final headers = <String, String>{};
+    if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) {
+      headers['x-app-api-key'] = _xAppApiKey!;
+    }
+
+    final response = await http.get(uri, headers: headers);
     // Uncomment the following lines to debug the response if needed
     // final response = await http.get(uri);
     debugPrint('API Response status: ${response.statusCode}');
@@ -59,6 +66,31 @@ class MovieApi {
       };
     } else {
       throw Exception('API error: ${response.body}');
+    }
+  }
+
+  static String? _xAppApiKey;
+
+  static Future<void> _ensureEnvLoaded() async {
+    if (_xAppApiKey != null) return;
+    try {
+      final content = await rootBundle.loadString('assets/env/.env');
+      final lines = const LineSplitter().convert(content);
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        final idx = trimmed.indexOf('=');
+        if (idx <= 0) continue;
+        final key = trimmed.substring(0, idx).trim();
+        final value = trimmed.substring(idx + 1).trim();
+        if (key == 'X_APP_API_KEY') {
+          _xAppApiKey = value;
+          break;
+        }
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      if (kDebugMode) print('Failed to load .env: $e');
     }
   }
 

@@ -107,6 +107,7 @@ flutter:
     - assets/images/AfbeeldingWatchlist.png
     - assets/kaart/export.geojson
     - assets/icons/appicon.png
+    - assets/env/.env
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

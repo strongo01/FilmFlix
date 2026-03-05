@@ -13,6 +13,14 @@ export default async function handler(req, res) {
         return res.status(200).end();
     }
 
+    // Vereiste API-key: x-app-api-key
+    const APP_API_KEY = process.env.X_APP_API_KEY;
+    const providedKey = req.headers['x-app-api-key'] || req.headers['x-app-key'];
+
+    if (!providedKey || providedKey !== APP_API_KEY) {
+        return res.status(401).json({ error: 'Missing or invalid x-app-api-key' });
+    }
+
     const {
         type,
 
