@@ -1,4 +1,22 @@
 const https = require('https');
+
+// In-process coalescing map to dedupe concurrent upstream requests per instance
+const _inFlight = new Map();
+function fetchWithCoalesce(key, fetcher) {
+    if (_inFlight.has(key)) {
+        return { promise: _inFlight.get(key), coalesced: true };
+    }
+    const p = (async () => {
+        try {
+            return await fetcher();
+        } finally {
+            _inFlight.delete(key);
+        }
+    })();
+    _inFlight.set(key, p);
+    return { promise: p, coalesced: false };
+}
+
 export default async function handler(req, res) {
 
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -350,17 +368,27 @@ export default async function handler(req, res) {
 
     if (url) {
         try {
-            const response = await fetch(url, { headers });
-            if (!response.ok) {
-                return res.status(response.status).json({ error: 'Upstream API failed' });
-            }
-            const data = await response.json();
+            const cacheKey = `${type}|${url}`;
+            const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
+                const resp = await fetch(url, { headers });
+                if (!resp.ok) {
+                    // propagate upstream status to handler
+                    const status = resp.status || 502;
+                    throw { upstreamStatus: status };
+                }
+                return await resp.json();
+            });
+
+            const data = await promise;
 
             const CACHE_TTLS = { search: 86400, get: 604800, filter: 86400 };
             function setCacheForType(t) {
                 const s = CACHE_TTLS[t] || 60; // default short s-maxage
                 res.setHeader('Cache-Control', `public, max-age=60, s-maxage=${s}, stale-while-revalidate=300`);
             }
+
+            // indicate whether response was coalesced or required a fresh upstream fetch
+            res.setHeader('X-Cache', coalesced ? 'COALESCED' : 'MISS');
 
             if (type !== 'search') {
                 if (type === 'get' || type === 'filter' || type === 'search') setCacheForType(type);
@@ -375,7 +403,7 @@ export default async function handler(req, res) {
                 if (!str) return '';
                 return str
                     .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[ -\u036f]/g, '')
                     .toLowerCase()
                     .replace(/[^a-z0-9\s]/g, ' ')
                     .replace(/\s+/g, ' ')
@@ -462,7 +490,9 @@ export default async function handler(req, res) {
                 .filter(item => item._score > 0)
                 .sort((a, b) => b._score - a._score);
 
+            // mark search responses with cache header (1 day)
             setCacheForType('search');
+            // X-Cache already set above based on coalescing
 
             res.status(200).json({
                 original_count: hits.length,
@@ -470,6 +500,9 @@ export default async function handler(req, res) {
                 results: filtered
             });
         } catch (err) {
+            if (err && err.upstreamStatus) {
+                return res.status(err.upstreamStatus).json({ error: 'Upstream API failed' });
+            }
             console.error(err);
             res.status(500).json({ error: 'External API request failed' });
         }
