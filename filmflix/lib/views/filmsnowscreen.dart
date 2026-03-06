@@ -141,13 +141,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
       return _posterWidget(item); // fallback naar poster
     }
 
-    return Image.network(
-      proxiedUrl(backdrop),
-      fit: BoxFit.cover,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : Container(color: Colors.grey[300]),
-      errorBuilder: (_, __, ___) => _posterWidget(item),
-    );
+    return _proxiedImage(backdrop, fit: BoxFit.cover);
   }
 
   Future<void> _fetchImdbIdFor(FilmNowItem item) async {
@@ -180,6 +174,26 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
 
   String proxiedUrl(String url) {
     return '$baseApi?type=image-proxy&imageUrl=${Uri.encodeComponent(url)}';
+  }
+
+  Widget _proxiedImage(String imageUrl, {BoxFit fit = BoxFit.cover}) {
+    return FutureBuilder<Uint8List?>(
+      future: _fetchProxiedImageBytes(imageUrl),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Container(color: Colors.grey[300]);
+        }
+        final bytes = snap.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          return Image.memory(
+            bytes,
+            fit: fit,
+            gaplessPlayback: true,
+          );
+        }
+        return Container(color: Colors.grey[300]);
+      },
+    );
   }
 
   Future<void> _ensureEnvLoaded() async {
@@ -276,46 +290,15 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
           }
           final url = snap.data;
           if (url != null && url.isNotEmpty) {
-            return Image.network(
-              proxiedUrl(url),
-              fit: BoxFit.cover,
-              loadingBuilder: (_, child, progress) =>
-                  progress == null ? child : Container(color: Colors.grey[300]),
-              errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
-            );
+            return _proxiedImage(url, fit: BoxFit.cover);
           }
           return Container(color: Colors.grey[300]);
         },
       );
     }
 
-    // There is a poster URL -> try proxy
-    return Image.network(
-      proxiedUrl(poster),
-      fit: BoxFit.cover,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : Container(color: Colors.grey[300]),
-      errorBuilder: (context, error, stackTrace) {
-        // fallback to TMDb
-        return FutureBuilder<String?>(
-          future: _fetchTmdbPoster(item.tmdbId),
-          builder: (ctx, snap) {
-            if (snap.connectionState == ConnectionState.waiting)
-              return Container(color: Colors.grey[300]);
-            final url = snap.data;
-            if (url != null && url.isNotEmpty) {
-              return Image.network(
-                proxiedUrl(url),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: Colors.grey[300]),
-              );
-            }
-            return Container(color: Colors.grey[300]);
-          },
-        );
-      },
-    );
+    // There is a poster URL -> try proxy (via header-using fetch)
+    return _proxiedImage(poster, fit: BoxFit.cover);
   }
 
   void _openDetails(FilmNowItem item) {
@@ -489,12 +472,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                               child: SizedBox(
                                 width: 120, // Was 78
                                 child: f.poster != null
-                                    ? Image.network(
-                                        proxiedUrl(f.poster!),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            Container(color: Colors.grey[300]),
-                                      )
+                                    ? _proxiedImage(f.poster!, fit: BoxFit.cover)
                                     : FutureBuilder<String?>(
                                         future: _fetchTmdbPoster(f.tmdbId),
                                         builder: (ctx, snap) {
@@ -505,14 +483,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                                             );
                                           final url = snap.data;
                                           if (url != null && url.isNotEmpty) {
-                                            return Image.network(
-                                              proxiedUrl(url),
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) =>
-                                                  Container(
-                                                    color: Colors.grey[300],
-                                                  ),
-                                            );
+                                            return _proxiedImage(url, fit: BoxFit.cover);
                                           }
                                           return Container(
                                             color: Colors.grey[300],

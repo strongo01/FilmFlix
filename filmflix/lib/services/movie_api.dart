@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class MovieApi {
   //  API Helper class voor alle movie-gerelateerde API calls
   static const String _baseUrl =
-      'https://film-flix-olive.vercel.app/api/movies';
+      'https://film-flix-olive.vercel.app/apiv2/movies';
 
   // Algemene GET helper die alle API calls afhandelt. Deze functie bouwt de URL op basis van de meegegeven parameters, maakt de HTTP GET request, en decodeert het JSON antwoord. Het resultaat is altijd een Map<String, dynamic>, waarbij de daadwerkelijke data meestal in een 'result' veld zit.
   static Future<Map<String, dynamic>> _get(Map<String, dynamic> params) async {

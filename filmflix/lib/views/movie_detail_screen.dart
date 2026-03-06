@@ -21,7 +21,6 @@ class MovieDetailScreen extends StatefulWidget {
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
-
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
@@ -103,10 +102,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         'seenFilm': {widget.imdbId: true},
       }, SetOptions(merge: true));
       setState(() => _isSeenFilm = true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gemarkeerd als gezien')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gemarkeerd als gezien')));
     } catch (e, s) {
       debugPrint('Error marking film seen: $e\n$s');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kon status niet bijwerken')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kon status niet bijwerken')),
+      );
     } finally {
       setState(() => _loadingUserData = false);
     }
@@ -125,6 +128,40 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       default:
         return 3;
     }
+  }
+
+  bool _isResponseMovie(String? type) {
+    final t = type?.toString().toLowerCase() ?? '';
+    if (t.isEmpty) return false;
+    // Accept common variants: 'movie', 'film', or phrases containing 'film' or 'movie'
+    return t == 'movie' ||
+        t == 'film' ||
+        t.contains('film') ||
+        t.contains('movie') ||
+        t.contains('feature');
+  }
+
+  String _detectMediaType() {
+    // Prefer RapidAPI fields when available
+    final candidates = [
+      _rapidData?['itemType'],
+      _rapidData?['type'],
+      _rapidData?['showType'],
+      _rapidData?['titleType'],
+      _omdbData?['Type'],
+    ];
+
+    var sawSeries = false;
+    for (final c in candidates) {
+      if (c == null) continue;
+      final s = c.toString().toLowerCase();
+      if (s.contains('movie') || s.contains('film') || s.contains('feature'))
+        return 'movie';
+      if (s.contains('series') || s.contains('tv')) sawSeries = true;
+    }
+
+    if (sawSeries) return 'series';
+    return 'unknown';
   }
 
   // Badge met kleur
@@ -238,13 +275,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
       // call your backend endpoint
       final uri = Uri.parse(
-        'https://film-flix-olive.vercel.app/api/movies',
+        'https://film-flix-olive.vercel.app/apiv2/movies',
       ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': movieId});
 
       debugPrint('Fetching TMDb images from backend: $uri');
       await _ensureEnvLoaded();
       final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
       final resp = await http.get(uri, headers: headers);
 
       if (resp.statusCode != 200) {
@@ -303,7 +341,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     setState(() => _isTranslating[key] = true);
 
     try {
-      final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
           .replace(
             queryParameters: {
               'type': 'translate',
@@ -314,7 +352,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
       await _ensureEnvLoaded();
       final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -333,7 +372,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   String proxiedUrl(String url) {
-    return 'https://film-flix-olive.vercel.app/api/movies'
+    return 'https://film-flix-olive.vercel.app/apiv2/movies'
         '?type=image-proxy'
         '&imageUrl=${Uri.encodeComponent(url)}';
   }
@@ -364,11 +403,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (_imageCache.containsKey(originalUrl)) return _imageCache[originalUrl];
     await _ensureEnvLoaded();
     try {
-      final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
-          .replace(queryParameters: {
-        'type': 'image-proxy',
-        'imageUrl': originalUrl,
-      });
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          .replace(
+            queryParameters: {'type': 'image-proxy', 'imageUrl': originalUrl},
+          );
       final headers = <String, String>{};
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) {
         headers['x-app-api-key'] = _xAppApiKey!;
@@ -384,8 +422,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return null;
   }
 
-  Widget _imageFromProxied(String originalUrl,
-      {BoxFit fit = BoxFit.cover, double? width, double? height}) {
+  Widget _imageFromProxied(
+    String originalUrl, {
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+  }) {
     return FutureBuilder<Uint8List?>(
       future: _fetchProxiedImageBytes(originalUrl),
       builder: (ctx, snap) {
@@ -399,12 +441,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         }
         final bytes = snap.data;
         if (bytes != null && bytes.isNotEmpty) {
-          return Image.memory(
-            bytes,
-            fit: fit,
-            width: width,
-            height: height,
-          );
+          return Image.memory(bytes, fit: fit, width: width, height: height);
         }
         return Container(
           width: width,
@@ -437,7 +474,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             );
           }
           final url = snap.data;
-            if (url != null && url.isNotEmpty) {
+          if (url != null && url.isNotEmpty) {
             return ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: _imageFromProxied(url, fit: BoxFit.cover, height: 220),
@@ -593,6 +630,20 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
           _loadingMovie = false;
         });
+
+        // Debug: show where we detected 'movie' from
+        try {
+          final omdbType = omdbData?['Type']?.toString();
+          final rapidTypes = [
+            rapid['itemType'],
+            rapid['type'],
+            rapid['showType'],
+            rapid['titleType'],
+          ].where((e) => e != null).map((e) => e.toString()).toList();
+          debugPrint('Detected types - OMDb: $omdbType  Rapid: $rapidTypes');
+        } catch (e) {
+          debugPrint('Error printing detected types: $e');
+        }
       }
 
       // apply first rapid result immediately
@@ -786,10 +837,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     try {
       if (newState) {
         // Add imdbId to watchlist and save lightweight metadata so WatchlistScreen
-        // can show title/overview without extra API calls.
+        // can show title/overview without extra API calls. Also store mediaType.
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
+          'mediaType': _detectMediaType(),
         };
         await docRef.set({
           'watchlist': FieldValue.arrayUnion([widget.imdbId]),
@@ -836,6 +888,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
+          'mediaType': _detectMediaType(),
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
@@ -884,6 +937,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
+          'mediaType': _detectMediaType(),
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
@@ -928,7 +982,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
 
     // Voor films: voeg één groep 'Bioscoop' toe met twee zoekchips: Biosagenda en Kinepolis
-    if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
+    final rapidTypeCandidates = [
+      _rapidData?['itemType'],
+      _rapidData?['type'],
+      _rapidData?['showType'],
+      _rapidData?['titleType'],
+    ];
+    final bool isMovieResponse =
+        _isResponseMovie(_omdbData?['Type']?.toString()) ||
+        rapidTypeCandidates.any((t) => _isResponseMovie(t?.toString()));
+
+    if (isMovieResponse) {
       final biosLink =
           'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
       final kinepolisLink =
@@ -1103,7 +1167,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   child: SizedBox(
                     width: 84,
                     height: 48,
-                    child: _imageFromProxied(epThumb.toString(), fit: BoxFit.cover, width: 84, height: 48),
+                    child: _imageFromProxied(
+                      epThumb.toString(),
+                      fit: BoxFit.cover,
+                      width: 84,
+                      height: 48,
+                    ),
                   ),
                 )
               : null,
@@ -1291,11 +1360,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       return Scaffold(body: Center(child: Text('Error: $_error')));
     }
     final isMovie =
-      (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['itemType']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['type']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['showType']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['titleType']?.toString().toLowerCase() ?? '') == 'movie';
+        _isResponseMovie(_omdbData?['Type']?.toString()) ||
+        _isResponseMovie(_rapidData?['itemType']?.toString()) ||
+        _isResponseMovie(_rapidData?['type']?.toString()) ||
+        _isResponseMovie(_rapidData?['showType']?.toString()) ||
+        _isResponseMovie(_rapidData?['titleType']?.toString());
 
     final rapid = _rapidData!;
     final poster = _poster;
@@ -1394,8 +1463,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                         color: Colors.white,
                                         width: 1,
                                       ),
-                                      foregroundColor:
-                                          isDark ? Colors.white : Colors.black,
+                                      foregroundColor: isDark
+                                          ? Colors.white
+                                          : Colors.black,
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -1419,8 +1489,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                       if (_user == null) {
                                         final goToLogin =
                                             await _ensureLoggedInWithPrompt(
-                                          context,
-                                        );
+                                              context,
+                                            );
                                         if (!goToLogin) return;
                                         return;
                                       }
@@ -1438,11 +1508,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                             if (_user == null) {
                                               final go =
                                                   await _ensureLoggedInWithPrompt(
-                                                context,
-                                              );
+                                                    context,
+                                                  );
                                               if (!go) return;
                                             }
-                                            await _toggleMovieSeen(val ?? false);
+                                            await _toggleMovieSeen(
+                                              val ?? false,
+                                            );
                                             setState(() {});
                                           },
                                         ),
@@ -1450,9 +1522,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                         Text(
                                           'Gezien',
                                           style: TextStyle(
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : Colors.black),
+                                            color: isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
                                         ),
                                       ],
                                     ),

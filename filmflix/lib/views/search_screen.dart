@@ -431,7 +431,7 @@ class _SearchScreenState extends State<SearchScreen> {
     loadingTopRated = true;
     setState(() {});
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
     try {
       await _ensureEnvLoaded();
@@ -474,7 +474,7 @@ class _SearchScreenState extends State<SearchScreen> {
     loadingPopular = true;
     setState(() {});
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'popular', 'page': page.toString()});
     try {
       await _ensureEnvLoaded();
@@ -516,7 +516,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _openTmdbMovieDetail(String movieId) async {
     if (movieId.isEmpty) return;
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': movieId});
     try {
       await _ensureEnvLoaded();
@@ -556,7 +556,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final movieId = parts.length > 1 ? parts.last : tmdbIdRaw;
 
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': movieId});
 
     try {
@@ -596,7 +596,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   String proxiedUrl(String url) {
-    return 'https://film-flix-olive.vercel.app/api/movies'
+    return 'https://film-flix-olive.vercel.app/apiv2/movies'
         '?type=image-proxy'
         '&imageUrl=${Uri.encodeComponent(url)}';
   }
@@ -627,7 +627,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_imageCache.containsKey(originalUrl)) return _imageCache[originalUrl];
     await _ensureEnvLoaded();
     try {
-      final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
           .replace(queryParameters: {
         'type': 'image-proxy',
         'imageUrl': originalUrl,
