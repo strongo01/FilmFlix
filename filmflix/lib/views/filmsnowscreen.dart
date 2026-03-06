@@ -32,7 +32,7 @@ class FilmNowScreen extends StatefulWidget {
 }
 
 class _FilmNowScreenState extends State<FilmNowScreen> {
-  final String baseApi = 'https://film-flix-olive.vercel.app/api/movies';
+  final String baseApi = 'https://film-flix-olive.vercel.app/apiv2/movies';
   String? _xAppApiKey;
   final Map<String, Uint8List> _imageCache = {};
   List<FilmNowItem> films = [];
