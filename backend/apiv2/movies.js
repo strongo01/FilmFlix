@@ -1,4 +1,3 @@
-// Database-backed endpoints removed — this backend no longer exposes DB access.
 const https = require('https');
 export default async function handler(req, res) {
 
@@ -112,7 +111,7 @@ export default async function handler(req, res) {
         addParam(params, 'country', country);
         addParam(params, 'series_granularity', series_granularity);
         addParam(params, 'output_language', output_language);
-        addParam(params, 'show_type', show_type); // voeg alleen toe als expliciet
+        addParam(params, 'show_type', show_type);
         addParam(params, 'rating_min', rating_min);
         addParam(params, 'rating_max', rating_max);
         addParam(params, 'catalogs', catalogs);
@@ -133,9 +132,6 @@ export default async function handler(req, res) {
         };
     }
 
-
-
-    // OMDB — GET BY ID OR TITLE
     else if (type === 'omdb-get') {
         if (!i && !t) {
             return res.status(400).json({
@@ -155,7 +151,6 @@ export default async function handler(req, res) {
             });
     }
 
-    // OMDB — SEARCH
     else if (type === 'omdb-search') {
         if (!s) {
             return res.status(400).json({
@@ -174,9 +169,6 @@ export default async function handler(req, res) {
             });
     }
 
-    // (database-backed endpoints have been removed)
-
-    // TMDB — GET IMAGES
     else if (type === 'tmdb-images') {
         if (!movie_id) {
             return res.status(400).json({
@@ -201,12 +193,10 @@ export default async function handler(req, res) {
         try {
             const parsed = new URL(imageUrl);
 
-            // 🔒 Alleen https toestaan
             if (parsed.protocol !== 'https:') {
                 return res.status(400).json({ error: 'Only HTTPS allowed' });
             }
 
-            // 🔒 Alleen bekende image hosts toestaan
             const allowedHosts = [
                 'cdn.movieofthenight.com',
                 'image.tmdb.org',
@@ -230,7 +220,6 @@ export default async function handler(req, res) {
                 response.headers.get('content-type') || 'image/jpeg'
             );
 
-            // optional cache (sneller + goedkoper)
             res.setHeader('Cache-Control', 'public, max-age=86400');
 
             return res.status(200).send(Buffer.from(buffer));
@@ -275,7 +264,6 @@ export default async function handler(req, res) {
         };
     }
 
-    // TMDB — TOP RATED
     else if (type === 'top_rated') {
         const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
 
@@ -292,7 +280,6 @@ export default async function handler(req, res) {
         };
     }
 
-    // TMDB — POPULAR
     else if (type === 'popular') {
         const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
 
@@ -361,7 +348,6 @@ export default async function handler(req, res) {
         });
     }
 
-    // FETCH EXTERNAL API (RapidAPI / OMDb)
     if (url) {
         try {
             const response = await fetch(url, { headers });
@@ -370,11 +356,16 @@ export default async function handler(req, res) {
             }
             const data = await response.json();
 
-            // Alleen filtering toepassen bij search
+            const CACHE_TTLS = { search: 86400, get: 604800, filter: 86400 };
+            function setCacheForType(t) {
+                const s = CACHE_TTLS[t] || 60; // default short s-maxage
+                res.setHeader('Cache-Control', `public, max-age=60, s-maxage=${s}, stale-while-revalidate=300`);
+            }
+
             if (type !== 'search') {
+                if (type === 'get' || type === 'filter' || type === 'search') setCacheForType(type);
                 return res.status(200).json(data);
             }
-            // ===== NETFLIX-ACHTIGE AUTO MATCHING =====
 
             if (!title) {
                 return res.status(400).json({ error: 'Search requires title parameter' });
@@ -391,7 +382,6 @@ export default async function handler(req, res) {
                     .trim();
             }
 
-            // Levenshtein
             function levenshtein(a, b) {
                 const m = a.length, n = b.length;
                 if (!m) return n;
@@ -415,7 +405,6 @@ export default async function handler(req, res) {
                 return 1 - dist / Math.max(a.length, b.length);
             }
 
-            // Hits ophalen
             let hits = [];
             if (Array.isArray(data)) hits = data;
             else if (Array.isArray(data?.results)) hits = data.results;
@@ -469,10 +458,11 @@ export default async function handler(req, res) {
                 };
             });
 
-            // Alleen resultaten met score > 0
             const filtered = scored
                 .filter(item => item._score > 0)
                 .sort((a, b) => b._score - a._score);
+
+            setCacheForType('search');
 
             res.status(200).json({
                 original_count: hits.length,
