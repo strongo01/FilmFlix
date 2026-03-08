@@ -91,39 +91,39 @@ export default async function handler(req, res) {
     // RAPIDAPI
     const RAPID_HOST = 'streaming-availability.p.rapidapi.com';
 
-const RAPIDAPI_KEYS = [
-    process.env.RAPIDAPI_KEY,      
-    process.env.RAPIDAPI_KEY2    
-    //process.env.RAPIDAPI_KEY3,
-    //process.env.RAPIDAPI_KEY4    
-];
+    const RAPIDAPI_KEYS = [
+        process.env.RAPIDAPI_KEY,
+        process.env.RAPIDAPI_KEY2,
+        process.env.RAPIDAPI_KEY3
+        //process.env.RAPIDAPI_KEY4    
+    ];
 
-async function fetchWithKeys(url) {
-    for (let i = 0; i < RAPIDAPI_KEYS.length; i++) {
-        const key = RAPIDAPI_KEYS[i];
-        const keyName = `RAPIDAPI_KEY${i === 0 ? '' : i+1}`; 
-        console.log(`Trying API key: ${keyName}`); 
-        const headers = {
-            'x-rapidapi-key': key,
-            'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
-        };
+    async function fetchWithKeys(url) {
+        for (let i = 0; i < RAPIDAPI_KEYS.length; i++) {
+            const key = RAPIDAPI_KEYS[i];
+            const keyName = `RAPIDAPI_KEY${i === 0 ? '' : i + 1}`;
+            console.log(`Trying API key: ${keyName}`);
+            const headers = {
+                'x-rapidapi-key': key,
+                'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
+            };
 
-        try {
-            const resp = await fetch(url, { headers });
-            if (resp.status === 429) {
-                console.warn(`${keyName} exceeded quota, trying next key...`);
-                continue; // probeer de volgende key
+            try {
+                const resp = await fetch(url, { headers });
+                if (resp.status === 429) {
+                    console.warn(`${keyName} exceeded quota, trying next key...`);
+                    continue; // probeer de volgende key
+                }
+                if (!resp.ok) {
+                    throw { upstreamStatus: resp.status };
+                }
+                return await resp.json();
+            } catch (err) {
+                if (i === RAPIDAPI_KEYS.length - 1) throw err;
+                console.warn(`${keyName} fetch failed, trying next key...`, err);
             }
-            if (!resp.ok) {
-                throw { upstreamStatus: resp.status };
-            }
-            return await resp.json();
-        } catch (err) {
-            if (i === RAPIDAPI_KEYS.length - 1) throw err; 
-            console.warn(`${keyName} fetch failed, trying next key...`, err);
         }
     }
-}
 
     function addParam(params, key, value) {
         if (value !== undefined && value !== null && value !== '') {
@@ -428,7 +428,7 @@ async function fetchWithKeys(url) {
 
     if (url) {
         try {
-           const _u = new URL(url);
+            const _u = new URL(url);
             const _params = Array.from(_u.searchParams.entries()).sort((a, b) => {
                 if (a[0] === b[0]) return a[1] < b[1] ? -1 : (a[1] > b[1] ? 1 : 0);
                 return a[0] < b[0] ? -1 : 1;
@@ -468,8 +468,8 @@ async function fetchWithKeys(url) {
                 }
             }
             const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
-const data = await fetchWithKeys(url);
-return data;
+                const data = await fetchWithKeys(url);
+                return data;
             });
 
             const data = await promise;
