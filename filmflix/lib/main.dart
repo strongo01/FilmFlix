@@ -11,6 +11,7 @@ import 'package:cinetrackr/views/homescreen.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:cinetrackr/views/kaart.dart'; 
 import 'package:cinetrackr/views/settingscreen.dart'; 
+import 'package:cinetrackr/views/watchlistscreen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,7 +78,7 @@ class _MainNavigationState extends State<MainNavigation> {
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
     const HomeScreen(),          // Index 0
-    const FilmNowScreen(),       // Index 1 (Nieuw in balk)
+    const WatchlistScreen(),     // Index 1 (Nieuw in balk)
     const SearchScreen(),        // Index 2
     const FoodScreen(),          // Index 3 (Nieuw in balk)
     const SettingsScreen(),      // Index 4
@@ -110,7 +111,7 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.movie_outlined),
             activeIcon: Icon(Icons.movie_filter_rounded),
-            label: 'Films',
+            label: 'Watchlist',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search_rounded),
