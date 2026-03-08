@@ -81,9 +81,32 @@ module.exports = async function handler(req, res) {
       if (!tokens.length) return res.status(200).json({ sent: 0, reason: 'no-admin-tokens' });
 
       const messages = tokens.map(t => ({ token: t, notification: { title, body: messageBody }, data: data || {} }));
-      const resp = await messaging.sendAll(messages);
-      console.log('userToAdmins: sendAll result:', { successCount: resp.successCount, failureCount: resp.failureCount });
-      return res.status(200).json({ successCount: resp.successCount, failureCount: resp.failureCount });
+
+      // Send messages. Newer admin SDKs provide sendAll/sendMulticast; older runtimes may not.
+      let successCount = 0;
+      let failureCount = 0;
+      if (typeof messaging.sendAll === 'function') {
+        const resp = await messaging.sendAll(messages);
+        successCount = resp.successCount ?? (resp.responses ? resp.responses.filter(r => r.success).length : 0);
+        failureCount = resp.failureCount ?? (resp.responses ? resp.responses.filter(r => !r.success).length : messages.length - successCount);
+        console.log('userToAdmins: sendAll used');
+      } else if (typeof messaging.sendMulticast === 'function') {
+        // sendMulticast accepts a multicast message with tokens array
+        const multicast = { tokens, notification: { title, body: messageBody }, data: data || {} };
+        const resp = await messaging.sendMulticast(multicast);
+        successCount = resp.successCount || 0;
+        failureCount = resp.failureCount || 0;
+        console.log('userToAdmins: sendMulticast used');
+      } else {
+        // Fallback: send messages individually and aggregate results
+        const results = await Promise.allSettled(messages.map(m => messaging.send(m)));
+        successCount = results.filter(r => r.status === 'fulfilled').length;
+        failureCount = results.length - successCount;
+        console.log('userToAdmins: send fallback used');
+      }
+
+      console.log('userToAdmins: send result:', { successCount, failureCount });
+      return res.status(200).json({ successCount, failureCount });
     }
 
     if (type === 'adminToUser') {
