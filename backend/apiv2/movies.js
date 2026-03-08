@@ -97,6 +97,28 @@ export default async function handler(req, res) {
         }
     }
 
+    function filterStreamingOptions(obj) {
+        if (Array.isArray(obj)) {
+            return obj.map(filterStreamingOptions);
+        } else if (obj && typeof obj === 'object') {
+            const result = {};
+            for (const key in obj) {
+                if (key === 'streamingOptions' && typeof obj[key] === 'object') {
+                    // filter alleen nl & us
+                    const filtered = {};
+                    if (obj[key].nl) filtered.nl = obj[key].nl;
+                    if (obj[key].us) filtered.us = obj[key].us;
+                    result[key] = filtered;
+                } else {
+                    result[key] = filterStreamingOptions(obj[key]);
+                }
+            }
+            return result;
+        } else {
+            return obj;
+        }
+    }
+
     if (type === 'search') {
         const params = {};
         addParam(params, 'country', country);
@@ -381,28 +403,35 @@ export default async function handler(req, res) {
             const normalizedUrl = _params.length ? `${_u.origin}${_u.pathname}?${_params}` : `${_u.origin}${_u.pathname}`;
             const cacheKey = `${type}|${normalizedUrl}`;
             console.log('movies: cacheKey=', cacheKey);
+            const BLOB_TTL_DAYS = 7; // houd blobs maximaal 7 dagen
+            const BLOB_TTL_MS = BLOB_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+            //let blobKey;
             if (isEpisodeRequest) {
+                blobKey = `episodes-${id}-${output_language}.json`;
                 try {
                     const existing = await list({ prefix: blobKey });
 
-                    if (existing.blobs.length > 0) {
+                    for (const blob of existing.blobs) {
+                        const blobDate = new Date(blob.created_at).getTime();
+                        if (Date.now() - blobDate > BLOB_TTL_MS) {
+                            console.log("Deleting old blob", blob.name);
+                            await blob.delete();
+                        }
+                    }
+
+                    const freshBlobs = existing.blobs.filter(blob => Date.now() - new Date(blob.created_at).getTime() <= BLOB_TTL_MS);
+                    if (freshBlobs.length > 0) {
                         console.log("BLOB CACHE HIT", blobKey);
-
-                        const cached = await fetch(existing.blobs[0].url);
+                        const cached = await fetch(freshBlobs[0].url);
                         const json = await cached.json();
-
-                        res.setHeader(
-                            "Cache-Control",
-                            "public, max-age=60, s-maxage=604800, stale-while-revalidate=300"
-                        );
-
+                        res.setHeader("Cache-Control", "public, max-age=60, s-maxage=604800, stale-while-revalidate=300");
                         return res.status(200).json(json);
                     } else {
                         console.log("BLOB CACHE MISS", blobKey);
-
                     }
                 } catch (e) {
-                    console.log("Blob read failed, continuing...");
+                    console.log("Blob read failed, continuing...", e);
                 }
             }
             const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
@@ -416,9 +445,11 @@ export default async function handler(req, res) {
             });
 
             const data = await promise;
+            const filteredData = filterStreamingOptions(data);
+
             if (isEpisodeRequest) {
                 try {
-                    await put(blobKey, JSON.stringify(data), {
+                    await put(blobKey, JSON.stringify(filteredData), {
                         access: "public",
                         contentType: "application/json",
                         token: process.env.BLOB_READ_WRITE_TOKEN,
@@ -439,8 +470,8 @@ export default async function handler(req, res) {
             res.setHeader('X-Cache', coalesced ? 'COALESCED' : 'MISS');
 
             if (type !== 'search') {
-                if (type === 'get' || type === 'filter' || type === 'search') setCacheForType(type);
-                return res.status(200).json(data);
+                if (type === 'get' || type === 'filter') setCacheForType(type);
+                return res.status(200).json(filteredData);
             }
 
             if (!title) {
@@ -451,7 +482,7 @@ export default async function handler(req, res) {
                 if (!str) return '';
                 return str
                     .normalize('NFD')
-                    .replace(/[ -\u036f]/g, '')
+                    .replace(/\p{Diacritic}/gu, '')
                     .toLowerCase()
                     .replace(/[^a-z0-9\s]/g, ' ')
                     .replace(/\s+/g, ' ')
