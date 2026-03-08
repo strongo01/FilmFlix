@@ -1,3 +1,4 @@
+import { put, list } from "@vercel/blob";
 const https = require('https');
 
 // In-process coalescing map to dedupe concurrent upstream requests per instance
@@ -112,6 +113,10 @@ export default async function handler(req, res) {
     }
 
     else if (type === 'get') {
+        const isEpisodeRequest =
+            type === "get" && series_granularity === "episode";
+
+        const blobKey = `episodes-${id}-${output_language}.json`;
         url = `https://${RAPID_HOST}/shows/${id}?` +
             new URLSearchParams({
                 series_granularity,
@@ -377,6 +382,30 @@ export default async function handler(req, res) {
             const normalizedUrl = _params.length ? `${_u.origin}${_u.pathname}?${_params}` : `${_u.origin}${_u.pathname}`;
             const cacheKey = `${type}|${normalizedUrl}`;
             console.log('movies: cacheKey=', cacheKey);
+            if (isEpisodeRequest) {
+                try {
+                    const existing = await list({ prefix: blobKey });
+
+                    if (existing.blobs.length > 0) {
+                        console.log("BLOB CACHE HIT", blobKey);
+
+                        const cached = await fetch(existing.blobs[0].url);
+                        const json = await cached.json();
+
+                        res.setHeader(
+                            "Cache-Control",
+                            "public, max-age=60, s-maxage=604800, stale-while-revalidate=300"
+                        );
+
+                        return res.status(200).json(json);
+                    } else {
+                        console.log("BLOB CACHE MISS", blobKey);
+
+                    }
+                } catch (e) {
+                    console.log("Blob read failed, continuing...");
+                }
+            }
             const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
                 const resp = await fetch(url, { headers });
                 if (!resp.ok) {
@@ -388,7 +417,19 @@ export default async function handler(req, res) {
             });
 
             const data = await promise;
+            if (isEpisodeRequest) {
+                try {
+                    await put(blobKey, JSON.stringify(data), {
+                        access: "public",
+                        contentType: "application/json",
+                        token: process.env.BLOB_READ_WRITE_TOKEN,
+                    });
 
+                    console.log("BLOB CACHE SAVED");
+                } catch (e) {
+                    console.log("Blob save failed", e);
+                }
+            }
             const CACHE_TTLS = { search: 86400, get: 604800, filter: 86400 };
             function setCacheForType(t) {
                 const s = CACHE_TTLS[t] || 60; // default short s-maxage
