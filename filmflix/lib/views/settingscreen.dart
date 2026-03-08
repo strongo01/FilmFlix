@@ -205,7 +205,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return _buildProfessionalCard(
       cardColor,
       child: InkWell(
-        onTap: () {},
+        onTap: () async {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user == null) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Je moet ingelogd zijn om je naam te wijzigen')),
+            );
+            return;
+          }
+
+          final formKey = GlobalKey<FormState>();
+          final ctrl = TextEditingController(text: _displayName ?? '');
+          final result = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Wijzig je naam'),
+              content: Form(
+                key: formKey,
+                child: TextFormField(
+                  controller: ctrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(labelText: 'Je naam'),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Vul je naam in';
+                    return null;
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Annuleer')),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!formKey.currentState!.validate()) return;
+                    Navigator.of(ctx).pop(true);
+                  },
+                  child: const Text('Opslaan'),
+                ),
+              ],
+            ),
+          );
+
+          if (result != true) return;
+          final newName = ctrl.text.trim();
+          try {
+            await user.updateDisplayName(newName);
+            await user.reload();
+            final usersRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+            await usersRef.set({
+              'displayName': newName,
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+            if (!mounted) return;
+            setState(() {
+              _displayName = newName;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Naam bijgewerkt')));
+          } catch (e) {
+            debugPrint('Failed to update displayName: $e');
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bijwerken mislukt')));
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(

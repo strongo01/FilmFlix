@@ -21,15 +21,13 @@ class _AdminScreenState extends State<AdminScreen> {
         appBar: AppBar(
           title: const Text('Admin'),
           bottom: const TabBar(
-            tabs: [Tab(text: 'Chats'), Tab(text: 'FAQs')],
+            tabs: [
+              Tab(text: 'Chats'),
+              Tab(text: 'FAQs'),
+            ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildChatsTab(),
-            _buildFaqsTab(),
-          ],
-        ),
+        body: TabBarView(children: [_buildChatsTab(), _buildFaqsTab()]),
       ),
     );
   }
@@ -37,17 +35,28 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _showPermissionHelp() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-        title: const Text('Niet ingelogd'),
-        content: const Text('Log eerst in als admin en probeer het opnieuw.'),
-        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Sluiten'))],
-      ));
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Niet ingelogd'),
+          content: const Text('Log eerst in als admin en probeer het opnieuw.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Sluiten'),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
     String roleText = 'Geen users-doc gevonden.';
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       final data = doc.data();
       if (data != null && data['role'] != null) {
         roleText = 'users/${user.uid} role = ${data['role'].toString()}';
@@ -58,25 +67,43 @@ class _AdminScreenState extends State<AdminScreen> {
       roleText = 'Fout bij lezen users-doc: $e';
     }
 
-    await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('Rechten controleren'),
-      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Mogelijke oorzaken en oplossingen:'),
-        const SizedBox(height: 8),
-        const Text('- Firestore rules controleren: regels gebruiken custom claims (request.auth.token.role).'),
-        const SizedBox(height: 6),
-        const Text('- Als je custom claims gebruikt: zet role/admin via Admin SDK (service account) en laat admin opnieuw inloggen.'),
-        const SizedBox(height: 6),
-        const Text('- Of wijzig tijdelijk de rules om de rol uit /users/{uid} te lezen.'),
-        const SizedBox(height: 12),
-        const Text('Huidige users-doc:'),
-        const SizedBox(height: 6),
-        Text(roleText),
-      ])),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Sluiten')),
-      ],
-    ));
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rechten controleren'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Mogelijke oorzaken en oplossingen:'),
+              const SizedBox(height: 8),
+              const Text(
+                '- Firestore rules controleren: regels gebruiken custom claims (request.auth.token.role).',
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '- Als je custom claims gebruikt: zet role/admin via Admin SDK (service account) en laat admin opnieuw inloggen.',
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '- Of wijzig tijdelijk de rules om de rol uit /users/{uid} te lezen.',
+              ),
+              const SizedBox(height: 12),
+              const Text('Huidige users-doc:'),
+              const SizedBox(height: 6),
+              Text(roleText),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Sluiten'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showDebugInfo() async {
@@ -96,14 +123,19 @@ class _AdminScreenState extends State<AdminScreen> {
 
     try {
       if (user != null) {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
         usersDoc = doc.data();
       }
     } catch (e) {
       usersDoc = {'error': e.toString()};
     }
 
-    debugPrint('AdminScreen debug: uid=$uid claims=$claims usersDoc=$usersDoc idTokenErr=$idTokenErr');
+    debugPrint(
+      'AdminScreen debug: uid=$uid claims=$claims usersDoc=$usersDoc idTokenErr=$idTokenErr',
+    );
 
     await showDialog<void>(
       context: context,
@@ -125,7 +157,12 @@ class _AdminScreenState extends State<AdminScreen> {
             ],
           ),
         ),
-        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
@@ -136,49 +173,89 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Fetch document by ID'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Plak hier het document ID van customerquestions:'),
-          const SizedBox(height: 8),
-          TextField(controller: ctrl),
-        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Plak hier het document ID van customerquestions:'),
+            const SizedBox(height: 8),
+            TextField(controller: ctrl),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(null), child: const Text('Annuleer')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()), child: const Text('Fetch')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Annuleer'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
+            child: const Text('Fetch'),
+          ),
         ],
       ),
     );
     if (res == null || res.isEmpty) return;
 
     try {
-      final doc = await FirebaseFirestore.instance.collection('customerquestions').doc(res).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('customerquestions')
+          .doc(res)
+          .get();
       if (!doc.exists) {
-        await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-          title: const Text('Niet gevonden'),
-          content: Text('Document ${res} bestaat niet of is niet leesbaar.'),
-          actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
-        ));
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Niet gevonden'),
+            content: Text('Document ${res} bestaat niet of is niet leesbaar.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
         debugPrint('fetchDoc: not found $res');
         return;
       }
       final data = doc.data();
       debugPrint('fetchDoc ${res}: $data');
-      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-        title: Text('Document ${res}'),
-        content: SingleChildScrollView(child: Text(data?.toString() ?? '<empty>')),
-        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
-      ));
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Document ${res}'),
+          content: SingleChildScrollView(
+            child: Text(data?.toString() ?? '<empty>'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       debugPrint('fetchDoc error for $res: $e');
-      await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-        title: const Text('Fout'),
-        content: Text('Fout bij ophalen: $e'),
-        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK'))],
-      ));
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Fout'),
+          content: Text('Fout bij ophalen: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
   Widget _buildChatsTab() {
-    final col = FirebaseFirestore.instance.collection('customerquestions').orderBy('updatedAt', descending: true);
+    final col = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .orderBy('updatedAt', descending: true);
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: col.snapshots(),
       builder: (ctx, snap) {
@@ -197,25 +274,30 @@ class _AdminScreenState extends State<AdminScreen> {
                     'Kan geen chats laden: ${snap.error}',
                     textAlign: TextAlign.center,
                   ),
-                  
-                  
                 ],
-              ),            ),
+              ),
+            ),
           );
-
         }
-        if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (snap.connectionState == ConnectionState.waiting)
+          return const Center(child: CircularProgressIndicator());
         if (!snap.hasData || snap.data!.docs.isEmpty) {
           final uid = FirebaseAuth.instance.currentUser?.uid;
           debugPrint('customerquestions: no docs (uid=$uid)');
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Text('Geen vragen gevonden'),
-                const SizedBox(height: 8),
-                ElevatedButton(onPressed: _promptAndFetchDoc, child: const Text('Toon debug info')),
-              ]),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Geen vragen gevonden'),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _promptAndFetchDoc,
+                    child: const Text('Toon debug info'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -253,10 +335,19 @@ class _AdminScreenState extends State<AdminScreen> {
             }
 
             String _extractTextFromMap(Map m) {
-              if (m['text'] != null && m['text'].toString().trim().isNotEmpty) return m['text'].toString();
-              if (m['answer'] != null && m['answer'].toString().trim().isNotEmpty) return m['answer'].toString();
-              if (m['message'] != null && m['message'].toString().trim().isNotEmpty) return m['message'].toString();
-              final firstString = m.values.firstWhere((v) => v != null && v is String && v.toString().trim().isNotEmpty, orElse: () => null);
+              if (m['text'] != null && m['text'].toString().trim().isNotEmpty)
+                return m['text'].toString();
+              if (m['answer'] != null &&
+                  m['answer'].toString().trim().isNotEmpty)
+                return m['answer'].toString();
+              if (m['message'] != null &&
+                  m['message'].toString().trim().isNotEmpty)
+                return m['message'].toString();
+              final firstString = m.values.firstWhere(
+                (v) =>
+                    v != null && v is String && v.toString().trim().isNotEmpty,
+                orElse: () => null,
+              );
               return firstString?.toString() ?? m.toString();
             }
 
@@ -314,7 +405,8 @@ class _AdminScreenState extends State<AdminScreen> {
             try {
               if (lastDt != null) {
                 final dt = lastDt.toLocal();
-                timeText = '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                timeText =
+                    '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
               }
             } catch (_) {}
 
@@ -325,7 +417,8 @@ class _AdminScreenState extends State<AdminScreen> {
                 if (ts is Timestamp) return ts.millisecondsSinceEpoch;
                 if (ts is DateTime) return ts.millisecondsSinceEpoch;
                 if (ts is int) return ts;
-                if (ts is String) return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
+                if (ts is String)
+                  return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
               } catch (_) {}
               return 0;
             }
@@ -333,73 +426,149 @@ class _AdminScreenState extends State<AdminScreen> {
             int lastUserMs = _tsToMs(data['createdAt']);
             for (final ur in userReplies) {
               try {
-                final ts = ur is Map ? (ur['createdAt'] ?? ur['updatedAt']) : null;
+                final ts = ur is Map
+                    ? (ur['createdAt'] ?? ur['updatedAt'])
+                    : null;
                 lastUserMs = Math.max(lastUserMs, _tsToMs(ts));
               } catch (_) {}
             }
 
             int lastAdminMs = _tsToMs(data['answerAt'] ?? data['updatedAt']);
-            if (answer.isNotEmpty) lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['answerAt'] ?? data['updatedAt']));
+            if (answer.isNotEmpty)
+              lastAdminMs = Math.max(
+                lastAdminMs,
+                _tsToMs(data['answerAt'] ?? data['updatedAt']),
+              );
             // consider admin's last seen timestamp (set when admin opens the chat)
             lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['adminSeenAt']));
             for (final ar in adminReplies) {
               try {
-                final ts = ar is Map ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt']) : null;
+                final ts = ar is Map
+                    ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'])
+                    : null;
                 lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts));
               } catch (_) {}
             }
+            final int adminSeenMs = _tsToMs(data['adminSeenAt']);
+            final bool noAdminActivity =
+                answer.isEmpty && (adminReplies.isEmpty);
+            final bool unreadForAdmin =
+                (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) ||
+                (lastUserMs > lastAdminMs);
 
-            final bool unreadForAdmin = lastUserMs > lastAdminMs;
-
-            return ListTile(
-              leading: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const CircleAvatar(child: Icon(Icons.person)),
-                  if (unreadForAdmin)
-                    Positioned(
-                      right: -2,
-                      top: -2,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.2)),
-                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                        child: const Center(
-                          child: Text('1', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+            return Dismissible(
+              key: ValueKey(d.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              confirmDismiss: (direction) async {
+                final confirm = await showDialog<bool>(
+                  context: ctx,
+                  builder: (confirmCtx) => AlertDialog(
+                    title: const Text('Verwijder chat'),
+                    content: const Text('Weet je zeker dat je deze chat wilt verwijderen? Dit kan niet ongedaan gemaakt worden.'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.of(confirmCtx).pop(false), child: const Text('Annuleer')),
+                      ElevatedButton(onPressed: () => Navigator.of(confirmCtx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Verwijder')),
+                    ],
+                  ),
+                );
+                return confirm == true;
+              },
+              onDismissed: (direction) async {
+                try {
+                  await FirebaseFirestore.instance.collection('customerquestions').doc(d.id).delete();
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chat verwijderd')));
+                } catch (e) {
+                  debugPrint('Failed to delete chat ${d.id}: $e');
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verwijderen mislukt')));
+                }
+              },
+              child: ListTile(
+                leading: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const CircleAvatar(child: Icon(Icons.person)),
+                    if (unreadForAdmin)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.2),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: const Center(
+                            child: Text(
+                              '1',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+                  ],
+                ),
+                title: Text(
+                  question,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 6),
+                    Builder(
+                      builder: (_) {
+                        final userName = (data['name'] ?? 'Gebruiker').toString();
+                        final adminNames = (data['adminNames'] as List?) ?? [];
+                        final adminText = adminNames.isNotEmpty
+                            ? 'Admins: ${adminNames.map((e) => e.toString()).join(', ')}'
+                            : '';
+                        return adminText.isNotEmpty
+                            ? Text(
+                                adminText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              )
+                            : const SizedBox.shrink();
+                      },
                     ),
-                ],
+                  ],
+                ),
+                trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (timeText.isNotEmpty)
+                      Text(timeText, style: const TextStyle(fontSize: 11)),
+                    TextButton(
+                      onPressed: () => _openAdminChat(d.id),
+                      child: const Text('Open'),
+                    ),
+                  ],
+                ),
+                onTap: () => _openAdminChat(d.id),
               ),
-              title: Text(question, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(preview, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 6),
-                  Builder(builder: (_) {
-                    final userName = (data['name'] ?? 'Gebruiker').toString();
-                    final adminNames = (data['adminNames'] as List?) ?? [];
-                    final adminText = adminNames.isNotEmpty ? 'Admins: ${adminNames.map((e) => e.toString()).join(', ')}' : '';
-                    return adminText.isNotEmpty
-                        ? Text(adminText, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.grey))
-                        : const SizedBox.shrink();
-                  }),
-                ],
-              ),
-              trailing: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (timeText.isNotEmpty) Text(timeText, style: const TextStyle(fontSize: 11)),
-                  TextButton(
-                    onPressed: () => _openAdminChat(d.id),
-                    child: const Text('Open'),
-                  ),
-                ],
-              ),
-              onTap: () => _openAdminChat(d.id),
             );
           },
         );
@@ -409,12 +578,16 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _openAdminChat(String docId) async {
     // fetch latest doc
-    final docRef = FirebaseFirestore.instance.collection('customerquestions').doc(docId);
+    final docRef = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .doc(docId);
     final snap = await docRef.get();
     if (!snap.exists) return;
     // mark chat as seen by this admin
     try {
-      await docRef.set({'adminSeenAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+      await docRef.set({
+        'adminSeenAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Failed to set adminSeenAt: $e');
     }
@@ -430,24 +603,58 @@ class _AdminScreenState extends State<AdminScreen> {
     // build message list (include sender names)
     final List<Map<String, dynamic>> messages = [];
     final ownerName = (data['name'] ?? 'Gebruiker').toString();
-    messages.add({'text': questionText, 'isAdmin': false, 'ts': data['createdAt'], 'name': ownerName});
-    if (answerText.isNotEmpty) messages.add({'text': answerText, 'isAdmin': true, 'ts': data['answerAt'] ?? data['updatedAt'], 'name': (data['answerAdminName'] ?? 'Admin').toString()});
+    messages.add({
+      'text': questionText,
+      'isAdmin': false,
+      'ts': data['createdAt'],
+      'name': ownerName,
+    });
+    if (answerText.isNotEmpty)
+      messages.add({
+        'text': answerText,
+        'isAdmin': true,
+        'ts': data['answerAt'] ?? data['updatedAt'],
+        'name': (data['answerAdminName'] ?? 'Admin').toString(),
+      });
     for (final ar in adminReplies) {
       if (ar is Map) {
-        final textVal = (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ?? ar.toString();
+        final textVal =
+            (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
+            ar.toString();
         final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin').toString();
-        messages.add({'text': textVal, 'isAdmin': true, 'ts': ar['createdAt'], 'name': adminName});
+        messages.add({
+          'text': textVal,
+          'isAdmin': true,
+          'ts': ar['createdAt'],
+          'name': adminName,
+        });
       } else {
-        messages.add({'text': ar?.toString() ?? '', 'isAdmin': true, 'ts': null, 'name': 'Admin'});
+        messages.add({
+          'text': ar?.toString() ?? '',
+          'isAdmin': true,
+          'ts': null,
+          'name': 'Admin',
+        });
       }
     }
     for (final ur in userReplies) {
       if (ur is Map) {
-        final textVal = (ur['text'] ?? ur['message'])?.toString() ?? ur.toString();
+        final textVal =
+            (ur['text'] ?? ur['message'])?.toString() ?? ur.toString();
         final uName = (ur['name'] ?? ownerName).toString();
-        messages.add({'text': textVal, 'isAdmin': false, 'ts': ur['createdAt'], 'name': uName});
+        messages.add({
+          'text': textVal,
+          'isAdmin': false,
+          'ts': ur['createdAt'],
+          'name': uName,
+        });
       } else {
-        messages.add({'text': ur?.toString() ?? '', 'isAdmin': false, 'ts': null, 'name': ownerName});
+        messages.add({
+          'text': ur?.toString() ?? '',
+          'isAdmin': false,
+          'ts': null,
+          'name': ownerName,
+        });
       }
     }
 
@@ -472,194 +679,314 @@ class _AdminScreenState extends State<AdminScreen> {
     //final docRef = FirebaseFirestore.instance.collection('customerquestions').doc(docId);
     StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? docSub;
     void Function(void Function())? setStateDialog;
-    docSub = docRef.snapshots().listen((snap) {
-      if (!snap.exists) return;
-      try {
-        final d = snap.data()!;
-        final qText = (d['question'] ?? '').toString();
-        final aText = (d['answer'] ?? '').toString();
-        final aReplies = (d['adminReplies'] as List?) ?? [];
-        final uReplies = (d['userReplies'] as List?) ?? [];
-        final ownerName = (d['name'] ?? 'Gebruiker').toString();
+    docSub = docRef.snapshots().listen(
+      (snap) {
+        if (!snap.exists) return;
+        try {
+          final d = snap.data()!;
+          final qText = (d['question'] ?? '').toString();
+          final aText = (d['answer'] ?? '').toString();
+          final aReplies = (d['adminReplies'] as List?) ?? [];
+          final uReplies = (d['userReplies'] as List?) ?? [];
+          final ownerName = (d['name'] ?? 'Gebruiker').toString();
 
-        final List<Map<String, dynamic>> newMessages = [];
-        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt'], 'name': ownerName});
-        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt'], 'name': (d['answerAdminName'] ?? 'Admin').toString()});
-        for (final ar in aReplies) {
-          if (ar is Map) {
-            final textVal = (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ?? ar.toString();
-            final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin').toString();
-            newMessages.add({'text': textVal, 'isAdmin': true, 'ts': ar['createdAt'], 'name': adminName});
-          } else {
-            newMessages.add({'text': ar?.toString() ?? '', 'isAdmin': true, 'ts': null, 'name': 'Admin'});
+          final List<Map<String, dynamic>> newMessages = [];
+          newMessages.add({
+            'text': qText,
+            'isAdmin': false,
+            'ts': d['createdAt'],
+            'name': ownerName,
+          });
+          if (aText.isNotEmpty)
+            newMessages.add({
+              'text': aText,
+              'isAdmin': true,
+              'ts': d['answerAt'] ?? d['updatedAt'],
+              'name': (d['answerAdminName'] ?? 'Admin').toString(),
+            });
+          for (final ar in aReplies) {
+            if (ar is Map) {
+              final textVal =
+                  (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
+                  ar.toString();
+              final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin')
+                  .toString();
+              newMessages.add({
+                'text': textVal,
+                'isAdmin': true,
+                'ts': ar['createdAt'],
+                'name': adminName,
+              });
+            } else {
+              newMessages.add({
+                'text': ar?.toString() ?? '',
+                'isAdmin': true,
+                'ts': null,
+                'name': 'Admin',
+              });
+            }
           }
-        }
-        for (final ur in uReplies) {
-          if (ur is Map) {
-            final textVal = (ur['text'] ?? ur['message'])?.toString() ?? ur.toString();
-            final uName = (ur['name'] ?? ownerName).toString();
-            newMessages.add({'text': textVal, 'isAdmin': false, 'ts': ur['createdAt'], 'name': uName});
-          } else {
-            newMessages.add({'text': ur?.toString() ?? '', 'isAdmin': false, 'ts': null, 'name': ownerName});
+          for (final ur in uReplies) {
+            if (ur is Map) {
+              final textVal =
+                  (ur['text'] ?? ur['message'])?.toString() ?? ur.toString();
+              final uName = (ur['name'] ?? ownerName).toString();
+              newMessages.add({
+                'text': textVal,
+                'isAdmin': false,
+                'ts': ur['createdAt'],
+                'name': uName,
+              });
+            } else {
+              newMessages.add({
+                'text': ur?.toString() ?? '',
+                'isAdmin': false,
+                'ts': null,
+                'name': ownerName,
+              });
+            }
           }
+
+          int _tsToMs(dynamic ts) {
+            try {
+              if (ts == null) return 0;
+              if (ts is Timestamp) return ts.millisecondsSinceEpoch;
+              if (ts is DateTime) return ts.millisecondsSinceEpoch;
+              if (ts is int) return ts;
+              if (ts is String)
+                return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
+            } catch (_) {}
+            return 0;
+          }
+
+          newMessages.sort(
+            (a, b) => _tsToMs(a['ts']).compareTo(_tsToMs(b['ts'])),
+          );
+
+          setStateDialog?.call(() {
+            messages
+              ..clear()
+              ..addAll(newMessages);
+          });
+        } catch (e) {
+          debugPrint('Realtime admin doc listener error: $e');
         }
-
-        int _tsToMs(dynamic ts) {
-          try {
-            if (ts == null) return 0;
-            if (ts is Timestamp) return ts.millisecondsSinceEpoch;
-            if (ts is DateTime) return ts.millisecondsSinceEpoch;
-            if (ts is int) return ts;
-            if (ts is String) return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
-          } catch (_) {}
-          return 0;
-        }
-
-        newMessages.sort((a, b) => _tsToMs(a['ts']).compareTo(_tsToMs(b['ts'])));
-
-        setStateDialog?.call(() {
-          messages
-            ..clear()
-            ..addAll(newMessages);
-        });
-      } catch (e) {
-        debugPrint('Realtime admin doc listener error: $e');
-      }
-    }, onError: (e) {
-      debugPrint('admin doc snapshots listen error: $e');
-    });
+      },
+      onError: (e) {
+        debugPrint('admin doc snapshots listen error: $e');
+      },
+    );
 
     // show chat as a fullscreen page while keeping the realtime listener active
-    await Navigator.of(context).push(MaterialPageRoute(builder: (ctx2) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}'),
-        ),
-        body: SafeArea(
-          child: StatefulBuilder(builder: (ctx3, setState) {
-            setStateDialog = setState;
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollCtrl,
-                      itemCount: messages.length,
-                      itemBuilder: (c, i) {
-                        final m = messages[i];
-                        final isAdmin = m['isAdmin'] == true;
-                        final txt = (m['text'] ?? '').toString();
-                        final senderName = (m['name'] ?? (isAdmin ? 'Admin' : 'Gebruiker')).toString();
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                          child: Column(
-                            crossAxisAlignment: isAdmin ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                senderName,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: isAdmin ? Colors.white70 : Colors.grey.shade700,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisAlignment: isAdmin ? MainAxisAlignment.end : MainAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: isAdmin ? Theme.of(context).colorScheme.primary : Colors.grey.shade200,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(txt, style: TextStyle(color: isAdmin ? Colors.white : Colors.black87)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(controller: replyCtrl, decoration: const InputDecoration(hintText: 'Typ een antwoord...'), maxLines: 3),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () async {
-                            final text = replyCtrl.text.trim();
-                            if (text.isEmpty) return;
-                            String adminName = 'Admin';
-                            String? adminId = FirebaseAuth.instance.currentUser?.uid;
-                            try {
-                              final currentUser = FirebaseAuth.instance.currentUser;
-                              if (adminId != null) {
-                                final udoc = await FirebaseFirestore.instance.collection('users').doc(adminId).get();
-                                final udata = udoc.data();
-                                adminName = (udata != null && udata['name'] != null) ? udata['name'].toString() : (currentUser?.displayName ?? 'Admin');
-                              } else {
-                                adminName = FirebaseAuth.instance.currentUser?.displayName ?? 'Admin';
-                              }
-                            } catch (_) {}
-
-                            final reply = {
-                              'text': text,
-                              'createdAt': Timestamp.now(),
-                              'seenBy': <String>[],
-                              'adminName': adminName,
-                              'adminId': adminId,
-                            };
-                            try {
-                              await docRef.update({
-                                'adminReplies': FieldValue.arrayUnion([reply]),
-                                'adminNames': FieldValue.arrayUnion([adminName]),
-                                'updatedAt': FieldValue.serverTimestamp(),
-                                'userRead': false,
-                              });
-                              setStateDialog?.call(() {
-                                //messages.add({'text': text, 'isAdmin': true, 'ts': Timestamp.now(), 'name': adminName});
-                                replyCtrl.clear();
-                              });
-                              await Future.delayed(const Duration(milliseconds: 100));
-                              if (scrollCtrl.hasClients) scrollCtrl.jumpTo(scrollCtrl.position.maxScrollExtent);
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
-                            }
-                          },
-                        child: const Text('Verstuur'),
-                      ),
-                    ],
-                  ),
-                ],
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (ctx2) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                'Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}',
               ),
-            );
-          }),
-        ),
-      );
-    }));
+            ),
+            body: SafeArea(
+              child: StatefulBuilder(
+                builder: (ctx3, setState) {
+                  setStateDialog = setState;
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            controller: scrollCtrl,
+                            itemCount: messages.length,
+                            itemBuilder: (c, i) {
+                              final m = messages[i];
+                              final isAdmin = m['isAdmin'] == true;
+                              final txt = (m['text'] ?? '').toString();
+                              final senderName =
+                                  (m['name'] ??
+                                          (isAdmin ? 'Admin' : 'Gebruiker'))
+                                      .toString();
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                  horizontal: 8,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: isAdmin
+                                      ? CrossAxisAlignment.end
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      senderName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: isAdmin
+                                            ? Colors.white70
+                                            : Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment: isAdmin
+                                          ? MainAxisAlignment.end
+                                          : MainAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          constraints: BoxConstraints(
+                                            maxWidth:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width *
+                                                0.66,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 10,
+                                            horizontal: 12,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isAdmin
+                                                ? Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary
+                                                : Colors.grey.shade200,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            txt,
+                                            style: TextStyle(
+                                              color: isAdmin
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: replyCtrl,
+                                decoration: const InputDecoration(
+                                  hintText: 'Typ een antwoord...',
+                                ),
+                                maxLines: 3,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () async {
+                                final text = replyCtrl.text.trim();
+                                if (text.isEmpty) return;
+                                String adminName = 'Admin';
+                                String? adminId =
+                                    FirebaseAuth.instance.currentUser?.uid;
+                                try {
+                                  final currentUser =
+                                      FirebaseAuth.instance.currentUser;
+                                  if (adminId != null) {
+                                    final udoc = await FirebaseFirestore
+                                        .instance
+                                        .collection('users')
+                                        .doc(adminId)
+                                        .get();
+                                    final udata = udoc.data();
+                                    adminName =
+                                        (udata != null && udata['name'] != null)
+                                        ? udata['name'].toString()
+                                        : (currentUser?.displayName ?? 'Admin');
+                                  } else {
+                                    adminName =
+                                        FirebaseAuth
+                                            .instance
+                                            .currentUser
+                                            ?.displayName ??
+                                        'Admin';
+                                  }
+                                } catch (_) {}
+
+                                final reply = {
+                                  'text': text,
+                                  'createdAt': Timestamp.now(),
+                                  'seenBy': <String>[],
+                                  'adminName': adminName,
+                                  'adminId': adminId,
+                                };
+                                try {
+                                  await docRef.update({
+                                    'adminReplies': FieldValue.arrayUnion([
+                                      reply,
+                                    ]),
+                                    'adminNames': FieldValue.arrayUnion([
+                                      adminName,
+                                    ]),
+                                    'updatedAt': FieldValue.serverTimestamp(),
+                                    'userRead': false,
+                                  });
+                                  setStateDialog?.call(() {
+                                    //messages.add({'text': text, 'isAdmin': true, 'ts': Timestamp.now(), 'name': adminName});
+                                    replyCtrl.clear();
+                                  });
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                  );
+                                  if (scrollCtrl.hasClients)
+                                    scrollCtrl.jumpTo(
+                                      scrollCtrl.position.maxScrollExtent,
+                                    );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Versturen mislukt'),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: const Text('Verstuur'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+    );
 
     // stop realtime listener when page is popped
     await docSub?.cancel();
   }
 
   Widget _buildFaqsTab() {
-    final col = FirebaseFirestore.instance.collection('faqs').orderBy('createdAt', descending: true);
+    final col = FirebaseFirestore.instance
+        .collection('faqs')
+        .orderBy('createdAt', descending: true);
     return Column(
       children: [
         Expanded(
           child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: col.snapshots(),
             builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+              if (snap.connectionState == ConnectionState.waiting)
+                return const Center(child: CircularProgressIndicator());
               final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return const Center(child: Text('Nog geen FAQ items'));
+              if (docs.isEmpty)
+                return const Center(child: Text('Nog geen FAQ items'));
               return ListView.separated(
                 itemCount: docs.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
@@ -672,13 +999,22 @@ class _AdminScreenState extends State<AdminScreen> {
                     title: Text(q),
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         child: Text(a),
                       ),
                       ButtonBar(
                         children: [
-                          TextButton(onPressed: () => _editFaq(d.id, q, a), child: const Text('Bewerk')),
-                          TextButton(onPressed: () => _deleteFaq(d.id), child: const Text('Verwijder')),
+                          TextButton(
+                            onPressed: () => _editFaq(d.id, q, a),
+                            child: const Text('Bewerk'),
+                          ),
+                          TextButton(
+                            onPressed: () => _deleteFaq(d.id),
+                            child: const Text('Verwijder'),
+                          ),
                         ],
                       ),
                     ],
@@ -707,14 +1043,30 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Nieuwe FAQ'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: qCtrl, decoration: const InputDecoration(labelText: 'Question')),
-          const SizedBox(height: 8),
-          TextField(controller: aCtrl, decoration: const InputDecoration(labelText: 'Answer'), maxLines: 4),
-        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: qCtrl,
+              decoration: const InputDecoration(labelText: 'Question'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: aCtrl,
+              decoration: const InputDecoration(labelText: 'Answer'),
+              maxLines: 4,
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Annuleren')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Voeg toe')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuleren'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Voeg toe'),
+          ),
         ],
       ),
     );
@@ -728,10 +1080,14 @@ class _AdminScreenState extends State<AdminScreen> {
         'answer': a,
         'createdAt': FieldValue.serverTimestamp(),
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('FAQ toegevoegd')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('FAQ toegevoegd')));
     } catch (e) {
       debugPrint('Failed to add faq: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Toevoegen mislukt')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Toevoegen mislukt')));
     }
   }
 
@@ -742,14 +1098,30 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Bewerk FAQ'),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: qCtrl, decoration: const InputDecoration(labelText: 'Question')),
-          const SizedBox(height: 8),
-          TextField(controller: aCtrl, decoration: const InputDecoration(labelText: 'Answer'), maxLines: 4),
-        ]),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: qCtrl,
+              decoration: const InputDecoration(labelText: 'Question'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: aCtrl,
+              decoration: const InputDecoration(labelText: 'Answer'),
+              maxLines: 4,
+            ),
+          ],
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Annuleren')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Opslaan')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuleren'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Opslaan'),
+          ),
         ],
       ),
     );
@@ -763,29 +1135,46 @@ class _AdminScreenState extends State<AdminScreen> {
         'answer': a,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('FAQ bijgewerkt')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('FAQ bijgewerkt')));
     } catch (e) {
       debugPrint('Failed to update faq: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opslaan mislukt')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Opslaan mislukt')));
     }
   }
 
   Future<void> _deleteFaq(String id) async {
-    final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('Verwijder FAQ'),
-      content: const Text('Weet je zeker dat je deze FAQ wilt verwijderen?'),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Annuleren')),
-        ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Verwijder')),
-      ],
-    ));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Verwijder FAQ'),
+        content: const Text('Weet je zeker dat je deze FAQ wilt verwijderen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuleren'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Verwijder'),
+          ),
+        ],
+      ),
+    );
     if (ok != true) return;
     try {
       await FirebaseFirestore.instance.collection('faqs').doc(id).delete();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('FAQ verwijderd')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('FAQ verwijderd')));
     } catch (e) {
       debugPrint('Failed to delete faq: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verwijderen mislukt')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Verwijderen mislukt')));
     }
   }
 }

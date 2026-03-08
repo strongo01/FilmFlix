@@ -119,7 +119,11 @@ class _HomeScreenState extends State<HomeScreen> {
             } catch (_) {}
           }
 
-          final bool unreadForAdmin = lastUserMs > lastAdminMs;
+          // If there is no admin activity yet (no answer, no adminReplies, and admin never opened),
+          // treat the initial question as unread for admins so they immediately see the badge on HomeScreen.
+          final int adminSeenMs = _tsToMs(data['adminSeenAt']);
+          final bool noAdminActivity = answer.isEmpty && (adminReplies.isEmpty);
+          final bool unreadForAdmin = (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) || (lastUserMs > lastAdminMs);
           if (unreadForAdmin) adminUnread += 1;
         }
         if (mounted) setState(() => _cachedUnreadAdminChats = adminUnread);

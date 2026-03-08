@@ -430,7 +430,6 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         'question': question,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        // mark as unread for the user until an admin replies
         'userRead': true,
         'adminReplies': [],
         'userReplies': [],
@@ -1097,9 +1096,45 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                       // ignore
                     }
 
+                    // determine if this thread has unread admin messages for the current user
+                    final String? _uid = FirebaseAuth.instance.currentUser?.uid;
+                    bool unreadForUser = false;
+                    final userRead = data['userRead'] == true;
+                    if (!userRead) {
+                      unreadForUser = true;
+                    } else {
+                      for (final ar in adminReplies) {
+                        if (ar is Map) {
+                          final seenBy = (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ?? [];
+                          if (!seenBy.contains(_uid)) {
+                            unreadForUser = true;
+                            break;
+                          }
+                        }
+                      }
+                    }
+
                     return ListTile(
-                      leading: const CircleAvatar(
-                        child: Icon(Icons.question_mark),
+                      leading: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const CircleAvatar(
+                            child: Icon(Icons.question_mark),
+                          ),
+                          if (unreadForUser)
+                            Positioned(
+                              right: -2,
+                              top: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.2)),
+                                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                                child: const Center(
+                                  child: Text('1', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       title: Text(
                         question,
