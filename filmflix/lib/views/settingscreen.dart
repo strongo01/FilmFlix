@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/main.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
+import 'package:cinetrackr/utils/notification_permissions.dart';
+import 'package:cinetrackr/utils/fcm_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -78,8 +80,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: const Text('Meldingen'),
                   value: _notificationsEnabled,
                   activeColor: goldAccent,
-                  onChanged: (val) =>
-                      setState(() => _notificationsEnabled = val),
+                  onChanged: (val) async {
+                    if (val == true) {
+                      final granted = await requestNotificationPermission();
+                      if (!mounted) return;
+                      if (granted) {
+                        await registerFcmTokenForUser(FirebaseAuth.instance.currentUser);
+                        if (!mounted) return;
+                        setState(() => _notificationsEnabled = true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Meldingen ingeschakeld')),
+                        );
+                      } else {
+                        setState(() => _notificationsEnabled = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Machtiging voor meldingen geweigerd')),
+                        );
+                      }
+                    } else {
+                      // User turned off notifications locally — unregister token
+                      await unregisterFcmTokenForUser(FirebaseAuth.instance.currentUser);
+                      if (!mounted) return;
+                      setState(() => _notificationsEnabled = false);
+                    }
+                  },
                 ),
                 _buildDivider(isDark),
                 // Hier geven we een lege functie mee voor nu
