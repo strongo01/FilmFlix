@@ -85,11 +85,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       final granted = await requestNotificationPermission();
                       if (!mounted) return;
                       if (granted) {
-                        await registerFcmTokenForUser(FirebaseAuth.instance.currentUser);
+                        final ok = await registerFcmTokenForUser(FirebaseAuth.instance.currentUser);
+                        debugPrint('SettingsScreen: registerFcmToken result=$ok');
                         if (!mounted) return;
-                        setState(() => _notificationsEnabled = true);
+                        setState(() => _notificationsEnabled = ok);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Meldingen ingeschakeld')),
+                          SnackBar(content: Text(ok ? 'Meldingen ingeschakeld' : 'Meldingen niet geregistreerd')),
                         );
                       } else {
                         setState(() => _notificationsEnabled = false);

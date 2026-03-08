@@ -538,7 +538,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                 final episodes = epRaw is List
                                     ? epRaw
                                     : (epRaw is Map
-                                          ? (epRaw as Map).values.toList()
+                                          ? (epRaw).values.toList()
                                           : []);
 
                                 final seenCount = episodes
@@ -598,7 +598,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                         final epStreamRaw = ep['streamingOptions']?['nl'] ?? ep['streamingOptions'];
                                         final epStreams = epStreamRaw is List
                                             ? List.from(epStreamRaw)
-                                            : (epStreamRaw is Map ? (epStreamRaw as Map).values.toList() : <dynamic>[]);
+                                            : (epStreamRaw is Map ? (epStreamRaw).values.toList() : <dynamic>[]);
 
                                         return ListTile(
                                           leading: Checkbox(

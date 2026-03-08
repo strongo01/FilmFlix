@@ -555,17 +555,26 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                   ],
                 ),
-                trailing: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (timeText.isNotEmpty)
-                      Text(timeText, style: const TextStyle(fontSize: 11)),
-                    TextButton(
-                      onPressed: () => _openAdminChat(d.id),
-                      child: const Text('Open'),
-                    ),
-                  ],
+                trailing: SizedBox(
+                  height: 56,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (timeText.isNotEmpty)
+                        Text(timeText, style: const TextStyle(fontSize: 11)),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () => _openAdminChat(d.id),
+                        child: const Text('Open'),
+                      ),
+                    ],
+                  ),
                 ),
                 onTap: () => _openAdminChat(d.id),
               ),

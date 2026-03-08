@@ -117,8 +117,6 @@ class _SearchScreenState extends State<SearchScreen> {
     String showOriginalLanguage = '';
     int? yearMin;
     int? yearMax;
-    String orderBy = '';
-    String orderDirection = '';
 
     await showModalBottomSheet(
       context: context,

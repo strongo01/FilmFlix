@@ -39,9 +39,10 @@ function initAdmin() {
   }
 
   if (cred) {
+    console.log('initAdmin: service account credential loaded');
     return admin.initializeApp({ credential: cred });
   }
-
+  console.log('initAdmin: no explicit service account, initializing default app');
   return admin.initializeApp();
 }
 
@@ -58,6 +59,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { type, userId, title, body: messageBody, data } = req.body || {};
+  console.log('notify handler called, body=', JSON.stringify(req.body || {}));
   if (!type || !userId || !title || !messageBody) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
@@ -74,10 +76,13 @@ module.exports = async function handler(req, res) {
         if (d && d.fcmToken) tokens.push(d.fcmToken);
       });
 
+      console.log('userToAdmins: found admin tokens count=', tokens.length);
+
       if (!tokens.length) return res.status(200).json({ sent: 0, reason: 'no-admin-tokens' });
 
       const messages = tokens.map(t => ({ token: t, notification: { title, body: messageBody }, data: data || {} }));
       const resp = await messaging.sendAll(messages);
+      console.log('userToAdmins: sendAll result:', { successCount: resp.successCount, failureCount: resp.failureCount });
       return res.status(200).json({ successCount: resp.successCount, failureCount: resp.failureCount });
     }
 
@@ -86,6 +91,7 @@ module.exports = async function handler(req, res) {
       if (!userDoc.exists) return res.status(404).json({ error: 'user-not-found' });
       const d = userDoc.data() || {};
       const token = d.fcmToken;
+      console.log('adminToUser: userId=', userId, 'tokenPresent=', !!token);
       if (!token) return res.status(200).json({ sent: 0, reason: 'user-has-no-token' });
       const message = { token, notification: { title, body: messageBody }, data: data || {} };
       await messaging.send(message);
@@ -94,7 +100,9 @@ module.exports = async function handler(req, res) {
 
     return res.status(400).json({ error: 'invalid-type' });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'internal' });
+    console.error('notify handler error:', err && err.stack ? err.stack : err);
+    const resp = { error: 'internal' };
+    if (process.env.NODE_ENV === 'development') resp.detail = err && err.message ? err.message : String(err);
+    return res.status(500).json(resp);
   }
 };

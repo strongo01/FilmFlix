@@ -44,7 +44,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   bool _isInWatchlist = false;
   final Set<String> _seenSet = {};
   bool _loadingUserData = false;
-  bool _isSeenFilm = false;
   Map<String, dynamic>? _rapidData;
   Map<String, dynamic>? _omdbData;
   String? _poster;
@@ -87,33 +86,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
-  Future<void> _markFilmSeen() async {
-    final u = FirebaseAuth.instance.currentUser;
-    if (u == null) {
-      final go = await _ensureLoggedInWithPrompt(context);
-      if (!go) return;
-    }
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    setState(() => _loadingUserData = true);
-    try {
-      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
-      await usersRef.set({
-        'seenFilm': {widget.imdbId: true},
-      }, SetOptions(merge: true));
-      setState(() => _isSeenFilm = true);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Gemarkeerd als gezien')));
-    } catch (e, s) {
-      debugPrint('Error marking film seen: $e\n$s');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kon status niet bijwerken')),
-      );
-    } finally {
-      setState(() => _loadingUserData = false);
-    }
-  }
 
   // Sorteer volgorde
   int _typePriority(String? type) {
@@ -493,7 +465,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: FutureBuilder<Uint8List?>(
-        future: _fetchProxiedImageBytes(initialPoster ?? ''),
+        future: _fetchProxiedImageBytes(initialPoster),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return Container(
@@ -648,7 +620,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
       // apply first rapid result immediately
       applyRapidAndOmdb(
-        firstRapid as Map<String, dynamic>,
+        firstRapid,
         omdb as Map<String, dynamic>?,
       );
 
@@ -768,7 +740,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           _seenSet.add('movie');
         else
           _seenSet.remove('movie');
-        _isSeenFilm = isSeenFilm;
       });
     } catch (e, s) {
       debugPrint('Error loading user data: $e\n$s');
@@ -1154,7 +1125,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // stable episode key for storage
     final epKey =
         's${seasonIndex}_e${episodeIndex}'; // We genereren een unieke sleutel voor deze aflevering op basis van de index van het seizoen en de index van de aflevering. Deze sleutel gebruiken we later om bij te houden welke afleveringen als gezien zijn gemarkeerd door de gebruiker. Door deze sleutel te gebruiken, kunnen we gemakkelijk controleren of een specifieke aflevering in de _seenSet zit, wat ons vertelt of de gebruiker deze aflevering als gezien heeft gemarkeerd.
-    final isSeen = _seenSet.contains(epKey);
+    _seenSet.contains(epKey);
 
     return Column(
       children: [
