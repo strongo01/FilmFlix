@@ -1540,6 +1540,28 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               debugPrint('Failed to send chat reply: $e');
                               if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
                             }
+                                // Notify admins about the new user reply
+                                try {
+                                  final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+                                  final resp = await http.post(uri,
+                                      headers: {'Content-Type': 'application/json'},
+                                      body: json.encode({
+                                        'type': 'userToAdmins',
+                                        'userId': FirebaseAuth.instance.currentUser?.uid,
+                                        'title': 'Nieuw bericht van gebruiker',
+                                        'body': text,
+                                        'data': {'conversationId': docId}
+                                      }));
+                                  if (resp.statusCode == 200) {
+                                    final j = json.decode(resp.body);
+                                    final success = j['successCount'] ?? 0;
+                                    if (success == 0 && mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+                                    }
+                                  }
+                                } catch (e) {
+                                  debugPrint('Failed to call notify (user reply): $e');
+                                }
                           },
                           child: const Text('Verstuur'),
                         ),
@@ -1599,6 +1621,28 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Bericht verstuurd')));
+        // Notify admins about this follow-up message
+        try {
+          final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+          final resp = await http.post(uri,
+              headers: {'Content-Type': 'application/json'},
+              body: json.encode({
+                'type': 'userToAdmins',
+                'userId': FirebaseAuth.instance.currentUser?.uid,
+                'title': 'Nieuw bericht van gebruiker',
+                'body': text,
+                'data': {'conversationId': docId}
+              }));
+          if (resp.statusCode == 200) {
+            final j = json.decode(resp.body);
+            final success = j['successCount'] ?? 0;
+            if (success == 0 && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+            }
+          }
+        } catch (e) {
+          debugPrint('Failed to call notify (followup): $e');
+        }
     } catch (e) {
       debugPrint('Failed to send followup: $e');
       ScaffoldMessenger.of(
