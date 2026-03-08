@@ -86,7 +86,8 @@ export default async function handler(req, res) {
 
     let url;
     let headers = {};
-
+let isEpisodeRequest = false; 
+let blobKey; 
     // RAPIDAPI
     const RAPID_HOST = 'streaming-availability.p.rapidapi.com';
 
@@ -112,22 +113,20 @@ export default async function handler(req, res) {
         };
     }
 
-    else if (type === 'get') {
-        const isEpisodeRequest =
-            type === "get" && series_granularity === "episode";
+else if (type === 'get') {
+    isEpisodeRequest = series_granularity === "episode"; 
+        blobKey = `episodes-${id}-${output_language}.json`;
+    url = `https://${RAPID_HOST}/shows/${id}?` +
+        new URLSearchParams({
+            series_granularity,
+            output_language,
+        });
 
-        const blobKey = `episodes-${id}-${output_language}.json`;
-        url = `https://${RAPID_HOST}/shows/${id}?` +
-            new URLSearchParams({
-                series_granularity,
-                output_language,
-            });
-
-        headers = {
-            'x-rapidapi-key': RAPIDAPI_KEY,
-            'x-rapidapi-host': RAPID_HOST,
-        };
-    }
+    headers = {
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': RAPID_HOST,
+    };
+}
 
     else if (type === 'filter') {
         const params = {};
