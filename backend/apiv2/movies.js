@@ -95,8 +95,7 @@ export default async function handler(req, res) {
         process.env.RAPIDAPI_KEY,
         process.env.RAPIDAPI_KEY2,
         process.env.RAPIDAPI_KEY3
-        //process.env.RAPIDAPI_KEY4    
-    ];
+    ].filter(Boolean);
 
     async function fetchWithKeys(url) {
         for (let i = 0; i < RAPIDAPI_KEYS.length; i++) {
@@ -467,9 +466,17 @@ export default async function handler(req, res) {
                     console.log("Blob read failed, continuing...", e);
                 }
             }
+
+            const isRapid = url.includes('rapidapi');
+
             const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
-                const data = await fetchWithKeys(url);
-                return data;
+                if (isRapid) return await fetchWithKeys(url);
+
+                const resp = await fetch(url, { headers });
+
+                if (!resp.ok) throw { upstreamStatus: resp.status };
+
+                return await resp.json();
             });
 
             const data = await promise;
