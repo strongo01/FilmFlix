@@ -4,6 +4,8 @@ import 'dart:math' as Math;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -954,6 +956,25 @@ class _AdminScreenState extends State<AdminScreen> {
                                     scrollCtrl.jumpTo(
                                       scrollCtrl.position.maxScrollExtent,
                                     );
+                                  // Notify the user of this admin reply via backend
+                                  try {
+                                    final userId = data['userId']?.toString();
+                                    if (userId != null && userId.isNotEmpty) {
+                                      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+                                      await http.post(uri,
+                                        headers: {'Content-Type': 'application/json'},
+                                        body: json.encode({
+                                          'type': 'adminToUser',
+                                          'userId': userId,
+                                          'title': 'Nieuw bericht van admin',
+                                          'body': text,
+                                          'data': {'conversationId': docId}
+                                        }),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    debugPrint('Failed to notify user: $e');
+                                  }
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(

@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../firebase_options.dart';
 import 'loginscreen.dart';
 
@@ -423,7 +425,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       return;
     }
     try {
-      await FirebaseFirestore.instance.collection('customerquestions').add({
+      final docRef = await FirebaseFirestore.instance.collection('customerquestions').add({
         'userId': user.uid,
         'email': email,
         'name': name,
@@ -438,6 +440,34 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Vraag verstuurd')));
+
+      // Try notify admins via backend endpoint. If no admin tokens are available
+      // or notifications are disabled, inform the user.
+      try {
+        final url = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+        final resp = await http.post(url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({
+              'type': 'userToAdmins',
+              'userId': user.uid,
+              'title': 'Nieuwe vraag',
+              'body': question,
+              'data': {'conversationId': docRef.id}
+            }));
+        if (resp.statusCode == 200) {
+          // successCount may be 0 if admins have no tokens / declined notifications
+          final j = json.decode(resp.body);
+          final success = j['successCount'] ?? 0;
+          if (success == 0) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+          }
+        } else {
+          debugPrint('notify userToAdmins failed: ${resp.statusCode} ${resp.body}');
+        }
+      } catch (e) {
+        debugPrint('Failed to call notify endpoint: $e');
+      }
     } catch (e) {
       debugPrint('Failed to send customer question: $e');
       ScaffoldMessenger.of(

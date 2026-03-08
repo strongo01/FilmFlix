@@ -368,7 +368,15 @@ export default async function handler(req, res) {
 
     if (url) {
         try {
-            const cacheKey = `${type}|${url}`;
+            // Normalize URL query params for stable cache keys (sort params)
+            const _u = new URL(url);
+            const _params = Array.from(_u.searchParams.entries()).sort((a, b) => {
+                if (a[0] === b[0]) return a[1] < b[1] ? -1 : (a[1] > b[1] ? 1 : 0);
+                return a[0] < b[0] ? -1 : 1;
+            }).map(p => `${p[0]}=${p[1]}`).join('&');
+            const normalizedUrl = _params.length ? `${_u.origin}${_u.pathname}?${_params}` : `${_u.origin}${_u.pathname}`;
+            const cacheKey = `${type}|${normalizedUrl}`;
+            console.log('movies: cacheKey=', cacheKey);
             const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
                 const resp = await fetch(url, { headers });
                 if (!resp.ok) {
