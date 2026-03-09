@@ -322,11 +322,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDarkMode =
-        MediaQuery.of(context).platformBrightness == Brightness.dark;
-
   Future<bool> _checkIfAdmin() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
