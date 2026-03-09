@@ -280,7 +280,68 @@ class _HomeScreenState extends State<HomeScreen> {
     if (doc.data()?['displayName'] == null) await _promptForDisplayName(user.uid);
   }
 
-  Future<void> _promptForDisplayName(String uid) async { /* Je bestaande prompt code */ }
+Future<void> _promptForDisplayName(String uid) async {
+    final formKey = GlobalKey<FormState>();
+    final ctrl = TextEditingController();
+
+    // showDialog with barrierDismissible false and prevent back button
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+              title: const Text('Voer je naam in.'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.'),
+                  const SizedBox(height: 12),
+                  Form(
+                    key: formKey,
+                    child: TextFormField(
+                      controller: ctrl,
+                      autofocus: true,
+                      decoration: const InputDecoration(labelText: 'Je naam'),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Vul je naam in';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+                    final name = ctrl.text.trim();
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user != null) {
+                        await user.updateDisplayName(name);
+                        await user.reload();
+                      }
+                      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+                      await usersRef.set({
+                        'displayName': name,
+                        'email': user?.email,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      }, SetOptions(merge: true));
+                    } catch (e) {
+                      debugPrint('Failed saving displayName from dialog: $e');
+                    }
+                    if (mounted) Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Opslaan en doorgaan'),
+                ),
+              ],
+            ),
+        );
+      },
+    );
+  }
   // Fetch number of unread customer replies for current user.
   Future<int> _fetchUnreadCustomerReplies() async {
     try {
