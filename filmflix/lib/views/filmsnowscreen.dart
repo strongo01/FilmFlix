@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -28,7 +32,9 @@ class FilmNowScreen extends StatefulWidget {
 }
 
 class _FilmNowScreenState extends State<FilmNowScreen> {
-  final String baseApi = 'https://film-flix-olive.vercel.app/api/movies';
+  final String baseApi = 'https://film-flix-olive.vercel.app/apiv2/movies';
+  String? _xAppApiKey;
+  final Map<String, Uint8List> _imageCache = {};
   List<FilmNowItem> films = [];
   bool loading = true;
   bool error = false;
@@ -62,7 +68,10 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
           'region': 'NL',
         },
       );
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200)
         throw Exception('Upstream status ${resp.statusCode}');
 
@@ -132,13 +141,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
       return _posterWidget(item); // fallback naar poster
     }
 
-    return Image.network(
-      proxiedUrl(backdrop),
-      fit: BoxFit.cover,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : Container(color: Colors.grey[300]),
-      errorBuilder: (_, __, ___) => _posterWidget(item),
-    );
+    return _proxiedImage(backdrop, fit: BoxFit.cover);
   }
 
   Future<void> _fetchImdbIdFor(FilmNowItem item) async {
@@ -151,7 +154,10 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
         },
       );
 
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return;
 
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
@@ -170,13 +176,79 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
     return '$baseApi?type=image-proxy&imageUrl=${Uri.encodeComponent(url)}';
   }
 
+  Widget _proxiedImage(String imageUrl, {BoxFit fit = BoxFit.cover}) {
+    return FutureBuilder<Uint8List?>(
+      future: _fetchProxiedImageBytes(imageUrl),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Container(color: Colors.grey[300]);
+        }
+        final bytes = snap.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          return Image.memory(
+            bytes,
+            fit: fit,
+            gaplessPlayback: true,
+          );
+        }
+        return Container(color: Colors.grey[300]);
+      },
+    );
+  }
+
+  Future<void> _ensureEnvLoaded() async {
+    if (_xAppApiKey != null) return;
+    try {
+      final content = await rootBundle.loadString('assets/env/.env');
+      final lines = const LineSplitter().convert(content);
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        final idx = trimmed.indexOf('=');
+        if (idx <= 0) continue;
+        final key = trimmed.substring(0, idx).trim();
+        final value = trimmed.substring(idx + 1).trim();
+        if (key == 'X_APP_API_KEY') {
+          _xAppApiKey = value;
+          break;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to load .env: $e');
+    }
+  }
+
+  Future<Uint8List?> _fetchProxiedImageBytes(String url) async {
+    if (_imageCache.containsKey(url)) return _imageCache[url];
+    await _ensureEnvLoaded();
+    try {
+      final uri = Uri.parse(baseApi).replace(queryParameters: {
+        'type': 'image-proxy',
+        'imageUrl': url,
+      });
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode == 200) {
+        _imageCache[url] = resp.bodyBytes;
+        return resp.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('Error fetching proxied image: $e');
+    }
+    return null;
+  }
+
   /// Fallback: als poster missing of mislukte proxy -> probeer TMDb images endpoint
   Future<String?> _fetchTmdbPoster(String tmdbId) async {
     try {
       final uri = Uri.parse(
         baseApi,
       ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': tmdbId});
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return null;
 
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
@@ -218,46 +290,15 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
           }
           final url = snap.data;
           if (url != null && url.isNotEmpty) {
-            return Image.network(
-              proxiedUrl(url),
-              fit: BoxFit.cover,
-              loadingBuilder: (_, child, progress) =>
-                  progress == null ? child : Container(color: Colors.grey[300]),
-              errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
-            );
+            return _proxiedImage(url, fit: BoxFit.cover);
           }
           return Container(color: Colors.grey[300]);
         },
       );
     }
 
-    // There is a poster URL -> try proxy
-    return Image.network(
-      proxiedUrl(poster),
-      fit: BoxFit.cover,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : Container(color: Colors.grey[300]),
-      errorBuilder: (context, error, stackTrace) {
-        // fallback to TMDb
-        return FutureBuilder<String?>(
-          future: _fetchTmdbPoster(item.tmdbId),
-          builder: (ctx, snap) {
-            if (snap.connectionState == ConnectionState.waiting)
-              return Container(color: Colors.grey[300]);
-            final url = snap.data;
-            if (url != null && url.isNotEmpty) {
-              return Image.network(
-                proxiedUrl(url),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: Colors.grey[300]),
-              );
-            }
-            return Container(color: Colors.grey[300]);
-          },
-        );
-      },
-    );
+    // There is a poster URL -> try proxy (via header-using fetch)
+    return _proxiedImage(poster, fit: BoxFit.cover);
   }
 
   void _openDetails(FilmNowItem item) {
@@ -431,12 +472,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                               child: SizedBox(
                                 width: 120, // Was 78
                                 child: f.poster != null
-                                    ? Image.network(
-                                        proxiedUrl(f.poster!),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            Container(color: Colors.grey[300]),
-                                      )
+                                    ? _proxiedImage(f.poster!, fit: BoxFit.cover)
                                     : FutureBuilder<String?>(
                                         future: _fetchTmdbPoster(f.tmdbId),
                                         builder: (ctx, snap) {
@@ -447,14 +483,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                                             );
                                           final url = snap.data;
                                           if (url != null && url.isNotEmpty) {
-                                            return Image.network(
-                                              proxiedUrl(url),
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) =>
-                                                  Container(
-                                                    color: Colors.grey[300],
-                                                  ),
-                                            );
+                                            return _proxiedImage(url, fit: BoxFit.cover);
                                           }
                                           return Container(
                                             color: Colors.grey[300],

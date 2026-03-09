@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
@@ -19,10 +21,11 @@ class MovieDetailScreen extends StatefulWidget {
 
   @override
   State<MovieDetailScreen> createState() => _MovieDetailScreenState();
-
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
+  String? _xAppApiKey;
+  final Map<String, Uint8List> _imageCache = {};
   String? _rating;
   List<String> _genres = [];
   List<String> _creators = [];
@@ -41,13 +44,28 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   bool _isInWatchlist = false;
   final Set<String> _seenSet = {};
   bool _loadingUserData = false;
-  bool _isSeenFilm = false;
   Map<String, dynamic>? _rapidData;
   Map<String, dynamic>? _omdbData;
   String? _poster;
   String? _title;
   String? _overview;
-  final Map<String, String> _serviceAssetMap = {};
+  static const Map<String, String> _serviceAssetMap = {
+    'Netflix': 'netflix',
+    'Amazon Prime Video': 'prime_video',
+    'Prime Video': 'prime_video',
+    'Disney+': 'disney+',
+    'HBO Max': 'hbo_max',
+    'Hulu': 'hulu',
+    'Apple TV': 'apple_tv',
+    'Google Play': 'googleplay',
+    'YouTube': 'youtube',
+    'Crunchyroll': 'crunchyroll',
+    'Curiosity Stream': 'curiosity_stream',
+    'Mejane': 'mejane',
+    'MUBI': 'mubi',
+    'SkyShowtime': 'skyshowtime',
+    'Zee5': 'zee5',
+  };
 
   String _formatStreamingType(Map<String, dynamic> option) {
     // Deze functie neemt een streaming optie (zoals die we van de API krijgen) en formatteert het type van de optie in een leesbaar formaat. We kijken naar het 'type' veld van de optie, en afhankelijk van of het een abonnement, koopoptie, of huur optie is, formatteren we het label dienovereenkomstig. Voor koop- en huur opties voegen we ook de prijs toe als deze beschikbaar is. Dit maakt het duidelijker voor de gebruiker wat voor soort streaming optie het is en wat de kosten zijn.
@@ -68,29 +86,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
-  Future<void> _markFilmSeen() async {
-    final u = FirebaseAuth.instance.currentUser;
-    if (u == null) {
-      final go = await _ensureLoggedInWithPrompt(context);
-      if (!go) return;
-    }
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    setState(() => _loadingUserData = true);
-    try {
-      final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
-      await usersRef.set({
-        'seenFilm': {widget.imdbId: true},
-      }, SetOptions(merge: true));
-      setState(() => _isSeenFilm = true);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gemarkeerd als gezien')));
-    } catch (e, s) {
-      debugPrint('Error marking film seen: $e\n$s');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kon status niet bijwerken')));
-    } finally {
-      setState(() => _loadingUserData = false);
-    }
-  }
 
   // Sorteer volgorde
   int _typePriority(String? type) {
@@ -105,6 +100,40 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       default:
         return 3;
     }
+  }
+
+  bool _isResponseMovie(String? type) {
+    final t = type?.toString().toLowerCase() ?? '';
+    if (t.isEmpty) return false;
+    // Accept common variants: 'movie', 'film', or phrases containing 'film' or 'movie'
+    return t == 'movie' ||
+        t == 'film' ||
+        t.contains('film') ||
+        t.contains('movie') ||
+        t.contains('feature');
+  }
+
+  String _detectMediaType() {
+    // Prefer RapidAPI fields when available
+    final candidates = [
+      _rapidData?['itemType'],
+      _rapidData?['type'],
+      _rapidData?['showType'],
+      _rapidData?['titleType'],
+      _omdbData?['Type'],
+    ];
+
+    var sawSeries = false;
+    for (final c in candidates) {
+      if (c == null) continue;
+      final s = c.toString().toLowerCase();
+      if (s.contains('movie') || s.contains('film') || s.contains('feature'))
+        return 'movie';
+      if (s.contains('series') || s.contains('tv')) sawSeries = true;
+    }
+
+    if (sawSeries) return 'series';
+    return 'unknown';
   }
 
   // Badge met kleur
@@ -218,11 +247,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
       // call your backend endpoint
       final uri = Uri.parse(
-        'https://film-flix-olive.vercel.app/api/movies',
+        'https://film-flix-olive.vercel.app/apiv2/movies',
       ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': movieId});
 
       debugPrint('Fetching TMDb images from backend: $uri');
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
 
       if (resp.statusCode != 200) {
         debugPrint('tmdb-images request failed: ${resp.statusCode}');
@@ -280,7 +313,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     setState(() => _isTranslating[key] = true);
 
     try {
-      final uri = Uri.parse('https://film-flix-olive.vercel.app/api/movies')
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
           .replace(
             queryParameters: {
               'type': 'translate',
@@ -289,7 +322,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             },
           );
 
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         final translated = data['translation'] ?? data['translatedText'] ?? '';
@@ -307,9 +344,85 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   String proxiedUrl(String url) {
-    return 'https://film-flix-olive.vercel.app/api/movies'
+    return 'https://film-flix-olive.vercel.app/apiv2/movies'
         '?type=image-proxy'
         '&imageUrl=${Uri.encodeComponent(url)}';
+  }
+
+  Future<void> _ensureEnvLoaded() async {
+    if (_xAppApiKey != null) return;
+    try {
+      final content = await rootBundle.loadString('assets/env/.env');
+      final lines = const LineSplitter().convert(content);
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        final idx = trimmed.indexOf('=');
+        if (idx <= 0) continue;
+        final key = trimmed.substring(0, idx).trim();
+        final value = trimmed.substring(idx + 1).trim();
+        if (key == 'X_APP_API_KEY') {
+          _xAppApiKey = value;
+          break;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to load .env: $e');
+    }
+  }
+
+  Future<Uint8List?> _fetchProxiedImageBytes(String originalUrl) async {
+    if (_imageCache.containsKey(originalUrl)) return _imageCache[originalUrl];
+    await _ensureEnvLoaded();
+    try {
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          .replace(
+            queryParameters: {'type': 'image-proxy', 'imageUrl': originalUrl},
+          );
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) {
+        headers['x-app-api-key'] = _xAppApiKey!;
+      }
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode == 200) {
+        _imageCache[originalUrl] = resp.bodyBytes;
+        return resp.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('Error fetching proxied image: $e');
+    }
+    return null;
+  }
+
+  Widget _imageFromProxied(
+    String originalUrl, {
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+  }) {
+    return FutureBuilder<Uint8List?>(
+      future: _fetchProxiedImageBytes(originalUrl),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey.shade200,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        final bytes = snap.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          return Image.memory(bytes, fit: fit, width: width, height: height);
+        }
+        return Container(
+          width: width,
+          height: height,
+          color: Colors.grey.shade300,
+          child: const Center(child: Icon(Icons.broken_image, size: 48)),
+        );
+      },
+    );
   }
 
   Widget _posterWithFallback(
@@ -336,20 +449,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           if (url != null && url.isNotEmpty) {
             return ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                proxiedUrl(url),
-                fit: BoxFit.cover,
-                errorBuilder: (c, e, s) {
-                  debugPrint('TMDb poster load error: $e');
-                  return Container(
-                    height: 220,
-                    color: Colors.grey.shade300,
-                    child: const Center(
-                      child: Icon(Icons.broken_image, size: 48),
-                    ),
-                  );
-                },
-              ),
+              child: _imageFromProxied(url, fit: BoxFit.cover, height: 220),
             );
           }
           return Container(
@@ -364,41 +464,35 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // We have an initial poster URL. Try to load it; on error fetch TMDb fallback.
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        proxiedUrl(initialPoster),
-        fit: BoxFit.cover,
-        // We proberen eerst de originele poster te laden. Als er een fout optreedt bij het laden van deze afbeelding (bijvoorbeeld vanwege een ongeldige URL of netwerkfout), gebruiken we de errorBuilder om een fallback te implementeren. In de errorBuilder maken we een FutureBuilder die asynchroon de TMDb poster ophaalt via onze backend. Terwijl we wachten op het resultaat, tonen we een loading indicator. Zodra we de TMDb poster URL hebben, proberen we deze te laden. Als dat ook mislukt, tonen we een "broken image" icoon. Op deze manier zorgen we ervoor dat we altijd ons best doen om een poster te tonen, zelfs als de originele bron niet beschikbaar is.
-        errorBuilder: (context, error, stackTrace) {
-          debugPrint(
-            'Primary poster load error: $error — trying TMDb fallback',
-          );
+      child: FutureBuilder<Uint8List?>(
+        future: _fetchProxiedImageBytes(initialPoster),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return Container(
+              height: 220,
+              color: Colors.grey.shade200,
+              child: const Center(child: CircularProgressIndicator()),
+            );
+          }
+          final bytes = snap.data;
+          if (bytes != null && bytes.isNotEmpty) {
+            return Image.memory(bytes, fit: BoxFit.cover);
+          }
+
+          // fallback to TMDb
           return FutureBuilder<String?>(
             future: _fetchTmdbPosterFromRapid(rapid),
-            builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
+            builder: (ctx2, snap2) {
+              if (snap2.connectionState == ConnectionState.waiting) {
                 return Container(
                   height: 220,
                   color: Colors.grey.shade200,
                   child: const Center(child: CircularProgressIndicator()),
                 );
               }
-              final url = snap.data;
-              if (url != null && url.isNotEmpty) {
-                // Als we een geldige TMDb poster URL hebben ontvangen, proberen we deze te laden. We gebruiken ook hier een errorBuilder om eventuele fouten bij het laden van de TMDb poster af te handelen, en tonen een "broken image" icoon als dat gebeurt.
-                return Image.network(
-                  proxiedUrl(url),
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) {
-                    debugPrint('TMDb fallback load error: $e');
-                    return Container(
-                      height: 220,
-                      color: Colors.grey.shade300,
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 48),
-                      ),
-                    );
-                  },
-                );
+              final url2 = snap2.data;
+              if (url2 != null && url2.isNotEmpty) {
+                return _imageFromProxied(url2, fit: BoxFit.cover, height: 220);
               }
               return Container(
                 height: 220,
@@ -508,11 +602,25 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
           _loadingMovie = false;
         });
+
+        // Debug: show where we detected 'movie' from
+        try {
+          final omdbType = omdbData?['Type']?.toString();
+          final rapidTypes = [
+            rapid['itemType'],
+            rapid['type'],
+            rapid['showType'],
+            rapid['titleType'],
+          ].where((e) => e != null).map((e) => e.toString()).toList();
+          debugPrint('Detected types - OMDb: $omdbType  Rapid: $rapidTypes');
+        } catch (e) {
+          debugPrint('Error printing detected types: $e');
+        }
       }
 
       // apply first rapid result immediately
       applyRapidAndOmdb(
-        firstRapid as Map<String, dynamic>,
+        firstRapid,
         omdb as Map<String, dynamic>?,
       );
 
@@ -632,7 +740,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           _seenSet.add('movie');
         else
           _seenSet.remove('movie');
-        _isSeenFilm = isSeenFilm;
       });
     } catch (e, s) {
       debugPrint('Error loading user data: $e\n$s');
@@ -701,10 +808,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     try {
       if (newState) {
         // Add imdbId to watchlist and save lightweight metadata so WatchlistScreen
-        // can show title/overview without extra API calls.
+        // can show title/overview without extra API calls. Also store mediaType.
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
+          'mediaType': _detectMediaType(),
         };
         await docRef.set({
           'watchlist': FieldValue.arrayUnion([widget.imdbId]),
@@ -751,6 +859,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
+          'mediaType': _detectMediaType(),
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
@@ -799,6 +908,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
+          'mediaType': _detectMediaType(),
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
@@ -843,7 +953,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
 
     // Voor films: voeg één groep 'Bioscoop' toe met twee zoekchips: Biosagenda en Kinepolis
-    if ((_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie') {
+    final rapidTypeCandidates = [
+      _rapidData?['itemType'],
+      _rapidData?['type'],
+      _rapidData?['showType'],
+      _rapidData?['titleType'],
+    ];
+    final bool isMovieResponse =
+        _isResponseMovie(_omdbData?['Type']?.toString()) ||
+        rapidTypeCandidates.any((t) => _isResponseMovie(t?.toString()));
+
+    if (isMovieResponse) {
       final biosLink =
           'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
       final kinepolisLink =
@@ -1005,7 +1125,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // stable episode key for storage
     final epKey =
         's${seasonIndex}_e${episodeIndex}'; // We genereren een unieke sleutel voor deze aflevering op basis van de index van het seizoen en de index van de aflevering. Deze sleutel gebruiken we later om bij te houden welke afleveringen als gezien zijn gemarkeerd door de gebruiker. Door deze sleutel te gebruiken, kunnen we gemakkelijk controleren of een specifieke aflevering in de _seenSet zit, wat ons vertelt of de gebruiker deze aflevering als gezien heeft gemarkeerd.
-    final isSeen = _seenSet.contains(epKey);
+    _seenSet.contains(epKey);
 
     return Column(
       children: [
@@ -1015,13 +1135,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   borderRadius: BorderRadius.circular(
                     6,
                   ), // We gebruiken ClipRRect om de thumbnail van de aflevering weer te geven met afgeronde hoeken. We controleren eerst of er een thumbnail beschikbaar is (epThumb is niet null), en als dat het geval is, tonen we deze in de leading positie van de ListTile. We stellen de breedte en hoogte van de afbeelding in op 84x48 pixels, en we gebruiken BoxFit.cover om ervoor te zorgen dat de afbeelding goed past binnen deze afmetingen. We voegen ook een errorBuilder toe om een fallback icoon weer te geven als er een fout optreedt bij het laden van de afbeelding, zoals wanneer de URL ongeldig is of wanneer er netwerkproblemen zijn.
-                  child: Image.network(
-                    proxiedUrl(epThumb.toString()),
+                  child: SizedBox(
                     width: 84,
                     height: 48,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        const Icon(Icons.broken_image),
+                    child: _imageFromProxied(
+                      epThumb.toString(),
+                      fit: BoxFit.cover,
+                      width: 84,
+                      height: 48,
+                    ),
                   ),
                 )
               : null,
@@ -1209,11 +1331,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       return Scaffold(body: Center(child: Text('Error: $_error')));
     }
     final isMovie =
-      (_omdbData?['Type']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['itemType']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['type']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['showType']?.toString().toLowerCase() ?? '') == 'movie' ||
-      (_rapidData?['titleType']?.toString().toLowerCase() ?? '') == 'movie';
+        _isResponseMovie(_omdbData?['Type']?.toString()) ||
+        _isResponseMovie(_rapidData?['itemType']?.toString()) ||
+        _isResponseMovie(_rapidData?['type']?.toString()) ||
+        _isResponseMovie(_rapidData?['showType']?.toString()) ||
+        _isResponseMovie(_rapidData?['titleType']?.toString());
 
     final rapid = _rapidData!;
     final poster = _poster;
@@ -1312,8 +1434,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                         color: Colors.white,
                                         width: 1,
                                       ),
-                                      foregroundColor:
-                                          isDark ? Colors.white : Colors.black,
+                                      foregroundColor: isDark
+                                          ? Colors.white
+                                          : Colors.black,
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
                                         vertical: 8,
@@ -1337,8 +1460,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                       if (_user == null) {
                                         final goToLogin =
                                             await _ensureLoggedInWithPrompt(
-                                          context,
-                                        );
+                                              context,
+                                            );
                                         if (!goToLogin) return;
                                         return;
                                       }
@@ -1356,11 +1479,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                             if (_user == null) {
                                               final go =
                                                   await _ensureLoggedInWithPrompt(
-                                                context,
-                                              );
+                                                    context,
+                                                  );
                                               if (!go) return;
                                             }
-                                            await _toggleMovieSeen(val ?? false);
+                                            await _toggleMovieSeen(
+                                              val ?? false,
+                                            );
                                             setState(() {});
                                           },
                                         ),
@@ -1368,9 +1493,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                         Text(
                                           'Gezien',
                                           style: TextStyle(
-                                              color: isDark
-                                                  ? Colors.white
-                                                  : Colors.black),
+                                            color: isDark
+                                                ? Colors.white
+                                                : Colors.black,
+                                          ),
                                         ),
                                       ],
                                     ),

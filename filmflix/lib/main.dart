@@ -1,16 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cinetrackr/firebase_options.dart';
-import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
 import 'package:cinetrackr/views/foodscreen.dart';
-import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:cinetrackr/views/search_screen.dart';
 import 'package:cinetrackr/views/homescreen.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
-import 'package:cinetrackr/views/kaart.dart'; 
 import 'package:cinetrackr/views/settingscreen.dart'; 
+import 'package:cinetrackr/views/watchlistscreen.dart';
+import 'package:cinetrackr/utils/fcm_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,11 +74,12 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
+  StreamSubscription<User?>? _authSub;
 
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
     const HomeScreen(),          // Index 0
-    const FilmNowScreen(),       // Index 1 (Nieuw in balk)
+    const WatchlistScreen(),     // Index 1 (Nieuw in balk)
     const SearchScreen(),        // Index 2
     const FoodScreen(),          // Index 3 (Nieuw in balk)
     const SettingsScreen(),      // Index 4
@@ -110,7 +112,7 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.movie_outlined),
             activeIcon: Icon(Icons.movie_filter_rounded),
-            label: 'Films',
+            label: 'Watchlist',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search_rounded),
@@ -129,5 +131,24 @@ class _MainNavigationState extends State<MainNavigation> {
         ],
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null) {
+        final ok = await registerFcmTokenForUser(user);
+        debugPrint('Main: registerFcmTokenForUser result=$ok for uid=${user.uid}');
+      } else {
+        // user signed out: nothing to do here (tokens are removed when user disables notifications)
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 }

@@ -49,8 +49,26 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>app-1-308332286849-ios-25e47790c0cc43e5744e80</string>
+				<string>app-1-308332286849-ios-6b93ac48bd272bc7744e80</string>
+				<string>app-1-308332286849-ios-0c34a050f4747298744e80</string>
+				<string>com.googleusercontent.apps.308332286849-irnt6u02lpvht2k3987i28vahs623lqd</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
