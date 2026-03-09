@@ -1,4 +1,15 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:math' as Math;
+
+import 'package:cinetrackr/views/adminscreen.dart';
+import 'package:cinetrackr/views/customer_service.dart';
+import 'package:cinetrackr/views/filmsnowscreen.dart';
+import 'package:cinetrackr/views/foodscreen.dart';
+import 'package:cinetrackr/views/kaart.dart';
+import 'package:cinetrackr/views/search_screen.dart';
+import 'package:cinetrackr/views/settingscreen.dart';
+import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -42,11 +53,160 @@ class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
   final PageController _pageController = PageController(viewportFraction: 0.85);
 
+  int _cachedUnreadCustomerReplies = 0;
+  int _cachedUnreadAdminChats = 0;
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _customerQuestionsSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _allCustomerQuestionsSub;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureDisplayName());
     _loadNowPlaying();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUnreadCustomerReplies().then((v) {
+        if (mounted) setState(() => _cachedUnreadCustomerReplies = v);
+      });
+    });
+    // subscribe to auth changes so we can keep badge updated realtime
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        _subscribeCustomerQuestions(user.uid);
+        _maybeSubscribeAdmin(user.uid);
+      } else {
+        _customerQuestionsSub?.cancel();
+        _customerQuestionsSub = null;
+        _allCustomerQuestionsSub?.cancel();
+        _allCustomerQuestionsSub = null;
+        if (mounted) setState(() {
+          _cachedUnreadCustomerReplies = 0;
+          _cachedUnreadAdminChats = 0;
+        });
+      }
+    });
+  }
+
+  void _maybeSubscribeAdmin(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final data = doc.data();
+      bool isAdmin = false;
+      if (data != null) {
+        final role = data['role'];
+        if (role is String) isAdmin = role.toLowerCase() == 'admin';
+        if (role is List) isAdmin = role.any((e) => (e?.toString().toLowerCase() ?? '') == 'admin');
+      }
+      if (isAdmin) {
+        _subscribeAllCustomerQuestions();
+      } else {
+        _allCustomerQuestionsSub?.cancel();
+        _allCustomerQuestionsSub = null;
+        if (mounted) setState(() => _cachedUnreadAdminChats = 0);
+      }
+    } catch (e) {
+      debugPrint('Failed to determine admin role (home): $e');
+    }
+  }
+
+  void _subscribeAllCustomerQuestions() {
+    _allCustomerQuestionsSub?.cancel();
+    _allCustomerQuestionsSub = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .snapshots()
+        .listen((snap) {
+      try {
+        int adminUnread = 0;
+        for (final d in snap.docs) {
+          final data = d.data();
+
+          int _tsToMs(dynamic ts) {
+            try {
+              if (ts == null) return 0;
+              if (ts is Timestamp) return ts.millisecondsSinceEpoch;
+              if (ts is DateTime) return ts.millisecondsSinceEpoch;
+              if (ts is int) return ts;
+              if (ts is String) return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
+            } catch (_) {}
+            return 0;
+          }
+
+          final adminReplies = (data['adminReplies'] as List?) ?? [];
+          final userReplies = (data['userReplies'] as List?) ?? [];
+          final answer = (data['answer'] ?? '').toString();
+
+          int lastUserMs = _tsToMs(data['createdAt']);
+          for (final ur in userReplies) {
+            try {
+              final ts = ur is Map ? (ur['createdAt'] ?? ur['updatedAt']) : null;
+              lastUserMs = Math.max(lastUserMs, _tsToMs(ts));
+            } catch (_) {}
+          }
+
+          int lastAdminMs = _tsToMs(data['answerAt'] ?? data['updatedAt']);
+          if (answer.isNotEmpty) lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['answerAt'] ?? data['updatedAt']));
+          lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['adminSeenAt']));
+          for (final ar in adminReplies) {
+            try {
+              final ts = ar is Map ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt']) : null;
+              lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts));
+            } catch (_) {}
+          }
+
+          // If there is no admin activity yet (no answer, no adminReplies, and admin never opened),
+          // treat the initial question as unread for admins so they immediately see the badge on HomeScreen.
+          final int adminSeenMs = _tsToMs(data['adminSeenAt']);
+          final bool noAdminActivity = answer.isEmpty && (adminReplies.isEmpty);
+          final bool unreadForAdmin = (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) || (lastUserMs > lastAdminMs);
+          if (unreadForAdmin) adminUnread += 1;
+        }
+        if (mounted) setState(() => _cachedUnreadAdminChats = adminUnread);
+      } catch (e) {
+        debugPrint('Failed to compute admin unread count in HomeScreen: $e');
+      }
+    }, onError: (e) {
+      debugPrint('customerquestions listen error (home admin): $e');
+    });
+  }
+
+  void _subscribeCustomerQuestions(String uid) {
+    _customerQuestionsSub?.cancel();
+    _customerQuestionsSub = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .where('userId', isEqualTo: uid)
+        .snapshots()
+        .listen((snap) {
+      try {
+        int unread = 0;
+        for (final d in snap.docs) {
+          final data = d.data();
+          final adminReplies = (data['adminReplies'] as List?) ?? [];
+          final userRead = data['userRead'] == true;
+
+          if (!userRead) {
+            unread += 1;
+            continue;
+          }
+
+          for (final ar in adminReplies) {
+            if (ar is Map) {
+              final seenBy = (ar['seenBy'] as List?)
+                      ?.map((e) => e.toString())
+                      .toList() ??
+                  [];
+              if (!seenBy.contains(uid)) {
+                unread += 1;
+                break;
+              }
+            }
+          }
+        }
+        if (mounted) setState(() => _cachedUnreadCustomerReplies = unread);
+      } catch (e) {
+        debugPrint('Failed to compute unread count in HomeScreen: $e');
+      }
+    }, onError: (e) {
+      debugPrint('customerquestions listen error (home): $e');
+    });
   }
 
   @override
@@ -121,6 +281,51 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _promptForDisplayName(String uid) async { /* Je bestaande prompt code */ }
+  // Fetch number of unread customer replies for current user.
+  Future<int> _fetchUnreadCustomerReplies() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return 0;
+      final uid = user.uid;
+      final snap = await FirebaseFirestore.instance
+          .collection('customerquestions')
+          .where('userId', isEqualTo: uid)
+          .get();
+      int unread = 0;
+      for (final d in snap.docs) {
+        final data = d.data();
+        final adminReplies = (data['adminReplies'] as List?) ?? [];
+        final userRead = data['userRead'] == true;
+
+        if (!userRead) {
+          unread += 1;
+          continue;
+        }
+
+        for (final ar in adminReplies) {
+          if (ar is Map) {
+            final seenBy = (ar['seenBy'] as List?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                [];
+            if (!seenBy.contains(uid)) {
+              unread += 1;
+              break;
+            }
+          }
+        }
+      }
+      return unread;
+    } catch (e) {
+      debugPrint('Failed fetching unread customer replies: $e');
+      return 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
 
   Future<bool> _checkIfAdmin() async {
     final user = FirebaseAuth.instance.currentUser;
