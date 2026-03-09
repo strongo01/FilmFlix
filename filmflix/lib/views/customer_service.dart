@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../firebase_options.dart';
 import 'loginscreen.dart';
 
@@ -116,6 +118,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
   _customerQuestionsSub;
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _customerQuestions = [];
   int _customerRepliesUnread = 0;
+  // Track whether the user opened an individual chat while on this screen.
+  bool _openedChat = false;
 
   List<Map<String, String>> get _filteredFaqs {
     final q = _query.trim().toLowerCase();
@@ -421,14 +425,13 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       return;
     }
     try {
-      await FirebaseFirestore.instance.collection('customerquestions').add({
+      final docRef = await FirebaseFirestore.instance.collection('customerquestions').add({
         'userId': user.uid,
         'email': email,
         'name': name,
         'question': question,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        // mark as unread for the user until an admin replies
         'userRead': true,
         'adminReplies': [],
         'userReplies': [],
@@ -437,6 +440,34 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Vraag verstuurd')));
+
+      // Try notify admins via backend endpoint. If no admin tokens are available
+      // or notifications are disabled, inform the user.
+      try {
+        final url = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+        final resp = await http.post(url,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({
+              'type': 'userToAdmins',
+              'userId': user.uid,
+              'title': 'Nieuwe vraag',
+              'body': question,
+              'data': {'conversationId': docRef.id}
+            }));
+        if (resp.statusCode == 200) {
+          // successCount may be 0 if admins have no tokens / declined notifications
+          final j = json.decode(resp.body);
+          final success = j['successCount'] ?? 0;
+          if (success == 0) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+          }
+        } else {
+          debugPrint('notify userToAdmins failed: ${resp.statusCode} ${resp.body}');
+        }
+      } catch (e) {
+        debugPrint('Failed to call notify endpoint: $e');
+      }
     } catch (e) {
       debugPrint('Failed to send customer question: $e');
       ScaffoldMessenger.of(
@@ -818,7 +849,12 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final faqs = _filteredFaqs;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_openedChat);
+        return false;
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Klantenservice'),
         actions: [
@@ -971,7 +1007,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           ],
         ),
       ),
-    );
+    ));
   }
 
   // Open a dialog showing user's customer questions and admin replies; allow reply.
@@ -982,21 +1018,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       if (!ok) return;
     }
 
-    // mark unread items as read when opened
-    for (final d in _customerQuestions) {
-      final data = d.data();
-      final hasAdminAnswer =
-          (data['answer'] != null && data['answer'].toString().isNotEmpty) ||
-          (data['adminReplies'] != null &&
-              (data['adminReplies'] as List).isNotEmpty);
-      final userRead = data['userRead'] == true;
-      if (hasAdminAnswer && !userRead) {
-        FirebaseFirestore.instance
-            .collection('customerquestions')
-            .doc(d.id)
-            .update({'userRead': true});
-      }
-    }
+    // Do NOT mark threads as read when opening the list. Marking occurs
+    // only when the user opens an individual chat (_openChatDialog).
 
     await showDialog<void>(
       context: context,
@@ -1103,9 +1126,45 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                       // ignore
                     }
 
+                    // determine if this thread has unread admin messages for the current user
+                    final String? _uid = FirebaseAuth.instance.currentUser?.uid;
+                    bool unreadForUser = false;
+                    final userRead = data['userRead'] == true;
+                    if (!userRead) {
+                      unreadForUser = true;
+                    } else {
+                      for (final ar in adminReplies) {
+                        if (ar is Map) {
+                          final seenBy = (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ?? [];
+                          if (!seenBy.contains(_uid)) {
+                            unreadForUser = true;
+                            break;
+                          }
+                        }
+                      }
+                    }
+
                     return ListTile(
-                      leading: const CircleAvatar(
-                        child: Icon(Icons.question_mark),
+                      leading: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const CircleAvatar(
+                            child: Icon(Icons.question_mark),
+                          ),
+                          if (unreadForUser)
+                            Positioned(
+                              right: -2,
+                              top: -2,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 1.2)),
+                                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                                child: const Center(
+                                  child: Text('1', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       title: Text(
                         question,
@@ -1137,11 +1196,17 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: const Text('Open'),
-                            onPressed: () => _openChatDialog(d.id),
+                            onPressed: () {
+                              Navigator.of(ctx).pop();
+                              _openChatDialog(d.id);
+                            },
                           ),
                         ],
                       ),
-                      onTap: () => _openChatDialog(d.id),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _openChatDialog(d.id);
+                      },
                     );
                   },
                 ),
@@ -1168,6 +1233,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
 
     // move this question to the top immediately so the list updates live
     _moveQuestionToTop(docId);
+
+    // mark that the user explicitly opened a chat (used when returning to HomeScreen)
+    if (mounted) setState(() => _openedChat = true);
 
     // mark admin replies as seen for this user and set userRead=true
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -1210,6 +1278,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final answerText = (data['answer'] ?? '').toString();
     final adminReplies = (data['adminReplies'] as List?) ?? [];
     final userReplies = (data['userReplies'] as List?) ?? [];
+    final userName = (data['name'] ?? 'Gebruiker').toString();
 
     final TextEditingController replyCtrl = TextEditingController();
     final ScrollController scrollCtrl = ScrollController();
@@ -1221,12 +1290,14 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       'text': questionText,
       'isAdmin': false,
       'ts': data['createdAt'],
+      'name': userName,
     });
     if (answerText.isNotEmpty)
       messages.add({
         'text': answerText,
         'isAdmin': true,
         'ts': data['answerAt'] ?? data['updatedAt'],
+        'name': 'Admin', // older answers may not have a name
       });
     for (final ar in adminReplies) {
       if (ar is Map) {
@@ -1249,9 +1320,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           }
         }
         final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
-        messages.add({'text': text, 'isAdmin': true, 'ts': ts});
+        final adminName = (ar['adminName'] ?? 'Admin').toString();
+        messages.add({'text': text, 'isAdmin': true, 'ts': ts, 'name': adminName});
       } else {
-        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null});
+        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': 'Admin'});
       }
     }
     for (final ur in userReplies) {
@@ -1266,9 +1338,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           );
           text = firstString?.toString() ?? ur.toString();
         }
-        messages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt']});
+        messages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt'], 'name': userName});
       } else {
-        messages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
+        messages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null, 'name': userName});
       }
     }
 
@@ -1309,10 +1381,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         final aText = (d['answer'] ?? '').toString();
         final aReplies = (d['adminReplies'] as List?) ?? [];
         final uReplies = (d['userReplies'] as List?) ?? [];
+        final uName = (d['name'] ?? 'Gebruiker').toString();
 
         final List<Map<String, dynamic>> newMessages = [];
-        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt']});
-        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt']});
+        newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt'], 'name': uName});
+        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt'], 'name': 'Admin'});
         for (final ar in aReplies) {
           if (ar is Map) {
             String text;
@@ -1324,9 +1397,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
               text = firstString?.toString() ?? ar.toString();
             }
             final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
-            newMessages.add({'text': text, 'isAdmin': true, 'ts': ts});
+            final adminName = (ar['adminName'] ?? 'Admin').toString();
+            newMessages.add({'text': text, 'isAdmin': true, 'ts': ts, 'name': adminName});
           } else {
-            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null});
+            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': 'Admin'});
           }
         }
         for (final ur in uReplies) {
@@ -1334,12 +1408,15 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
             String text;
             if (ur['text'] != null && ur['text'].toString().trim().isNotEmpty) text = ur['text'].toString();
             else {
-              final firstString = ur.values.firstWhere((v) => v != null && v is String && v.toString().trim().isNotEmpty, orElse: () => null);
+              final firstString = ur.values.firstWhere(
+                (v) => v != null && v is String && v.toString().trim().isNotEmpty,
+                orElse: () => null,
+              );
               text = firstString?.toString() ?? ur.toString();
             }
-            newMessages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt']});
+            newMessages.add({'text': text, 'isAdmin': false, 'ts': ur['createdAt'], 'name': uName});
           } else {
-            newMessages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null});
+            newMessages.add({'text': ur.toString(), 'isAdmin': false, 'ts': null, 'name': uName});
           }
         }
 
@@ -1391,17 +1468,36 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                           final txt = (m['text'] ?? '').toString();
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                            child: Row(
-                              mainAxisAlignment: isAdmin ? MainAxisAlignment.start : MainAxisAlignment.end,
+                            child: Column(
+                              crossAxisAlignment: isAdmin ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                               children: [
-                                Container(
-                                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
-                                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(12),
+                                Text(
+                                  m['name'] ?? (isAdmin ? 'Admin' : 'Gebruiker'),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isAdmin ? Colors.grey.shade700 : Colors.grey.shade500,
                                   ),
-                                  child: Text(txt, style: TextStyle(color: isAdmin ? Colors.black87 : Colors.white)),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: isAdmin ? MainAxisAlignment.start : MainAxisAlignment.end,
+                                  children: [
+                                    Container(
+                                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
+                                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        txt,
+                                        style: TextStyle(
+                                          color: isAdmin ? Colors.black87 : Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -1432,7 +1528,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                                 'userRead': true,
                               });
                               setStateDialog?.call(() {
-                                messages.add({'text': text, 'isAdmin': false, 'ts': Timestamp.now()});
+                                // Do not append the message locally here — the realtime
+                                // document listener will deliver the new message and
+                                // prevent showing it twice.
                                 replyCtrl.clear();
                               });
                               _moveQuestionToTop(docId);
@@ -1442,6 +1540,28 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               debugPrint('Failed to send chat reply: $e');
                               if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
                             }
+                                // Notify admins about the new user reply
+                                try {
+                                  final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+                                  final resp = await http.post(uri,
+                                      headers: {'Content-Type': 'application/json'},
+                                      body: json.encode({
+                                        'type': 'userToAdmins',
+                                        'userId': FirebaseAuth.instance.currentUser?.uid,
+                                        'title': 'Nieuw bericht van gebruiker',
+                                        'body': text,
+                                        'data': {'conversationId': docId}
+                                      }));
+                                  if (resp.statusCode == 200) {
+                                    final j = json.decode(resp.body);
+                                    final success = j['successCount'] ?? 0;
+                                    if (success == 0 && mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+                                    }
+                                  }
+                                } catch (e) {
+                                  debugPrint('Failed to call notify (user reply): $e');
+                                }
                           },
                           child: const Text('Verstuur'),
                         ),
@@ -1501,6 +1621,28 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Bericht verstuurd')));
+        // Notify admins about this follow-up message
+        try {
+          final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+          final resp = await http.post(uri,
+              headers: {'Content-Type': 'application/json'},
+              body: json.encode({
+                'type': 'userToAdmins',
+                'userId': FirebaseAuth.instance.currentUser?.uid,
+                'title': 'Nieuw bericht van gebruiker',
+                'body': text,
+                'data': {'conversationId': docId}
+              }));
+          if (resp.statusCode == 200) {
+            final j = json.decode(resp.body);
+            final success = j['successCount'] ?? 0;
+            if (success == 0 && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+            }
+          }
+        } catch (e) {
+          debugPrint('Failed to call notify (followup): $e');
+        }
     } catch (e) {
       debugPrint('Failed to send followup: $e');
       ScaffoldMessenger.of(

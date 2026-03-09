@@ -401,6 +401,14 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   }
 
                   final savedSeries = watchlist.where((id) {
+                    // Prefer explicit mediaType stored in watchlist_meta when available
+                    final meta = metaMap[id];
+                    if (meta is Map && meta['mediaType'] != null) {
+                      final mt = meta['mediaType'].toString().toLowerCase();
+                      if (mt == 'series') return true;
+                      if (mt == 'movie') return false;
+                    }
+
                     final val = seenMap[id];
                     if (val is List) {
                       // if the saved seen list explicitly contains 'movie', treat as film
@@ -411,6 +419,14 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   }).toList();
 
                   final savedFilms = watchlist.where((id) {
+                    // Prefer explicit mediaType stored in watchlist_meta when available
+                    final meta = metaMap[id];
+                    if (meta is Map && meta['mediaType'] != null) {
+                      final mt = meta['mediaType'].toString().toLowerCase();
+                      if (mt == 'movie') return true;
+                      if (mt == 'series') return false;
+                    }
+
                     final val = seenMap[id];
                     if (val is List) {
                       if (seenIndicatesMovie(val)) return true;
@@ -522,7 +538,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                 final episodes = epRaw is List
                                     ? epRaw
                                     : (epRaw is Map
-                                          ? (epRaw as Map).values.toList()
+                                          ? (epRaw).values.toList()
                                           : []);
 
                                 final seenCount = episodes
@@ -582,7 +598,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                         final epStreamRaw = ep['streamingOptions']?['nl'] ?? ep['streamingOptions'];
                                         final epStreams = epStreamRaw is List
                                             ? List.from(epStreamRaw)
-                                            : (epStreamRaw is Map ? (epStreamRaw as Map).values.toList() : <dynamic>[]);
+                                            : (epStreamRaw is Map ? (epStreamRaw).values.toList() : <dynamic>[]);
 
                                         return ListTile(
                                           leading: Checkbox(

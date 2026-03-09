@@ -4,7 +4,11 @@ import 'package:cinetrackr/models/movie_models.dart';
 import 'package:cinetrackr/services/movie_api.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'dart:async';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 
 class SearchScreen extends StatefulWidget {
@@ -27,6 +31,8 @@ class _SearchScreenState extends State<SearchScreen> {
   List<MovieSearchItem> popular = [];
   bool loadingTopRated = false;
   bool loadingPopular = false;
+  String? _xAppApiKey;
+  final Map<String, Uint8List> _imageCache = {};
 
   Future<void> search() async {
     final query = controller.text.trim();
@@ -111,8 +117,6 @@ class _SearchScreenState extends State<SearchScreen> {
     String showOriginalLanguage = '';
     int? yearMin;
     int? yearMax;
-    String orderBy = '';
-    String orderDirection = '';
 
     await showModalBottomSheet(
       context: context,
@@ -425,10 +429,13 @@ class _SearchScreenState extends State<SearchScreen> {
     loadingTopRated = true;
     setState(() {});
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
     try {
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return;
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
       final items = (jsonData?['results'] as List<dynamic>?) ?? [];
@@ -465,10 +472,13 @@ class _SearchScreenState extends State<SearchScreen> {
     loadingPopular = true;
     setState(() {});
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'popular', 'page': page.toString()});
     try {
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return;
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
       final items = (jsonData?['results'] as List<dynamic>?) ?? [];
@@ -504,10 +514,13 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _openTmdbMovieDetail(String movieId) async {
     if (movieId.isEmpty) return;
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': movieId});
     try {
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Kon filmdetails niet ophalen')),
@@ -541,11 +554,14 @@ class _SearchScreenState extends State<SearchScreen> {
     final movieId = parts.length > 1 ? parts.last : tmdbIdRaw;
 
     final uri = Uri.parse(
-      'https://film-flix-olive.vercel.app/api/movies',
+      'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': movieId});
 
     try {
-      final resp = await http.get(uri);
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return null;
 
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
@@ -578,9 +594,69 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   String proxiedUrl(String url) {
-    return 'https://film-flix-olive.vercel.app/api/movies'
+    return 'https://film-flix-olive.vercel.app/apiv2/movies'
         '?type=image-proxy'
         '&imageUrl=${Uri.encodeComponent(url)}';
+  }
+
+  Future<void> _ensureEnvLoaded() async {
+    if (_xAppApiKey != null) return;
+    try {
+      final content = await rootBundle.loadString('assets/env/.env');
+      final lines = const LineSplitter().convert(content);
+      for (final line in lines) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        final idx = trimmed.indexOf('=');
+        if (idx <= 0) continue;
+        final key = trimmed.substring(0, idx).trim();
+        final value = trimmed.substring(idx + 1).trim();
+        if (key == 'X_APP_API_KEY') {
+          _xAppApiKey = value;
+          break;
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('Failed to load .env: $e');
+    }
+  }
+
+  Future<Uint8List?> _fetchProxiedImageBytes(String originalUrl) async {
+    if (_imageCache.containsKey(originalUrl)) return _imageCache[originalUrl];
+    await _ensureEnvLoaded();
+    try {
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          .replace(queryParameters: {
+        'type': 'image-proxy',
+        'imageUrl': originalUrl,
+      });
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode == 200) {
+        _imageCache[originalUrl] = resp.bodyBytes;
+        return resp.bodyBytes;
+      }
+    } catch (e) {
+      debugPrint('Error fetching proxied image: $e');
+    }
+    return null;
+  }
+
+  Widget _imageFromProxied(String originalUrl, {BoxFit fit = BoxFit.cover}) {
+    return FutureBuilder<Uint8List?>(
+      future: _fetchProxiedImageBytes(originalUrl),
+      builder: (ctx, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Container(color: Colors.grey[300]);
+        }
+        final bytes = snap.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          return Image.memory(bytes, fit: fit);
+        }
+        return Container(color: Colors.grey[300]);
+      },
+    );
   }
 
   Widget _posterWithFallback(MovieSearchItem movie) {
@@ -593,12 +669,8 @@ class _SearchScreenState extends State<SearchScreen> {
             return Container(color: Colors.grey[300]);
           }
           final url = snap.data;
-          if (url != null && url.isNotEmpty) {
-            return Image.network(
-              proxiedUrl(url),
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: Colors.grey[300]),
-            );
+            if (url != null && url.isNotEmpty) {
+            return _imageFromProxied(url, fit: BoxFit.cover);
           }
           return Container(color: Colors.grey[300]);
         },
@@ -606,29 +678,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     // Er is een originele poster
-    return Image.network(
-      proxiedUrl(movie.poster!),
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        // fallback naar TMDb
-        return FutureBuilder<String?>(
-          future: _fetchTmdbPoster(movie.tmdbId),
-          builder: (ctx, snap) {
-            if (snap.connectionState == ConnectionState.waiting)
-              return Container(color: Colors.grey[300]);
-            final url = snap.data;
-            if (url != null && url.isNotEmpty)
-              return Image.network(
-                proxiedUrl(url),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: Colors.grey[300]),
-              );
-            return Container(color: Colors.grey[300]);
-          },
-        );
-      },
-    );
+    return _imageFromProxied(movie.poster ?? '');
   }
 
   @override

@@ -52,6 +52,8 @@ dependencies:
   geocoding: ^4.0.0
   firebase_ai: ^3.8.0
   shared_preferences: ^2.5.4
+  permission_handler: ^12.0.1
+  firebase_messaging: ^16.1.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
@@ -107,6 +109,7 @@ flutter:
     - assets/images/AfbeeldingWatchlist.png
     - assets/kaart/export.geojson
     - assets/icons/appicon.png
+    - assets/env/.env
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,5 +1,23 @@
-// Database-backed endpoints removed — this backend no longer exposes DB access.
+import { put, list } from "@vercel/blob";
 const https = require('https');
+
+// In-process coalescing map to dedupe concurrent upstream requests per instance
+const _inFlight = new Map();
+function fetchWithCoalesce(key, fetcher) {
+    if (_inFlight.has(key)) {
+        return { promise: _inFlight.get(key), coalesced: true };
+    }
+    const p = (async () => {
+        try {
+            return await fetcher();
+        } finally {
+            _inFlight.delete(key);
+        }
+    })();
+    _inFlight.set(key, p);
+    return { promise: p, coalesced: false };
+}
+
 export default async function handler(req, res) {
 
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,6 +29,14 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
+    }
+
+    // Vereiste API-key: x-app-api-key
+    const APP_API_KEY = process.env.X_APP_API_KEY;
+    const providedKey = req.headers['x-app-api-key'] || req.headers['x-app-key'];
+
+    if (!providedKey || providedKey !== APP_API_KEY) {
+        return res.status(401).json({ error: 'Missing or invalid x-app-api-key' });
     }
 
     const {
@@ -60,13 +86,69 @@ export default async function handler(req, res) {
 
     let url;
     let headers = {};
-
+    let isEpisodeRequest = false;
+    let blobKey;
     // RAPIDAPI
     const RAPID_HOST = 'streaming-availability.p.rapidapi.com';
+
+    const RAPIDAPI_KEYS = [
+        process.env.RAPIDAPI_KEY,
+        process.env.RAPIDAPI_KEY2,
+        process.env.RAPIDAPI_KEY3
+    ].filter(Boolean);
+
+    async function fetchWithKeys(url) {
+        for (let i = 0; i < RAPIDAPI_KEYS.length; i++) {
+            const key = RAPIDAPI_KEYS[i];
+            const keyName = `RAPIDAPI_KEY${i === 0 ? '' : i + 1}`;
+            console.log(`Trying API key: ${keyName}`);
+            const headers = {
+                'x-rapidapi-key': key,
+                'x-rapidapi-host': 'streaming-availability.p.rapidapi.com'
+            };
+
+            try {
+                const resp = await fetch(url, { headers });
+                if (resp.status === 429) {
+                    console.warn(`${keyName} exceeded quota, trying next key...`);
+                    continue; // probeer de volgende key
+                }
+                if (!resp.ok) {
+                    throw { upstreamStatus: resp.status };
+                }
+                return await resp.json();
+            } catch (err) {
+                if (i === RAPIDAPI_KEYS.length - 1) throw err;
+                console.warn(`${keyName} fetch failed, trying next key...`, err);
+            }
+        }
+    }
 
     function addParam(params, key, value) {
         if (value !== undefined && value !== null && value !== '') {
             params[key] = value;
+        }
+    }
+
+    function filterStreamingOptions(obj) {
+        if (Array.isArray(obj)) {
+            return obj.map(filterStreamingOptions);
+        } else if (obj && typeof obj === 'object') {
+            const result = {};
+            for (const key in obj) {
+                if (key === 'streamingOptions' && typeof obj[key] === 'object') {
+                    // filter alleen nl & us
+                    const filtered = {};
+                    if (obj[key].nl) filtered.nl = obj[key].nl;
+                    if (obj[key].us) filtered.us = obj[key].us;
+                    result[key] = filtered;
+                } else {
+                    result[key] = filterStreamingOptions(obj[key]);
+                }
+            }
+            return result;
+        } else {
+            return obj;
         }
     }
 
@@ -87,6 +169,8 @@ export default async function handler(req, res) {
     }
 
     else if (type === 'get') {
+        isEpisodeRequest = series_granularity === "episode";
+        blobKey = `episodes-${id}-${output_language}.json`;
         url = `https://${RAPID_HOST}/shows/${id}?` +
             new URLSearchParams({
                 series_granularity,
@@ -104,7 +188,7 @@ export default async function handler(req, res) {
         addParam(params, 'country', country);
         addParam(params, 'series_granularity', series_granularity);
         addParam(params, 'output_language', output_language);
-        addParam(params, 'show_type', show_type); // voeg alleen toe als expliciet
+        addParam(params, 'show_type', show_type);
         addParam(params, 'rating_min', rating_min);
         addParam(params, 'rating_max', rating_max);
         addParam(params, 'catalogs', catalogs);
@@ -125,9 +209,6 @@ export default async function handler(req, res) {
         };
     }
 
-
-
-    // OMDB — GET BY ID OR TITLE
     else if (type === 'omdb-get') {
         if (!i && !t) {
             return res.status(400).json({
@@ -147,7 +228,6 @@ export default async function handler(req, res) {
             });
     }
 
-    // OMDB — SEARCH
     else if (type === 'omdb-search') {
         if (!s) {
             return res.status(400).json({
@@ -166,9 +246,6 @@ export default async function handler(req, res) {
             });
     }
 
-    // (database-backed endpoints have been removed)
-
-    // TMDB — GET IMAGES
     else if (type === 'tmdb-images') {
         if (!movie_id) {
             return res.status(400).json({
@@ -193,12 +270,10 @@ export default async function handler(req, res) {
         try {
             const parsed = new URL(imageUrl);
 
-            // 🔒 Alleen https toestaan
             if (parsed.protocol !== 'https:') {
                 return res.status(400).json({ error: 'Only HTTPS allowed' });
             }
 
-            // 🔒 Alleen bekende image hosts toestaan
             const allowedHosts = [
                 'cdn.movieofthenight.com',
                 'image.tmdb.org',
@@ -222,7 +297,6 @@ export default async function handler(req, res) {
                 response.headers.get('content-type') || 'image/jpeg'
             );
 
-            // optional cache (sneller + goedkoper)
             res.setHeader('Cache-Control', 'public, max-age=86400');
 
             return res.status(200).send(Buffer.from(buffer));
@@ -267,7 +341,6 @@ export default async function handler(req, res) {
         };
     }
 
-    // TMDB — TOP RATED
     else if (type === 'top_rated') {
         const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
 
@@ -284,7 +357,6 @@ export default async function handler(req, res) {
         };
     }
 
-    // TMDB — POPULAR
     else if (type === 'popular') {
         const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
 
@@ -353,20 +425,89 @@ export default async function handler(req, res) {
         });
     }
 
-    // FETCH EXTERNAL API (RapidAPI / OMDb)
     if (url) {
         try {
-            const response = await fetch(url, { headers });
-            if (!response.ok) {
-                return res.status(response.status).json({ error: 'Upstream API failed' });
-            }
-            const data = await response.json();
+            const _u = new URL(url);
+            const _params = Array.from(_u.searchParams.entries()).sort((a, b) => {
+                if (a[0] === b[0]) return a[1] < b[1] ? -1 : (a[1] > b[1] ? 1 : 0);
+                return a[0] < b[0] ? -1 : 1;
+            }).map(p => `${p[0]}=${p[1]}`).join('&');
+            const normalizedUrl = _params.length ? `${_u.origin}${_u.pathname}?${_params}` : `${_u.origin}${_u.pathname}`;
+            const cacheKey = `${type}|${normalizedUrl}`;
+            console.log('movies: cacheKey=', cacheKey);
+            const BLOB_TTL_DAYS = 7; // hou blobs maximaal 7 dagen
+            const BLOB_TTL_MS = BLOB_TTL_DAYS * 24 * 60 * 60 * 1000;
 
-            // Alleen filtering toepassen bij search
-            if (type !== 'search') {
-                return res.status(200).json(data);
+            //let blobKey;
+            if (isEpisodeRequest) {
+                blobKey = `episodes-${id}-${output_language}.json`;
+                try {
+                    const existing = await list({ prefix: blobKey });
+
+                    for (const blob of existing.blobs) {
+                        const blobDate = new Date(blob.created_at).getTime();
+                        if (Date.now() - blobDate > BLOB_TTL_MS) {
+                            console.log("Deleting old blob", blob.name);
+                            await blob.delete();
+                        }
+                    }
+
+                    const freshBlobs = existing.blobs.filter(blob => Date.now() - new Date(blob.created_at).getTime() <= BLOB_TTL_MS);
+                    if (freshBlobs.length > 0) {
+                        console.log("BLOB CACHE HIT", blobKey);
+                        const cached = await fetch(freshBlobs[0].url);
+                        const json = await cached.json();
+                        res.setHeader("Cache-Control", "public, max-age=60, s-maxage=604800, stale-while-revalidate=300");
+                        return res.status(200).json(json);
+                    } else {
+                        console.log("BLOB CACHE MISS", blobKey);
+                    }
+                } catch (e) {
+                    console.log("Blob read failed, continuing...", e);
+                }
             }
-            // ===== NETFLIX-ACHTIGE AUTO MATCHING =====
+
+            const isRapid = url.includes('rapidapi');
+
+            const { promise, coalesced } = fetchWithCoalesce(cacheKey, async () => {
+                if (isRapid) return await fetchWithKeys(url);
+
+                const resp = await fetch(url, { headers });
+
+                if (!resp.ok) throw { upstreamStatus: resp.status };
+
+                return await resp.json();
+            });
+
+            const data = await promise;
+            const filteredData = filterStreamingOptions(data);
+
+            if (isEpisodeRequest) {
+                try {
+                    await put(blobKey, JSON.stringify(filteredData), {
+                        access: "public",
+                        contentType: "application/json",
+                        token: process.env.BLOB_READ_WRITE_TOKEN,
+                    });
+
+                    console.log("BLOB CACHE SAVED");
+                } catch (e) {
+                    console.log("Blob save failed", e);
+                }
+            }
+            const CACHE_TTLS = { search: 86400, get: 604800, filter: 86400 };
+            function setCacheForType(t) {
+                const s = CACHE_TTLS[t] || 60; // default short s-maxage
+                res.setHeader('Cache-Control', `public, max-age=60, s-maxage=${s}, stale-while-revalidate=300`);
+            }
+
+            // indicate whether response was coalesced or required a fresh upstream fetch
+            res.setHeader('X-Cache', coalesced ? 'COALESCED' : 'MISS');
+
+            if (type !== 'search') {
+                if (type === 'get' || type === 'filter') setCacheForType(type);
+                return res.status(200).json(filteredData);
+            }
 
             if (!title) {
                 return res.status(400).json({ error: 'Search requires title parameter' });
@@ -376,14 +517,13 @@ export default async function handler(req, res) {
                 if (!str) return '';
                 return str
                     .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\p{Diacritic}/gu, '')
                     .toLowerCase()
                     .replace(/[^a-z0-9\s]/g, ' ')
                     .replace(/\s+/g, ' ')
                     .trim();
             }
 
-            // Levenshtein
             function levenshtein(a, b) {
                 const m = a.length, n = b.length;
                 if (!m) return n;
@@ -407,7 +547,6 @@ export default async function handler(req, res) {
                 return 1 - dist / Math.max(a.length, b.length);
             }
 
-            // Hits ophalen
             let hits = [];
             if (Array.isArray(data)) hits = data;
             else if (Array.isArray(data?.results)) hits = data.results;
@@ -461,10 +600,13 @@ export default async function handler(req, res) {
                 };
             });
 
-            // Alleen resultaten met score > 0
             const filtered = scored
                 .filter(item => item._score > 0)
                 .sort((a, b) => b._score - a._score);
+
+            // mark search responses with cache header (1 day)
+            setCacheForType('search');
+            // X-Cache already set above based on coalescing
 
             res.status(200).json({
                 original_count: hits.length,
@@ -472,6 +614,9 @@ export default async function handler(req, res) {
                 results: filtered
             });
         } catch (err) {
+            if (err && err.upstreamStatus) {
+                return res.status(err.upstreamStatus).json({ error: 'Upstream API failed' });
+            }
             console.error(err);
             res.status(500).json({ error: 'External API request failed' });
         }
