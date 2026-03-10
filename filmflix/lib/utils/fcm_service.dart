@@ -87,6 +87,10 @@ Future<bool> registerFcmTokenForUser(User? user) async {
 Future<bool> unregisterFcmTokenForUser(User? user) async {
   if (user == null) return false;
   try {
+    // We explicitly delete the token from the Firebase Messaging instance instance so it stops receiving messages now.
+    await FirebaseMessaging.instance.deleteToken();
+    debugPrint('FCM: FirebaseMessaging token deleted locally.');
+
     final ref = FirebaseFirestore.instance.collection('users').doc(user.uid);
     await ref.set({
       'fcmToken': FieldValue.delete(),

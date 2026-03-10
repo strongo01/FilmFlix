@@ -11,6 +11,8 @@ import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:cinetrackr/utils/notification_permissions.dart';
 import 'package:cinetrackr/utils/fcm_service.dart';
 
+import 'package:permission_handler/permission_handler.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -48,6 +50,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _subscribeCustomerQuestions(user.uid);
         _fetchUnreadCustomerReplies().then((v) {
           if (mounted) setState(() => _cachedUnreadCustomerReplies = v);
+        });
+        
+        // Initialiseer _notificationsEnabled op basis van of we een token hebben in firestore
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get()
+            .then((doc) {
+          if (mounted && doc.exists) {
+            final data = doc.data() ?? {};
+            setState(() {
+              _notificationsEnabled = data.containsKey('fcmToken') && (data['fcmToken']?.toString().isNotEmpty ?? false);
+            });
+          }
         });
       } else {
         _customerQuestionsSub?.cancel();
@@ -103,21 +119,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   activeColor: goldAccent,
                   onChanged: (val) async {
                     if (val == true) {
+                      // Probeer (opnieuw) permissies te vragen. Als het vastzit, opent dit de OS instellingen.
                       final granted = await requestNotificationPermission();
                       if (!mounted) return;
-                      if (granted) {
-                        final ok = await registerFcmTokenForUser(FirebaseAuth.instance.currentUser);
-                        debugPrint('SettingsScreen: registerFcmToken result=$ok');
-                        if (!mounted) return;
-                        setState(() => _notificationsEnabled = ok);
+
+                      // We forceren alsnog het registreren van de fcmToken in de database ongeacht OS block!
+                      // Waarom? Als de gebruiker het in de instellingen zometeen aanzet, hebben we het token al nodig.
+                      final ok = await registerFcmTokenForUser(FirebaseAuth.instance.currentUser);
+                      
+                      if (!mounted) return;
+                      // Update toggle UI
+                      setState(() => _notificationsEnabled = true);
+
+                      if (granted && ok) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(ok ? 'Meldingen ingeschakeld' : 'Meldingen niet geregistreerd')),
+                          const SnackBar(content: Text('Meldingen ingeschakeld')),
+                        );
+                      } else if (!granted) {
+                        // OS had permissie geblokkeerd of we zitten in Android Settings. Het token gokken we succesvol geupload.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Controleer de Systeem Instellingen om meldingen toe te laten.'),
+                              duration: Duration(seconds: 4),
+                          ),
                         );
                       } else {
-                        setState(() => _notificationsEnabled = false);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Machtiging voor meldingen geweigerd')),
+                         ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Aanmelden voor notificaties mislukt.')),
                         );
+                         setState(() => _notificationsEnabled = false);
                       }
                     } else {
                       // User turned off notifications locally — unregister token
