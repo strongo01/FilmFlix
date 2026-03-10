@@ -26,6 +26,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   User? _currentUser;
   String? _displayName;
   String? _email;
+  int _cachedUnreadCustomerReplies = 0;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+      _customerQuestionsSub;
 
   @override
   void initState() {
@@ -40,7 +43,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _displayName = user?.displayName;
         _email = user?.email;
       });
+
+      if (user != null) {
+        _subscribeCustomerQuestions(user.uid);
+        _fetchUnreadCustomerReplies().then((v) {
+          if (mounted) setState(() => _cachedUnreadCustomerReplies = v);
+        });
+      } else {
+        _customerQuestionsSub?.cancel();
+        _customerQuestionsSub = null;
+        if (mounted) setState(() => _cachedUnreadCustomerReplies = 0);
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _customerQuestionsSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -127,12 +148,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 // HIER GEBEURT DE NAVIGATIE:
-                _buildSimpleTile(
-                  Icons.help_outline,
-                  'Klantenservice',
-                  '',
-                  textColor,
-                  () {
+                ListTile(
+                  leading: Icon(Icons.help_outline, color: movieBlue.withOpacity(0.7)),
+                  title: Text(
+                    'Klantenservice',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_cachedUnreadCustomerReplies > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                          child: Center(
+                            child: Text(
+                              _cachedUnreadCustomerReplies > 99
+                                  ? '99+'
+                                  : '$_cachedUnreadCustomerReplies',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                    ],
+                  ),
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -220,12 +274,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
-  }
-
   Widget _buildAccountCard(Color cardColor, Color textColor) {
     return _buildProfessionalCard(
       cardColor,
@@ -274,13 +322,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (result != true) return;
           final newName = ctrl.text.trim();
           try {
+            // 1. Update Firebase Auth Profile
             await user.updateDisplayName(newName);
             await user.reload();
+            
+            // 2. Update Firestore User Document
             final usersRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
             await usersRef.set({
               'displayName': newName,
               'updatedAt': FieldValue.serverTimestamp(),
             }, SetOptions(merge: true));
+            
             if (!mounted) return;
             setState(() {
               _displayName = newName;
@@ -553,6 +605,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
       indent: 55,
       endIndent: 10,
       color: isDark ? Colors.white10 : Colors.black12,
+    );
+  }
+
+  Future<int> _fetchUnreadCustomerReplies() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return 0;
+      final uid = user.uid;
+      final snap = await FirebaseFirestore.instance
+          .collection('customerquestions')
+          .where('userId', isEqualTo: uid)
+          .get();
+      int unread = 0;
+      for (final d in snap.docs) {
+        final data = d.data();
+        final adminReplies = (data['adminReplies'] as List?) ?? [];
+        final userRead = data['userRead'] == true;
+
+        if (!userRead) {
+          unread += 1;
+          continue;
+        }
+
+        for (final ar in adminReplies) {
+          if (ar is Map) {
+            final seenBy =
+                (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ??
+                    [];
+            if (!seenBy.contains(uid)) {
+              unread += 1;
+              break;
+            }
+          }
+        }
+      }
+      return unread;
+    } catch (e) {
+      debugPrint('Failed fetching unread customer replies (settings): $e');
+      return 0;
+    }
+  }
+
+  void _subscribeCustomerQuestions(String uid) {
+    _customerQuestionsSub?.cancel();
+    _customerQuestionsSub = FirebaseFirestore.instance
+        .collection('customerquestions')
+        .where('userId', isEqualTo: uid)
+        .snapshots()
+        .listen(
+      (snap) {
+        try {
+          int unread = 0;
+          for (final d in snap.docs) {
+            final data = d.data();
+            final adminReplies = (data['adminReplies'] as List?) ?? [];
+            final userRead = data['userRead'] == true;
+
+            if (!userRead) {
+              unread += 1;
+              continue;
+            }
+
+            for (final ar in adminReplies) {
+              if (ar is Map) {
+                final seenBy = (ar['seenBy'] as List?)
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    [];
+                if (!seenBy.contains(uid)) {
+                  unread += 1;
+                  break;
+                }
+              }
+            }
+          }
+          if (mounted) setState(() => _cachedUnreadCustomerReplies = unread);
+        } catch (e) {
+          debugPrint('Failed to compute unread count in SettingsScreen: $e');
+        }
+      },
+      onError: (e) {
+        debugPrint('customerquestions listen error (settings): $e');
+      },
     );
   }
 }
