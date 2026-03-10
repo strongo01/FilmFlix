@@ -959,21 +959,28 @@ class _AdminScreenState extends State<AdminScreen> {
                                   // Notify the user of this admin reply via backend
                                   try {
                                     final userId = data['userId']?.toString();
+                                    debugPrint('AdminScreen: Attempting to notify user. userId=$userId');
                                     if (userId != null && userId.isNotEmpty) {
                                       final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
-                                      await http.post(uri,
+                                      final payload = {
+                                        'type': 'adminToUser',
+                                        'userId': userId,
+                                        'title': 'Nieuw bericht van admin',
+                                        'body': text,
+                                        'data': {'conversationId': docId}
+                                      };
+                                      debugPrint('AdminScreen: Sending payload: ${json.encode(payload)}');
+                                      final resp = await http.post(uri,
                                         headers: {'Content-Type': 'application/json'},
-                                        body: json.encode({
-                                          'type': 'adminToUser',
-                                          'userId': userId,
-                                          'title': 'Nieuw bericht van admin',
-                                          'body': text,
-                                          'data': {'conversationId': docId}
-                                        }),
+                                        body: json.encode(payload),
                                       );
+                                      debugPrint('AdminScreen: Notify response status: ${resp.statusCode}');
+                                      debugPrint('AdminScreen: Notify response body: ${resp.body}');
+                                    } else {
+                                      debugPrint('AdminScreen: Cannot notify user, userId is null or empty in document data.');
                                     }
                                   } catch (e) {
-                                    debugPrint('Failed to notify user: $e');
+                                    debugPrint('AdminScreen: Failed to notify user: $e');
                                   }
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
