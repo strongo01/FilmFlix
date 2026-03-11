@@ -12,6 +12,7 @@ import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:cinetrackr/views/settingscreen.dart'; 
 import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:cinetrackr/utils/fcm_service.dart';
+import 'package:cinetrackr/views/profiel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +83,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const WatchlistScreen(),     // Index 1 (Nieuw in balk)
     const SearchScreen(),        // Index 2
     const FoodScreen(),          // Index 3 (Nieuw in balk)
-    const SettingsScreen(),      // Index 4
+    const ProfileScreen(),      // Index 4
   ];
 
   @override
