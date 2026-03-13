@@ -1069,7 +1069,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       : _buildTypeChip(option);
 
                   return GestureDetector(
-                    onTap: () => _openLink(link?.toString()),
+                    onTap: () async {
+                      final url = link?.toString();
+                      if (serviceName == 'Bioscoop' && option['type']?.toString() == 'biosagenda') {
+                        final proceed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('!!Waarschuwing!!', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: const Text('Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: const Text('Annuleren'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                child: const Text('Doorgaan'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (proceed == true && url != null) await _openLink(url);
+                      } else {
+                        if (url != null) await _openLink(url);
+                      }
+                    },
                     child: chip,
                   );
                 }).toList(),

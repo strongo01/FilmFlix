@@ -95,6 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Instellingen',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
+        iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: movieBlue,
         elevation: 0,
         centerTitle: true,
@@ -741,6 +742,7 @@ class AboutCineTrackrScreen extends StatelessWidget {
     final textColor = isDark ? Colors.white : Colors.black;
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Over CineTrackr',
           style: TextStyle(color: Colors.white),

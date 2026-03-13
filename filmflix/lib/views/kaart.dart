@@ -134,6 +134,7 @@ class _CinemasMapViewState extends State<CinemasMapView> {
 
     return Scaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
         title:  Text('Alle bioscopen in Nederland', style: TextStyle(color: Colors.white)),
         backgroundColor: movieBlue,
       ),

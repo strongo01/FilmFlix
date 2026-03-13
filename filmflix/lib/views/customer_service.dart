@@ -351,65 +351,102 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       if (!ok) return;
     }
 
-    final emailCtrl = TextEditingController(
-      text: FirebaseAuth.instance.currentUser?.email ?? '',
-    );
-    final nameCtrl = TextEditingController(
-      text: FirebaseAuth.instance.currentUser?.displayName ?? '',
-    );
-    final questionCtrl = TextEditingController();
+    final initialEmail = FirebaseAuth.instance.currentUser?.email ?? '';
+    final initialName = FirebaseAuth.instance.currentUser?.displayName ?? '';
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Contact admin'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: emailCtrl,
-                decoration: const InputDecoration(labelText: 'E-mail'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Naam'),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: questionCtrl,
-                decoration: const InputDecoration(labelText: 'Vraag'),
-                maxLines: 4,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuleren'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Verstuur'),
-          ),
-        ],
-      ),
-    );
+    await Navigator.of(context).push(MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (ctx) {
+        final formKey = GlobalKey<FormState>();
+        final emailCtrl = TextEditingController(text: initialEmail);
+        final nameCtrl = TextEditingController(text: initialName);
+        final questionCtrl = TextEditingController();
 
-    if (result != true) return;
-    final email = emailCtrl.text.trim();
-    final name = nameCtrl.text.trim();
-    final question = questionCtrl.text.trim();
-    if (question.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Vul je vraag in')));
-      return;
-    }
-
-    await _sendCustomerQuestion(email: email, name: name, question: question);
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Contact admin', style: TextStyle(color: Colors.white)),
+            backgroundColor: const Color.fromRGBO(43, 77, 91, 1),
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+                  child: IntrinsicHeight(
+                    child: Form(
+                      key: formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: emailCtrl,
+                            decoration: const InputDecoration(labelText: 'E-mail'),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: nameCtrl,
+                            decoration: const InputDecoration(labelText: 'Naam'),
+                          ),
+                          const SizedBox(height: 8),
+                          // Make the question field multi-line but allow scrolling of the whole page
+                          TextFormField(
+                            controller: questionCtrl,
+                            decoration: const InputDecoration(labelText: 'Vraag'),
+                            keyboardType: TextInputType.multiline,
+                            minLines: 6,
+                            maxLines: null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Vul je vraag in';
+                              return null;
+                            },
+                          ),
+                          const Spacer(),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(ctx).pop(),
+                                  child: const Text('Annuleren'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    if (!formKey.currentState!.validate()) return;
+                                    final email = emailCtrl.text.trim();
+                                    final name = nameCtrl.text.trim();
+                                    final question = questionCtrl.text.trim();
+                                    try {
+                                      await _sendCustomerQuestion(
+                                        email: email,
+                                        name: name,
+                                        question: question,
+                                      );
+                                    } catch (_) {}
+                                    if (ctx.mounted) Navigator.of(ctx).pop();
+                                  },
+                                  child: const Text('Verstuur'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ));
   }
 
   Future<void> _sendCustomerQuestion({
