@@ -836,6 +836,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
+          'genres': _genres,
         };
         await docRef.set({
           'watchlist': FieldValue.arrayUnion([widget.imdbId]),
@@ -883,6 +884,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
+          'genres': _genres,
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
@@ -932,6 +934,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
+          'genres': _genres,
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),

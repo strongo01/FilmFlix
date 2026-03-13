@@ -428,6 +428,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _isLoading ? null : _resetPassword,
                             child: const Text('Wachtwoord vergeten?', style: TextStyle(color: Colors.white60, fontSize: 13)),
                           ),
+                        if (_isLogin)
+                          TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () async {
+                                    setState(() => _isLoading = true);
+                                    try {
+                                      if (!mounted) return;
+                                      if (widget.returnAfterLogin) {
+                                        Navigator.of(context).pop(true);
+                                      } else {
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(builder: (_) => const MainNavigation()),
+                                        );
+                                      }
+                                    } finally {
+                                      if (mounted) setState(() => _isLoading = false);
+                                    }
+                                  },
+                            child: const Text('Verder gaan als gast', style: TextStyle(color: Colors.white70)),
+                          ),
                         const SizedBox(height: 20),
                         Row(children: [
                           const Expanded(child: Divider(color: Colors.white24)),
