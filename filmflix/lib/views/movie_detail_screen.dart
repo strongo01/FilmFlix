@@ -831,12 +831,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     try {
       if (newState) {
         // Add imdbId to watchlist and save lightweight metadata so WatchlistScreen
-        // can show title/overview without extra API calls. Also store mediaType.
+        // can show title/overview without extra API calls. Also store mediaType
+        // and a server timestamp of when the user saved this item.
         final meta = {
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
           'genres': _genres,
+          'savedAt': FieldValue.serverTimestamp(),
         };
         await docRef.set({
           'watchlist': FieldValue.arrayUnion([widget.imdbId]),
@@ -885,6 +887,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
           'genres': _genres,
+          'savedAt': FieldValue.serverTimestamp(),
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
@@ -935,6 +938,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
           'genres': _genres,
+          'savedAt': FieldValue.serverTimestamp(),
         };
         await docRef.set({
           'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
