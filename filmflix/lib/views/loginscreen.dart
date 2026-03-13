@@ -83,19 +83,20 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
-        await cred.user?.updateDisplayName(_nameCtrl.text.trim());
-        try {
-          final user = cred.user;
-          if (user != null) {
-            final usersRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+        final user = cred.user;
+        if (user != null) {
+          await user.updateDisplayName(_nameCtrl.text.trim());
+          await user.reload();
+          // After reload, user is a new object from the SDK for safety
+          final updatedUser = auth.currentUser;
+          if (updatedUser != null) {
+            final usersRef = FirebaseFirestore.instance.collection('users').doc(updatedUser.uid);
             await usersRef.set({
               'displayName': _nameCtrl.text.trim(),
-              'email': _emailCtrl.text.trim(),
+              'email': updatedUser.email,
               'createdAt': FieldValue.serverTimestamp(),
             }, SetOptions(merge: true));
           }
-        } catch (e) {
-          debugPrint('Failed to write user doc after registration: $e');
         }
       }
       if (!mounted) return;

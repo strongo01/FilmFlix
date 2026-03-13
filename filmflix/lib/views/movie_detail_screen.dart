@@ -36,6 +36,29 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   String? _error;
   String? _rated;
 
+  String _formatRating(String? rating) {
+    if (rating == null || rating.isEmpty || rating == '-') return rating ?? '';
+    
+    // Some ratings come as "73." or "73" (out of 100)
+    // or "7.3" (out of 10). Let's clean and parse.
+    String cleanRating = rating.replaceAll(',', '.');
+    if (cleanRating.endsWith('.')) {
+      cleanRating = cleanRating.substring(0, cleanRating.length - 1);
+    }
+
+    final doubleRating = double.tryParse(cleanRating);
+    if (doubleRating != null) {
+      if (doubleRating == 0) return '-';
+      if (doubleRating > 10 && doubleRating <= 100) {
+        return '${(doubleRating / 10).toStringAsFixed(1)}/10 sterren';
+      } else if (doubleRating <= 10) {
+        return '${doubleRating.toStringAsFixed(1)}/10 sterren';
+      }
+    }
+    
+    return rating;
+  }
+
   Map<String, String> _translatedTexts = {};
   Map<String, bool> _isTranslating = {};
 
@@ -85,7 +108,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         return type ?? '';
     }
   }
-
 
   // Sorteer volgorde
   int _typePriority(String? type) {
@@ -426,21 +448,21 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Widget _posterWithFallback(
-    // Deze functie bouwt een widget die de poster van de film toont, met een fallback naar de TMDb poster als de originele poster niet beschikbaar is of niet geladen kan worden. We proberen eerst de originele poster te laden, en als dat mislukt (bijvoorbeeld vanwege een fout in de URL of een probleem met het laden van de afbeelding), gebruiken we een FutureBuilder om asynchroon de TMDb poster op te halen via onze backend. Als ook dat mislukt, tonen we een standaard "broken image" icoon. Dit zorgt
     BuildContext context,
     String? initialPoster,
     Map<String, dynamic> rapid,
   ) {
+    const double posterHeight = 600.0;
+    
     if (initialPoster == null || initialPoster.isEmpty) {
       // no initial poster — fetch TMDb immediately
       return FutureBuilder<String?>(
-        future: _fetchTmdbPosterFromRapid(
-          rapid,
-        ), // Als er geen originele poster URL is, gaan we direct naar het ophalen van de TMDb poster via onze backend. We gebruiken een FutureBuilder om deze asynchrone operatie af te handelen, en tonen een loading indicator terwijl we wachten op het resultaat. Zodra we de TMDb poster URL hebben, proberen we deze te laden. Als dat ook mislukt, tonen we een "broken image" icoon.
+        future: _fetchTmdbPosterFromRapid(rapid),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return Container(
-              height: 220,
+              height: posterHeight,
+              width: double.infinity,
               color: Colors.grey.shade200,
               child: const Center(child: CircularProgressIndicator()),
             );
@@ -449,11 +471,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           if (url != null && url.isNotEmpty) {
             return ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: _imageFromProxied(url, fit: BoxFit.cover, height: 220),
+              child: _imageFromProxied(url, fit: BoxFit.cover, height: posterHeight, width: double.infinity),
             );
           }
           return Container(
-            height: 220,
+            height: posterHeight,
+            width: double.infinity,
             color: Colors.grey.shade300,
             child: const Center(child: Icon(Icons.broken_image, size: 48)),
           );
@@ -469,14 +492,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return Container(
-              height: 220,
+              height: posterHeight,
+              width: double.infinity,
               color: Colors.grey.shade200,
               child: const Center(child: CircularProgressIndicator()),
             );
           }
           final bytes = snap.data;
           if (bytes != null && bytes.isNotEmpty) {
-            return Image.memory(bytes, fit: BoxFit.cover);
+            return Image.memory(bytes, fit: BoxFit.cover, height: posterHeight, width: double.infinity);
           }
 
           // fallback to TMDb
@@ -485,17 +509,19 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             builder: (ctx2, snap2) {
               if (snap2.connectionState == ConnectionState.waiting) {
                 return Container(
-                  height: 220,
+                  height: posterHeight,
+                  width: double.infinity,
                   color: Colors.grey.shade200,
                   child: const Center(child: CircularProgressIndicator()),
                 );
               }
               final url2 = snap2.data;
               if (url2 != null && url2.isNotEmpty) {
-                return _imageFromProxied(url2, fit: BoxFit.cover, height: 220);
+                return _imageFromProxied(url2, fit: BoxFit.cover, height: posterHeight, width: double.infinity);
               }
               return Container(
-                height: 220,
+                height: posterHeight,
+                width: double.infinity,
                 color: Colors.grey.shade300,
                 child: const Center(child: Icon(Icons.broken_image, size: 48)),
               );
@@ -619,10 +645,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       }
 
       // apply first rapid result immediately
-      applyRapidAndOmdb(
-        firstRapid,
-        omdb as Map<String, dynamic>?,
-      );
+      applyRapidAndOmdb(firstRapid, omdb as Map<String, dynamic>?);
 
       // When the other Rapid response arrives, merge/update UI with additional info.
       showFuture
@@ -1046,7 +1069,31 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       : _buildTypeChip(option);
 
                   return GestureDetector(
-                    onTap: () => _openLink(link?.toString()),
+                    onTap: () async {
+                      final url = link?.toString();
+                      if (serviceName == 'Bioscoop' && option['type']?.toString() == 'biosagenda') {
+                        final proceed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('!!Waarschuwing!!', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: const Text('Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: const Text('Annuleren'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                child: const Text('Doorgaan'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (proceed == true && url != null) await _openLink(url);
+                      } else {
+                        if (url != null) await _openLink(url);
+                      }
+                    },
                     child: chip,
                   );
                 }).toList(),
@@ -1409,7 +1456,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         const Icon(Icons.star, color: Colors.amber),
                         const SizedBox(width: 6),
                         Text(
-                          _rating ?? '',
+                          _formatRating(_rating),
                           style: TextStyle(
                             color: isDark ? Colors.white : Colors.black,
                           ),

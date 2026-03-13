@@ -16,7 +16,7 @@ class _CinemasMapViewState extends State<CinemasMapView> {
   bool _loading = true;
   List<Map<String, dynamic>> _cinemas = [];
   final MapController _mapController = MapController();
-
+  final Color movieBlue = const Color.fromRGBO(43, 77, 91, 1);
   @override
   void initState() {
     super.initState();
@@ -134,8 +134,9 @@ class _CinemasMapViewState extends State<CinemasMapView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alle bioscopen in Nederland'),
-        backgroundColor: const Color.fromARGB(255, 49, 225, 244),
+        iconTheme: const IconThemeData(color: Colors.white),
+        title:  Text('Alle bioscopen in Nederland', style: TextStyle(color: Colors.white)),
+        backgroundColor: movieBlue,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
