@@ -55,19 +55,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _cachedUnreadCustomerReplies = 0;
   int _cachedUnreadAdminChats = 0;
+  Future<void>? _initialLoads;
   StreamSubscription<User?>? _authSub;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _customerQuestionsSub;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _allCustomerQuestionsSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _customerQuestionsSub;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _allCustomerQuestionsSub;
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureDisplayName());
-    _loadNowPlaying();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchUnreadCustomerReplies().then((v) {
+    // Start initial loads and defer displayName check until they complete.
+    _initialLoads = (() async {
+      final loadNow = _loadNowPlaying();
+      final fetchUnread = _fetchUnreadCustomerReplies().then((v) {
         if (mounted) setState(() => _cachedUnreadCustomerReplies = v);
       });
-    });
+      await Future.wait([loadNow, fetchUnread]);
+    })();
+
+    // Ensure displayName check happens only after initial loads are complete.
+    _initialLoads!.then((_) => _ensureDisplayName());
+
     // subscribe to auth changes so we can keep badge updated realtime
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
@@ -78,23 +86,31 @@ class _HomeScreenState extends State<HomeScreen> {
         _customerQuestionsSub = null;
         _allCustomerQuestionsSub?.cancel();
         _allCustomerQuestionsSub = null;
-        if (mounted) setState(() {
-          _cachedUnreadCustomerReplies = 0;
-          _cachedUnreadAdminChats = 0;
-        });
+        if (mounted) {
+          setState(() {
+            _cachedUnreadCustomerReplies = 0;
+            _cachedUnreadAdminChats = 0;
+          });
+        }
       }
     });
   }
 
   void _maybeSubscribeAdmin(String uid) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       final data = doc.data();
       bool isAdmin = false;
       if (data != null) {
         final role = data['role'];
         if (role is String) isAdmin = role.toLowerCase() == 'admin';
-        if (role is List) isAdmin = role.any((e) => (e?.toString().toLowerCase() ?? '') == 'admin');
+        if (role is List)
+          isAdmin = role.any(
+            (e) => (e?.toString().toLowerCase() ?? '') == 'admin',
+          );
       }
       if (isAdmin) {
         _subscribeAllCustomerQuestions();
@@ -113,59 +129,82 @@ class _HomeScreenState extends State<HomeScreen> {
     _allCustomerQuestionsSub = FirebaseFirestore.instance
         .collection('customerquestions')
         .snapshots()
-        .listen((snap) {
-      try {
-        int adminUnread = 0;
-        for (final d in snap.docs) {
-          final data = d.data();
-
-          int _tsToMs(dynamic ts) {
+        .listen(
+          (snap) {
             try {
-              if (ts == null) return 0;
-              if (ts is Timestamp) return ts.millisecondsSinceEpoch;
-              if (ts is DateTime) return ts.millisecondsSinceEpoch;
-              if (ts is int) return ts;
-              if (ts is String) return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
-            } catch (_) {}
-            return 0;
-          }
+              int adminUnread = 0;
+              for (final d in snap.docs) {
+                final data = d.data();
 
-          final adminReplies = (data['adminReplies'] as List?) ?? [];
-          final userReplies = (data['userReplies'] as List?) ?? [];
-          final answer = (data['answer'] ?? '').toString();
+                int _tsToMs(dynamic ts) {
+                  try {
+                    if (ts == null) return 0;
+                    if (ts is Timestamp) return ts.millisecondsSinceEpoch;
+                    if (ts is DateTime) return ts.millisecondsSinceEpoch;
+                    if (ts is int) return ts;
+                    if (ts is String)
+                      return DateTime.tryParse(ts)?.millisecondsSinceEpoch ?? 0;
+                  } catch (_) {}
+                  return 0;
+                }
 
-          int lastUserMs = _tsToMs(data['createdAt']);
-          for (final ur in userReplies) {
-            try {
-              final ts = ur is Map ? (ur['createdAt'] ?? ur['updatedAt']) : null;
-              lastUserMs = Math.max(lastUserMs, _tsToMs(ts));
-            } catch (_) {}
-          }
+                final adminReplies = (data['adminReplies'] as List?) ?? [];
+                final userReplies = (data['userReplies'] as List?) ?? [];
+                final answer = (data['answer'] ?? '').toString();
 
-          int lastAdminMs = _tsToMs(data['answerAt'] ?? data['updatedAt']);
-          if (answer.isNotEmpty) lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['answerAt'] ?? data['updatedAt']));
-          lastAdminMs = Math.max(lastAdminMs, _tsToMs(data['adminSeenAt']));
-          for (final ar in adminReplies) {
-            try {
-              final ts = ar is Map ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt']) : null;
-              lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts));
-            } catch (_) {}
-          }
+                int lastUserMs = _tsToMs(data['createdAt']);
+                for (final ur in userReplies) {
+                  try {
+                    final ts = ur is Map
+                        ? (ur['createdAt'] ?? ur['updatedAt'])
+                        : null;
+                    lastUserMs = Math.max(lastUserMs, _tsToMs(ts));
+                  } catch (_) {}
+                }
 
-          // If there is no admin activity yet (no answer, no adminReplies, and admin never opened),
-          // treat the initial question as unread for admins so they immediately see the badge on HomeScreen.
-          final int adminSeenMs = _tsToMs(data['adminSeenAt']);
-          final bool noAdminActivity = answer.isEmpty && (adminReplies.isEmpty);
-          final bool unreadForAdmin = (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) || (lastUserMs > lastAdminMs);
-          if (unreadForAdmin) adminUnread += 1;
-        }
-        if (mounted) setState(() => _cachedUnreadAdminChats = adminUnread);
-      } catch (e) {
-        debugPrint('Failed to compute admin unread count in HomeScreen: $e');
-      }
-    }, onError: (e) {
-      debugPrint('customerquestions listen error (home admin): $e');
-    });
+                int lastAdminMs = _tsToMs(
+                  data['answerAt'] ?? data['updatedAt'],
+                );
+                if (answer.isNotEmpty)
+                  lastAdminMs = Math.max(
+                    lastAdminMs,
+                    _tsToMs(data['answerAt'] ?? data['updatedAt']),
+                  );
+                lastAdminMs = Math.max(
+                  lastAdminMs,
+                  _tsToMs(data['adminSeenAt']),
+                );
+                for (final ar in adminReplies) {
+                  try {
+                    final ts = ar is Map
+                        ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'])
+                        : null;
+                    lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts));
+                  } catch (_) {}
+                }
+
+                // If there is no admin activity yet (no answer, no adminReplies, and admin never opened),
+                // treat the initial question as unread for admins so they immediately see the badge on HomeScreen.
+                final int adminSeenMs = _tsToMs(data['adminSeenAt']);
+                final bool noAdminActivity =
+                    answer.isEmpty && (adminReplies.isEmpty);
+                final bool unreadForAdmin =
+                    (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) ||
+                    (lastUserMs > lastAdminMs);
+                if (unreadForAdmin) adminUnread += 1;
+              }
+              if (mounted)
+                setState(() => _cachedUnreadAdminChats = adminUnread);
+            } catch (e) {
+              debugPrint(
+                'Failed to compute admin unread count in HomeScreen: $e',
+              );
+            }
+          },
+          onError: (e) {
+            debugPrint('customerquestions listen error (home admin): $e');
+          },
+        );
   }
 
   void _subscribeCustomerQuestions(String uid) {
@@ -174,39 +213,44 @@ class _HomeScreenState extends State<HomeScreen> {
         .collection('customerquestions')
         .where('userId', isEqualTo: uid)
         .snapshots()
-        .listen((snap) {
-      try {
-        int unread = 0;
-        for (final d in snap.docs) {
-          final data = d.data();
-          final adminReplies = (data['adminReplies'] as List?) ?? [];
-          final userRead = data['userRead'] == true;
+        .listen(
+          (snap) {
+            try {
+              int unread = 0;
+              for (final d in snap.docs) {
+                final data = d.data();
+                final adminReplies = (data['adminReplies'] as List?) ?? [];
+                final userRead = data['userRead'] == true;
 
-          if (!userRead) {
-            unread += 1;
-            continue;
-          }
+                if (!userRead) {
+                  unread += 1;
+                  continue;
+                }
 
-          for (final ar in adminReplies) {
-            if (ar is Map) {
-              final seenBy = (ar['seenBy'] as List?)
-                      ?.map((e) => e.toString())
-                      .toList() ??
-                  [];
-              if (!seenBy.contains(uid)) {
-                unread += 1;
-                break;
+                for (final ar in adminReplies) {
+                  if (ar is Map) {
+                    final seenBy =
+                        (ar['seenBy'] as List?)
+                            ?.map((e) => e.toString())
+                            .toList() ??
+                        [];
+                    if (!seenBy.contains(uid)) {
+                      unread += 1;
+                      break;
+                    }
+                  }
+                }
               }
+              if (mounted)
+                setState(() => _cachedUnreadCustomerReplies = unread);
+            } catch (e) {
+              debugPrint('Failed to compute unread count in HomeScreen: $e');
             }
-          }
-        }
-        if (mounted) setState(() => _cachedUnreadCustomerReplies = unread);
-      } catch (e) {
-        debugPrint('Failed to compute unread count in HomeScreen: $e');
-      }
-    }, onError: (e) {
-      debugPrint('customerquestions listen error (home): $e');
-    });
+          },
+          onError: (e) {
+            debugPrint('customerquestions listen error (home): $e');
+          },
+        );
   }
 
   @override
@@ -218,12 +262,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- API Functies (gekopieerd uit FilmNowScreen) ---
   Future<void> _loadNowPlaying() async {
     try {
-      final uri = Uri.parse(baseApi).replace(queryParameters: {
-        'type': 'actualfilms',
-        'page': '1',
-        'language': 'nl-NL',
-        'region': 'NL',
-      });
+      final uri = Uri.parse(baseApi).replace(
+        queryParameters: {
+          'type': 'actualfilms',
+          'page': '1',
+          'language': 'nl-NL',
+          'region': 'NL',
+        },
+      );
       final resp = await http.get(uri);
       if (resp.statusCode == 200) {
         final jsonData = jsonDecode(resp.body);
@@ -232,20 +278,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
         for (final r in results) {
           final map = r as Map<String, dynamic>;
-          temp.add(FilmNowItem(
-            tmdbId: map['id'].toString(),
-            title: map['title'] ?? map['original_title'],
-            poster: map['poster_path'] != null ? 'https://image.tmdb.org/t/p/w500${map['poster_path']}' : null,
-            backdrop: map['backdrop_path'] != null ? 'https://image.tmdb.org/t/p/original${map['backdrop_path']}' : null,
-          ));
+          temp.add(
+            FilmNowItem(
+              tmdbId: map['id'].toString(),
+              title: map['title'] ?? map['original_title'],
+              poster: map['poster_path'] != null
+                  ? 'https://image.tmdb.org/t/p/w500${map['poster_path']}'
+                  : null,
+              backdrop: map['backdrop_path'] != null
+                  ? 'https://image.tmdb.org/t/p/original${map['backdrop_path']}'
+                  : null,
+            ),
+          );
         }
-        
+
         // Haal IMDB IDs op voor navigatie
         setState(() {
           films = temp;
           loadingFilms = false;
         });
-        
+
         for (var item in films) {
           _fetchImdbIdFor(item);
         }
@@ -258,10 +310,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchImdbIdFor(FilmNowItem item) async {
     try {
-      final uri = Uri.parse(baseApi).replace(queryParameters: {
-        'type': 'tmdbmovieinfo',
-        'movie_id': item.tmdbId,
-      });
+      final uri = Uri.parse(baseApi).replace(
+        queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': item.tmdbId},
+      );
       final resp = await http.get(uri);
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
@@ -270,14 +321,106 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {}
   }
 
-  String proxiedUrl(String url) => '$baseApi?type=image-proxy&imageUrl=${Uri.encodeComponent(url)}';
+  String proxiedUrl(String url) =>
+      '$baseApi?type=image-proxy&imageUrl=${Uri.encodeComponent(url)}';
 
   // --- Bestaande Logica voor DisplayName & Admin ---
   Future<void> _ensureDisplayName() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    if (doc.data()?['displayName'] == null) await _promptForDisplayName(user.uid);
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    var data = doc.data();
+    
+    // Fallback: If doc doesn't exist but local Auth has a name, create the doc immediately
+    if (data == null && user.displayName != null && user.displayName!.trim().isNotEmpty) {
+      debugPrint('ensureDisplayName: doc null but user.displayName found. Creating doc.');
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'displayName': user.displayName,
+        'email': user.email,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      data = {'displayName': user.displayName};
+    }
+
+    debugPrint('ensureDisplayName: uid=${user.uid}, userdoc=${data ?? '<null>'}');
+
+    // Check several possible keys and ensure the value is a non-empty string.
+    final dynamic rawName = data == null
+        ? null
+        : (data['displayName'] ?? data['display_name'] ?? data['name']);
+    if (rawName is String && rawName.trim().isNotEmpty) return;
+    await _promptForDisplayName(user.uid);
+  }
+
+  Future<void> _promptForDisplayName(String uid) async {
+    final formKey = GlobalKey<FormState>();
+    final ctrl = TextEditingController();
+
+    // showDialog with barrierDismissible false and prevent back button
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: AlertDialog(
+            title: const Text('Voer je naam in.'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.',
+                ),
+                const SizedBox(height: 12),
+                Form(
+                  key: formKey,
+                  child: TextFormField(
+                    controller: ctrl,
+                    autofocus: true,
+                    decoration: const InputDecoration(labelText: 'Je naam'),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty)
+                        return 'Vul je naam in';
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  if (!formKey.currentState!.validate()) return;
+                  final name = ctrl.text.trim();
+                  try {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user != null) {
+                      await user.updateDisplayName(name);
+                      await user.reload();
+                    }
+                    final usersRef = FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(uid);
+                    await usersRef.set({
+                      'displayName': name,
+                      'email': user?.email,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    }, SetOptions(merge: true));
+                  } catch (e) {
+                    debugPrint('Failed saving displayName from dialog: $e');
+                  }
+                  if (mounted) Navigator.of(ctx).pop();
+                },
+                child: const Text('Opslaan en doorgaan'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
 Future<void> _promptForDisplayName(String uid) async {
@@ -365,9 +508,8 @@ Future<void> _promptForDisplayName(String uid) async {
 
         for (final ar in adminReplies) {
           if (ar is Map) {
-            final seenBy = (ar['seenBy'] as List?)
-                    ?.map((e) => e.toString())
-                    .toList() ??
+            final seenBy =
+                (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ??
                 [];
             if (!seenBy.contains(uid)) {
               unread += 1;
@@ -386,13 +528,17 @@ Future<void> _promptForDisplayName(String uid) async {
   Future<bool> _checkIfAdmin() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
     return doc.data()?['role']?.toString().toLowerCase() == 'admin';
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final isDarkMode =
+        MediaQuery.of(context).platformBrightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white : Colors.black;
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -400,8 +546,12 @@ Future<void> _promptForDisplayName(String uid) async {
       body: Container(
         decoration: BoxDecoration(
           gradient: isDarkMode
-              ? const LinearGradient(colors: [Color(0xFF0F2027), Color(0xFF203A43)])
-              : const LinearGradient(colors: [Color(0xFFE0E0E0), Color(0xFFFFFFFF)]),
+              ? const LinearGradient(
+                  colors: [Color(0xFF0F2027), Color(0xFF203A43)],
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFE0E0E0), Color(0xFFFFFFFF)],
+                ),
         ),
         child: SafeArea(
           child: Column(
@@ -413,27 +563,129 @@ Future<void> _promptForDisplayName(String uid) async {
                   children: [
                     IconButton(
                       icon: Icon(Icons.map_outlined, color: textColor),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CinemasMapView())),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CinemasMapView(),
+                        ),
+                      ),
                     ),
                     const Expanded(
-                      child: Text("CineTrackr", textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        "CineTrackr",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     FutureBuilder<bool>(
                       future: _checkIfAdmin(),
-                      builder: (context, snap) => snap.data == true 
-                        ? IconButton(icon: const Icon(Icons.admin_panel_settings, color: Colors.amber), onPressed: () {}) 
-                        : const SizedBox(width: 48),
+                      builder: (context, snap) => snap.data == true
+                          ? Stack(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.admin_panel_settings,
+                                    color: Colors.amber,
+                                  ),
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const AdminScreen(),
+                                    ),
+                                  ),
+                                ),
+                                if (_cachedUnreadAdminChats > 0)
+                                  Positioned(
+                                    right: 6,
+                                    top: 6,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: Colors.white, width: 1),
+                                      ),
+                                      constraints: const BoxConstraints(
+                                        minWidth: 16,
+                                        minHeight: 16,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          _cachedUnreadAdminChats > 99
+                                              ? '99+'
+                                              : '$_cachedUnreadAdminChats',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            )
+                          : const SizedBox(width: 48),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.settings, color: textColor),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                    Stack(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.settings, color: textColor),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SettingsScreen(),
+                            ),
+                          ),
+                        ),
+                        if (_cachedUnreadCustomerReplies > 0)
+                          Positioned(
+                            right: 6,
+                            top: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _cachedUnreadCustomerReplies > 99
+                                      ? '99+'
+                                      : '$_cachedUnreadCustomerReplies',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 20),
-              Text("Nu in de bioscoop", style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.w300)),
+              Text(
+                "Nu in de bioscoop",
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
               const SizedBox(height: 10),
 
               // --- DE SWIPER (FILM CARROUSEL) ---
@@ -452,7 +704,7 @@ Future<void> _promptForDisplayName(String uid) async {
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeOut,
                             margin: EdgeInsets.symmetric(
-                              horizontal: 10, 
+                              horizontal: 10,
                               vertical: isSelected ? 20 : 50,
                             ),
                             decoration: BoxDecoration(
@@ -462,7 +714,7 @@ Future<void> _promptForDisplayName(String uid) async {
                                   color: Colors.black.withOpacity(0.3),
                                   blurRadius: 15,
                                   offset: const Offset(0, 10),
-                                )
+                                ),
                               ],
                             ),
                             child: ClipRRect(
@@ -470,7 +722,14 @@ Future<void> _promptForDisplayName(String uid) async {
                               child: GestureDetector(
                                 onTap: () {
                                   if (film.imdbId != null) {
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: film.imdbId!)));
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MovieDetailScreen(
+                                          imdbId: film.imdbId!,
+                                        ),
+                                      ),
+                                    );
                                   }
                                 },
                                 child: Stack(
@@ -479,7 +738,8 @@ Future<void> _promptForDisplayName(String uid) async {
                                     Image.network(
                                       proxiedUrl(film.poster ?? ""),
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(color: Colors.grey),
+                                      errorBuilder: (_, __, ___) =>
+                                          Container(color: Colors.grey),
                                     ),
                                     // Titel overlay
                                     Align(
@@ -491,12 +751,19 @@ Future<void> _promptForDisplayName(String uid) async {
                                           gradient: LinearGradient(
                                             begin: Alignment.bottomCenter,
                                             end: Alignment.topCenter,
-                                            colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                                            colors: [
+                                              Colors.black.withOpacity(0.8),
+                                              Colors.transparent,
+                                            ],
                                           ),
                                         ),
                                         child: Text(
                                           film.title,
-                                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                           textAlign: TextAlign.center,
                                         ),
                                       ),
@@ -513,17 +780,21 @@ Future<void> _promptForDisplayName(String uid) async {
               // --- DOT INDICATOR ---
               Padding(
                 padding: const EdgeInsets.only(bottom: 30),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    (films.length > 8 ? 8 : films.length), // Maximaal 8 stipjes voor overzicht
-                    (i) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: i == currentIndex ? 12 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: i == currentIndex ? Colors.blue : Colors.grey.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(4),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(
+                      films.length,
+                      (i) => Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: i == currentIndex ? 12 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: i == currentIndex
+                              ? Colors.blue
+                              : Colors.grey.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
                   ),

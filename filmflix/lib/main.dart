@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cinetrackr/firebase_options.dart';
 import 'package:cinetrackr/views/filmsnowscreen.dart';
@@ -17,6 +20,26 @@ import 'package:cinetrackr/views/profiel.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  final analytics = FirebaseAnalytics.instance;
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    await analytics.setUserId(id: user.uid);
+  } else {
+    final prefs = await SharedPreferences.getInstance();
+    var anon = prefs.getString('analytics_anon_id');
+      if (anon == null) {
+        anon = '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1 << 31)}';
+      await prefs.setString('analytics_anon_id', anon);
+    }
+    await analytics.setUserId(id: anon);
+  }
+
+  try {
+    await analytics.logAppOpen();
+  } catch (_) {
+    }
+
   runApp(const CineTrackrApp());
 }
 
@@ -138,11 +161,21 @@ class _MainNavigationState extends State<MainNavigation> {
   void initState() {
     super.initState();
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
+      // Keep analytics user id in sync with auth state.
+      final analytics = FirebaseAnalytics.instance;
       if (user != null) {
+        await analytics.setUserId(id: user.uid);
         final ok = await registerFcmTokenForUser(user);
         debugPrint('Main: registerFcmTokenForUser result=$ok for uid=${user.uid}');
       } else {
-        // user signed out: nothing to do here (tokens are removed when user disables notifications)
+        // user signed out: fall back to the stored anonymous id
+        final prefs = await SharedPreferences.getInstance();
+        var anon = prefs.getString('analytics_anon_id');
+        if (anon == null) {
+          anon = '${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1 << 31)}';
+          await prefs.setString('analytics_anon_id', anon);
+        }
+        await analytics.setUserId(id: anon);
       }
     });
   }

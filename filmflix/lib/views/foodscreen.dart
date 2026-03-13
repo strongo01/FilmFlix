@@ -143,7 +143,7 @@ class _FoodScreenState extends State<FoodScreen> {
     return Scaffold(
       backgroundColor: scaffoldBg,
       appBar: AppBar(
-        title: const Text('Food & Movies', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text('Food', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: movieBlue,
         centerTitle: true,
         elevation: 0,
