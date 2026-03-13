@@ -110,15 +110,29 @@ module.exports = async function handler(req, res) {
     }
 
     if (type === 'adminToUser') {
+      console.log('adminToUser branch triggered for userId:', userId);
       const userDoc = await db.collection('users').doc(userId).get();
-      if (!userDoc.exists) return res.status(404).json({ error: 'user-not-found' });
+      if (!userDoc.exists) {
+        console.error('adminToUser: User doc not found for userId:', userId);
+        return res.status(404).json({ error: 'user-not-found', userId });
+      }
       const d = userDoc.data() || {};
       const token = d.fcmToken;
-      console.log('adminToUser: userId=', userId, 'tokenPresent=', !!token);
-      if (!token) return res.status(200).json({ sent: 0, reason: 'user-has-no-token' });
+      console.log('adminToUser: userId found, token present:', !!token, 'token length:', token ? token.length : 0);
+      if (!token) {
+        console.warn('adminToUser: No fcmToken in user doc for userId:', userId);
+        return res.status(200).json({ sent: 0, reason: 'user-has-no-token', userId });
+      }
       const message = { token, notification: { title, body: messageBody }, data: data || {} };
-      await messaging.send(message);
-      return res.status(200).json({ sent: 1 });
+      console.log('adminToUser: Sending message via messaging.send...');
+      try {
+        await messaging.send(message);
+        console.log('adminToUser: Message sent successfully to userId:', userId);
+        return res.status(200).json({ sent: 1, userId });
+      } catch (sendError) {
+        console.error('adminToUser: Error calling messaging.send:', sendError);
+        return res.status(500).json({ error: 'messaging-send-failed', detail: sendError.message });
+      }
     }
 
     return res.status(400).json({ error: 'invalid-type' });
