@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'movie_detail_screen.dart';
+import 'loginscreen.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -312,7 +313,6 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -325,34 +325,63 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             ],
           ),
         ),
-        body: user == null
-            ? Center(
+        body: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, authSnap) {
+            final user = authSnap.data;
+            if (user == null) {
+              return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Je bent niet ingelogd.'),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () async {
-                          // navigate to login screen if available
-                          Navigator.of(context).pushNamed('/login');
-                        },
-                        child: const Text('Inloggen'),
+                  padding: const EdgeInsets.all(24.0),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blueAccent.withOpacity(0.5)),
+                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.blueAccent.withOpacity(0.05),
                       ),
-                    ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lock_outline, size: 48, color: Colors.blueAccent),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Je bent nog niet ingelogd.',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Tik hier om in te loggen en je watchlist te bekijken.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              )
-            : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              );
+            }
+
+            return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                 stream: FirebaseFirestore.instance
                     .collection('users')
                     .doc(user.uid)
                     .snapshots(),
                 builder: (ctx, snap) {
-                  if (snap.hasError)
+                  if (snap.hasError) {
+                    if (snap.error.toString().contains('permission-denied')) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
                     return Center(child: Text('Fout bij laden: ${snap.error}'));
+                  }
                   if (!snap.hasData)
                     return const Center(child: CircularProgressIndicator());
                   final data = snap.data!.data() ?? {};
@@ -418,6 +447,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     return false;
                   }).toList();
 
+                  // Sort savedSeries by IMDb id (e.g. tt1632701)
+                  savedSeries.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
                   final savedFilms = watchlist.where((id) {
                     // Prefer explicit mediaType stored in watchlist_meta when available
                     final meta = metaMap[id];
@@ -436,6 +468,17 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     return !seenMap.containsKey(id);
                   }).toList();
 
+                  // Sort savedFilms alphabetically by stored title (fallback to id)
+                  savedFilms.sort((a, b) {
+                    final ta = (metaMap[a] is Map && metaMap[a]!['title'] != null)
+                        ? metaMap[a]!['title'].toString()
+                        : a;
+                    final tb = (metaMap[b] is Map && metaMap[b]!['title'] != null)
+                        ? metaMap[b]!['title'].toString()
+                        : b;
+                    return ta.toLowerCase().compareTo(tb.toLowerCase());
+                  });
+
                   final watchingSeries = <String>[];
                   final watchingFilms = <String>[];
 
@@ -452,6 +495,18 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       }
                     }
                   }
+
+                  // Sort watchingSeries by IMDb id (e.g. tt1632701)
+                  watchingSeries.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+                  watchingFilms.sort((a, b) {
+                    final ta = (metaMap[a] is Map && metaMap[a]!['title'] != null)
+                        ? metaMap[a]!['title'].toString()
+                        : a;
+                    final tb = (metaMap[b] is Map && metaMap[b]!['title'] != null)
+                        ? metaMap[b]!['title'].toString()
+                        : b;
+                    return ta.toLowerCase().compareTo(tb.toLowerCase());
+                  });
 
                   Widget buildList(
                     List<String> items, {
@@ -592,7 +647,6 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                     'Episode')
                                                 .toString();
                                         final epKey = 's${si}_e${ei}';
-                                        final isSeen = seenSet.contains(epKey);
 
                                         // gather episode streaming options (nl preferred)
                                         final epStreamRaw = ep['streamingOptions']?['nl'] ?? ep['streamingOptions'];
@@ -600,48 +654,56 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                             ? List.from(epStreamRaw)
                                             : (epStreamRaw is Map ? (epStreamRaw).values.toList() : <dynamic>[]);
 
+                                        // Capture loop variables into locals to avoid closure issues
+                                        final localId = id;
+                                        final localSi = si;
+                                        final localEi = ei;
+                                        final localEpKey = 's${localSi}_e${localEi}';
+                                        final localEpTitle = epTitle;
+                                        final localIsSeen = seenSet.contains(localEpKey);
+
                                         return ListTile(
-                                          leading: Checkbox(
-                                            value: isSeen,
-                                            onChanged: (val) async {
-                                              final newVal = val ?? false;
-                                              if (newVal) {
-                                                // collect previous unseen episodes in this season
-                                                final unseenPrev = <int>[];
-                                                for (var p = 0; p < ei; p++) {
-                                                  final prevKey = 's${si}_e${p}';
-                                                  if (!seenSet.contains(prevKey)) unseenPrev.add(p);
-                                                }
-
-                                                if (unseenPrev.isNotEmpty) {
-                                                  final confirm = await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (dctx) => AlertDialog(
-                                                      title: const Text('Vorige afleveringen markeren?'),
-                                                      content: Text('Je markeert "$epTitle" als gezien. Wil je ook ${unseenPrev.length} vorige aflevering(en) van seizoen ${si + 1} markeren als gezien?'),
-                                                      actions: [
-                                                        TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: const Text('Nee')),
-                                                        TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: const Text('Ja')),
-                                                      ],
-                                                    ),
-                                                  );
-
-                                                  if (confirm == true) {
-                                                    for (final p in unseenPrev) {
-                                                      await _toggleEpisodeSeenForUser(id, 's${si}_e${p}', true);
-                                                    }
-                                                    await _toggleEpisodeSeenForUser(id, epKey, true);
-                                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${unseenPrev.length + 1} afleveringen gemarkeerd als gezien')));
-                                                    return;
+                                            leading: Checkbox(
+                                              value: localIsSeen,
+                                              onChanged: (val) async {
+                                                final newVal = val ?? false;
+                                                if (newVal) {
+                                                  // collect previous unseen episodes in this season
+                                                  final unseenPrev = <int>[];
+                                                  for (var p = 0; p < localEi; p++) {
+                                                    final prevKey = 's${localSi}_e${p}';
+                                                    if (!seenSet.contains(prevKey)) unseenPrev.add(p);
                                                   }
-                                                }
 
-                                                await _toggleEpisodeSeenForUser(id, epKey, true);
-                                              } else {
-                                                await _toggleEpisodeSeenForUser(id, epKey, false);
-                                              }
-                                            },
-                                          ),
+                                                  if (unseenPrev.isNotEmpty) {
+                                                    final confirm = await showDialog<bool>(
+                                                      context: context,
+                                                      builder: (dctx) => AlertDialog(
+                                                        title: const Text('Vorige afleveringen markeren?'),
+                                                        content: Text('Je markeert "${localEpTitle}" als gezien. Wil je ook ${unseenPrev.length} vorige aflevering(en) van seizoen ${localSi + 1} markeren als gezien?'),
+                                                        actions: [
+                                                          TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: const Text('Nee')),
+                                                          TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: const Text('Ja')),
+                                                        ],
+                                                      ),
+                                                    );
+
+                                                    if (confirm == true) {
+                                                      for (final p in unseenPrev) {
+                                                        await _toggleEpisodeSeenForUser(localId, 's${localSi}_e${p}', true);
+                                                      }
+                                                      await _toggleEpisodeSeenForUser(localId, localEpKey, true);
+                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${unseenPrev.length + 1} afleveringen gemarkeerd als gezien')));
+                                                      return;
+                                                    }
+                                                  }
+
+                                                  await _toggleEpisodeSeenForUser(localId, localEpKey, true);
+                                                } else {
+                                                  await _toggleEpisodeSeenForUser(localId, localEpKey, false);
+                                                }
+                                              },
+                                            ),
                                           title: Text(epTitle),
                                           trailing: Row(
                                             mainAxisSize: MainAxisSize.min,
@@ -849,7 +911,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     ],
                   );
                 },
-              ),
+              );
+          },
+        ),
       ),
     );
   }
