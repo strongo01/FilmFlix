@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
+import 'dart:math' as math;
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({
@@ -463,8 +464,14 @@ class _SearchScreenState extends State<SearchScreen> {
         })(),
       ]);
 
+      final List<dynamic> moviesPart = futures.isNotEmpty ? futures[0] : <dynamic>[];
+      final List<dynamic> tvPart = futures.length > 1 ? futures[1] : <dynamic>[];
+      final int maxLen = math.max(moviesPart.length, tvPart.length);
       final rawCombined = <dynamic>[];
-      for (final part in futures) rawCombined.addAll(part);
+      for (int i = 0; i < maxLen; i++) {
+        if (i < moviesPart.length) rawCombined.add(moviesPart[i]);
+        if (i < tvPart.length) rawCombined.add(tvPart[i]);
+      }
 
       // dedupe by id + type (movie vs tv) to avoid collisions
       final Map<String, dynamic> unique = {};
@@ -544,8 +551,14 @@ class _SearchScreenState extends State<SearchScreen> {
         })(),
       ]);
 
+      final List<dynamic> moviesPart = futures.isNotEmpty ? futures[0] : <dynamic>[];
+      final List<dynamic> tvPart = futures.length > 1 ? futures[1] : <dynamic>[];
+      final int maxLen = math.max(moviesPart.length, tvPart.length);
       final rawCombined = <dynamic>[];
-      for (final part in futures) rawCombined.addAll(part);
+      for (int i = 0; i < maxLen; i++) {
+        if (i < moviesPart.length) rawCombined.add(moviesPart[i]);
+        if (i < tvPart.length) rawCombined.add(tvPart[i]);
+      }
 
       final Map<String, dynamic> unique = {};
       for (final e in rawCombined) {
@@ -605,9 +618,10 @@ class _SearchScreenState extends State<SearchScreen> {
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
       final imdbId = jsonData?['imdb_id']?.toString();
       if (imdbId != null && imdbId.isNotEmpty) {
+        final imdbNonNull = imdbId!;
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbId)),
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbNonNull)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -618,6 +632,57 @@ class _SearchScreenState extends State<SearchScreen> {
       debugPrint('Failed openTmdbMovieDetail: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Fout bij ophalen filmdetails')),
+      );
+    }
+  }
+
+  Future<void> _openTmdbDetailFromItem(MovieSearchItem item) async {
+    final tmdbId = item.tmdbId ?? '';
+    if (tmdbId.isEmpty) return;
+
+    final isTv = (item.raw['first_air_date'] != null) || (item.raw['media_type'] == 'tv');
+
+    final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies').replace(queryParameters: isTv
+        ? {'type': 'tmdbserieinfo', 'tv_id': tmdbId}
+        : {'type': 'tmdbmovieinfo', 'movie_id': tmdbId});
+
+    try {
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isTv ? 'Kon seriedetails niet ophalen' : 'Kon filmdetails niet ophalen')),
+        );
+        return;
+      }
+
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+
+      // try to find an IMDb ID (movie: imdb_id, tv: external_ids.imdb_id)
+      String? imdbId;
+      if (isTv) {
+        imdbId = jsonData?['external_ids']?['imdb_id']?.toString();
+      } else {
+        imdbId = jsonData?['imdb_id']?.toString();
+      }
+
+      if (imdbId != null && imdbId.isNotEmpty) {
+        final imdbNonNull = imdbId;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbNonNull)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isTv ? 'Geen IMDb ID gevonden voor deze serie' : 'Geen IMDb ID gevonden voor deze film')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed openTmdbDetail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(isTv ? 'Fout bij ophalen seriedetails' : 'Fout bij ophalen filmdetails')),
       );
     }
   }
@@ -928,9 +993,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   itemBuilder: (_, index) {
                                     final movie = topRated[index];
                                     return GestureDetector(
-                                      onTap: () => _openTmdbMovieDetail(
-                                        movie.tmdbId ?? '',
-                                      ),
+                                      onTap: () => _openTmdbDetailFromItem(movie),
                                       child: Column(
                                         children: [
                                           Expanded(
@@ -974,9 +1037,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   itemBuilder: (_, index) {
                                     final movie = popular[index];
                                     return GestureDetector(
-                                      onTap: () => _openTmdbMovieDetail(
-                                        movie.tmdbId ?? '',
-                                      ),
+                                      onTap: () => _openTmdbDetailFromItem(movie),
                                       child: Column(
                                         children: [
                                           Expanded(

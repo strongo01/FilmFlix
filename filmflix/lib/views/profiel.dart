@@ -419,10 +419,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )
-                                  : Image.network(
-                                      'https://i.pravatar.cc/150?u=kevin',
-                                      fit: BoxFit.cover,
-                                    ),
+                                  : const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Colors.white54,
+                                  ),
                             ),
                           ),
                         ),
