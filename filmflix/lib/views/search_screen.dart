@@ -428,17 +428,55 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _fetchTopRated({int page = 1}) async {
     loadingTopRated = true;
     setState(() {});
-    final uri = Uri.parse(
+    final uriMovie = Uri.parse(
       'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
+
+    final uriTv = Uri.parse(
+      'https://film-flix-olive.vercel.app/apiv2/movies',
+    ).replace(queryParameters: {'type': 'tv_top_rated', 'page': page.toString()});
     try {
       await _ensureEnvLoaded();
       final headers = <String, String>{};
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
-      final resp = await http.get(uri, headers: headers);
-      if (resp.statusCode != 200) return;
-      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
-      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      // request both movie and tv top-rated in parallel, tolerate one failing
+      final futures = await Future.wait<List<dynamic>>([
+        (() async {
+          try {
+            final r = await http.get(uriMovie, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+        (() async {
+          try {
+            final r = await http.get(uriTv, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+      ]);
+
+      final rawCombined = <dynamic>[];
+      for (final part in futures) rawCombined.addAll(part);
+
+      // dedupe by id + type (movie vs tv) to avoid collisions
+      final Map<String, dynamic> unique = {};
+      for (final e in rawCombined) {
+        final Map m = e as Map;
+        final id = (m['id']?.toString() ?? '');
+        final typeHint = m.containsKey('first_air_date') ? 'tv' : 'movie';
+        final key = '$id|$typeHint';
+        if (!unique.containsKey(key)) unique[key] = m;
+      }
+
+      final items = unique.values.toList();
       topRated = items.map((e) {
         final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
         final id = m['id']?.toString() ?? '';
@@ -447,7 +485,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final poster = posterPath != null
             ? 'https://image.tmdb.org/t/p/w500$posterPath'
             : null;
-        final year = (m['release_date'] ?? '')
+        final year = ((m['release_date'] ?? m['first_air_date']) ?? '')
             .toString()
             .split('-')
             .firstWhere((_) => true, orElse: () => '');
@@ -471,17 +509,54 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _fetchPopular({int page = 1}) async {
     loadingPopular = true;
     setState(() {});
-    final uri = Uri.parse(
+    final uriMovie = Uri.parse(
       'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'popular', 'page': page.toString()});
+
+    final uriTv = Uri.parse(
+      'https://film-flix-olive.vercel.app/apiv2/movies',
+    ).replace(queryParameters: {'type': 'tv_popular', 'page': page.toString()});
     try {
       await _ensureEnvLoaded();
       final headers = <String, String>{};
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
-      final resp = await http.get(uri, headers: headers);
-      if (resp.statusCode != 200) return;
-      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
-      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      // fetch both movie and tv popular endpoints in parallel
+      final futures = await Future.wait<List<dynamic>>([
+        (() async {
+          try {
+            final r = await http.get(uriMovie, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+        (() async {
+          try {
+            final r = await http.get(uriTv, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+      ]);
+
+      final rawCombined = <dynamic>[];
+      for (final part in futures) rawCombined.addAll(part);
+
+      final Map<String, dynamic> unique = {};
+      for (final e in rawCombined) {
+        final Map m = e as Map;
+        final id = (m['id']?.toString() ?? '');
+        final typeHint = m.containsKey('first_air_date') ? 'tv' : 'movie';
+        final key = '$id|$typeHint';
+        if (!unique.containsKey(key)) unique[key] = m;
+      }
+
+      final items = unique.values.toList();
       popular = items.map((e) {
         final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
         final id = m['id']?.toString() ?? '';
@@ -490,7 +565,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final poster = posterPath != null
             ? 'https://image.tmdb.org/t/p/w500$posterPath'
             : null;
-        final year = (m['release_date'] ?? '')
+        final year = ((m['release_date'] ?? m['first_air_date']) ?? '')
             .toString()
             .split('-')
             .firstWhere((_) => true, orElse: () => '');

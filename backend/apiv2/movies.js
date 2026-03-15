@@ -373,6 +373,38 @@ export default async function handler(req, res) {
         };
     }
 
+   else if (type === 'tv_top_rated') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/tv/top_rated?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    else if (type === 'tv_popular') {
+        const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
+
+        url = `https://api.themoviedb.org/3/tv/popular?` +
+            new URLSearchParams({
+                language,
+                page,
+                region,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
     else if (type === 'translate') {
         const { text, target = 'nl', source = 'auto' } = req.query;
 
