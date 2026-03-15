@@ -9,9 +9,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cinetrackr/widgets/youtube_player.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:cinetrackr/services/movie_api.dart';
 import 'package:http/http.dart' as http;
+// youtube player removed for web compatibility; fallback to opening embed in WebView
 
 class MovieDetailScreen extends StatefulWidget {
   // Deze screen toont de details van een specifieke film. We verwachten een imdbId als parameter, die we gebruiken om de details van de film op te halen via onze MovieRepository. In deze screen tonen we informatie zoals de poster, titel, overzicht, genres, cast, en streaming opties. We hebben ook functionaliteit voor gebruikers om films aan hun watchlist toe te voegen en om te markeren welke afleveringen ze hebben gezien (voor series). We gebruiken Firebase Authentication om gebruikers te identificeren, en Firestore om hun watchlist en seen episodes op te slaan.
@@ -125,6 +127,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       if (chosen != null) {
         final trailerKey = chosen['key']?.toString();
         final trailerSite = chosen['site']?.toString();
+
         setState(() {
           _trailerKey = trailerKey;
           _trailerSite = trailerSite;
@@ -1521,7 +1524,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           children: [
             _posterWithFallback(context, poster, rapid),
 
-            // Trailer (YouTube) thumbnail with play overlay
+            // Trailer (YouTube) - show in-app player when available
             if (_loadingTrailer)
               const Padding(
                 padding: EdgeInsets.only(top: 8.0),
@@ -1530,37 +1533,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             else if (_trailerKey != null && _trailerKey!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: GestureDetector(
-                  onTap: () async {
-                    final url = Uri.parse('https://www.youtube.com/embed/${_trailerKey!}?rel=0');
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url, mode: LaunchMode.inAppWebView);
-                    }
-                  },
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          'https://img.youtube.com/vi/${_trailerKey!}/hqdefault.jpg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(color: Colors.black12),
-                        ),
-                        Container(
-                          color: Colors.black26,
-                        ),
-                        const Center(
-                          child: Icon(
-                            Icons.play_circle_fill,
-                            size: 64,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                child: YouTubePlayerWidget(videoId: _trailerKey!),
               ),
 
             const SizedBox(height: 12),
