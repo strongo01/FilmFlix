@@ -1300,8 +1300,43 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                     final go = await _ensureLoggedInWithPrompt(context);
                     if (!go) return;
                   }
-                  await _toggleEpisodeSeen(epKey, val ?? false);
-                  // Na het toggelen van de seen status van de aflevering, willen we ervoor zorgen dat de UI wordt bijgewerkt om de nieuwe status weer te geven. We roepen setState aan om de widget te laten herbouwen, zodat de checkbox en andere relevante delen van de UI worden bijgewerkt op basis van de nieuwe staat van _seenSet. Dit zorgt ervoor dat wanneer een gebruiker een aflevering markeert als gezien of niet gezien, deze verandering direct zichtbaar is in de interface.
+
+                  final newVal = val ?? false;
+
+                  if (newVal) {
+                    // collect previous unseen episodes in this season
+                    final unseenPrev = <int>[];
+                    for (var p = 0; p < episodeIndex; p++) {
+                      final prevKey = 's${seasonIndex}_e${p}';
+                      if (!_seenSet.contains(prevKey)) unseenPrev.add(p);
+                    }
+
+                    if (unseenPrev.isNotEmpty) {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (dctx) => AlertDialog(
+                          title: const Text('Vorige afleveringen markeren?'),
+                          content: Text('Je markeert "${epTitle}" als gezien. Wil je ook ${unseenPrev.length} vorige aflevering(en) van seizoen ${seasonIndex + 1} markeren als gezien?'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: const Text('Nee')),
+                            TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: const Text('Ja')),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true) {
+                        for (final p in unseenPrev) {
+                          await _toggleEpisodeSeen('s${seasonIndex}_e${p}', true);
+                        }
+                        await _toggleEpisodeSeen(epKey, true);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${unseenPrev.length + 1} afleveringen gemarkeerd als gezien')));
+                        setState(() {});
+                        return;
+                      }
+                    }
+                  }
+
+                  await _toggleEpisodeSeen(epKey, newVal);
                   setState(() {});
                 },
               ),
