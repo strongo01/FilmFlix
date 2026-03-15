@@ -362,6 +362,46 @@ export default async function handler(req, res) {
         };
     }
 
+    else if (type === 'tmdbmovievideos') {
+        const { movie_id, language = 'en-US' } = req.query;
+
+        if (!movie_id) {
+            return res.status(400).json({
+                error: 'TMDB requires movie_id',
+            });
+        }
+
+        url = `https://api.themoviedb.org/3/movie/${movie_id}/videos?` +
+            new URLSearchParams({
+                language,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
+    else if (type === 'tmdbserievideos') {
+        const { tv_id, language = 'en-US' } = req.query;
+
+        if (!tv_id) {
+            return res.status(400).json({
+                error: 'TMDB requires tv_id',
+            });
+        }
+
+        url = `https://api.themoviedb.org/3/tv/${tv_id}/videos?` +
+            new URLSearchParams({
+                language,
+            });
+
+        headers = {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${TMDB_API_KEY}`,
+        };
+    }
+
     else if (type === 'top_rated') {
         const { page = 1, language = 'nl-NL', region = 'NL' } = req.query;
 
