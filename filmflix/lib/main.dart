@@ -16,6 +16,8 @@ import 'package:cinetrackr/views/settingscreen.dart';
 import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:cinetrackr/utils/fcm_service.dart';
 import 'package:cinetrackr/views/profiel.dart';
+import 'package:cinetrackr/services/tutorial_service.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -100,6 +102,12 @@ class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
   StreamSubscription<User?>? _authSub;
 
+  final GlobalKey _homeKey = GlobalKey();
+  final GlobalKey _watchlistKey = GlobalKey();
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _foodKey = GlobalKey();
+  final GlobalKey _profileKey = GlobalKey();
+
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
     const HomeScreen(),          // Index 0
@@ -108,6 +116,49 @@ class _MainNavigationState extends State<MainNavigation> {
     const FoodScreen(),          // Index 3 (Nieuw in balk)
     const ProfileScreen(),      // Index 4
   ];
+
+  void _showTutorial() {
+    // Check of de eerste key wel echt in de widget tree zit
+    if (_homeKey.currentContext == null) {
+      debugPrint("Tutorial: _homeKey context is null, skipping tutorial trigger.");
+      return;
+    }
+
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "home",
+        key: _homeKey,
+        text: "Welkom! Hier vind je de nieuwste films en series.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "watchlist",
+        key: _watchlistKey,
+        text: "Sla hier je favoriete films op voor later.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "search",
+        key: _searchKey,
+        text: "Zoek naar specifieke titels of genres.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "food",
+        key: _foodKey,
+        text: "Bekijk bijpassende snacks voor je filmavond!",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "profile",
+        key: _profileKey,
+        text: "Beheer hier je profiel en instellingen.",
+        align: ContentAlign.top,
+      ),
+    ];
+
+    TutorialService.showTutorial(context, targets);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,39 +169,48 @@ class _MainNavigationState extends State<MainNavigation> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed, // Noodzakelijk bij 5 knoppen
-        backgroundColor: isDark ? const Color(0xFF1C282E) : Colors.white,
-        selectedItemColor: const Color(0xFFD4AF37),
-        unselectedItemColor: Colors.grey,
-        selectedFontSize: 12,
-        unselectedFontSize: 10,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1C282E) : Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', _homeKey),
+            _buildNavItem(1, Icons.movie_outlined, Icons.movie_filter_rounded, 'Watchlist', _watchlistKey),
+            _buildNavItem(2, Icons.search_rounded, Icons.search_rounded, 'Zoeken', _searchKey),
+            _buildNavItem(3, Icons.fastfood_outlined, Icons.fastfood_rounded, 'Food', _foodKey),
+            _buildNavItem(4, Icons.person_outline_rounded, Icons.person_rounded, 'Profiel', _profileKey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label, GlobalKey key) {
+    final isSelected = _selectedIndex == index;
+    final color = isSelected ? const Color(0xFFD4AF37) : Colors.grey;
+    
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isSelected ? activeIcon : icon,
+            key: key,
+            color: color,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.movie_outlined),
-            activeIcon: Icon(Icons.movie_filter_rounded),
-            label: 'Watchlist',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search_rounded),
-            label: 'Zoeken',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.fastfood_outlined),
-            activeIcon: Icon(Icons.fastfood_rounded),
-            label: 'Food',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Profiel',
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+            ),
           ),
         ],
       ),
@@ -160,6 +220,10 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Gebruik een herhalende check om te wachten tot de key beschikbaar is
+      _checkAndStartTutorial();
+    });
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
       // Keep analytics user id in sync with auth state.
       final analytics = FirebaseAnalytics.instance;
@@ -176,6 +240,24 @@ class _MainNavigationState extends State<MainNavigation> {
           await prefs.setString('analytics_anon_id', anon);
         }
         await analytics.setUserId(id: anon);
+      }
+    });
+  }
+
+  int _tutorialRetryCount = 0;
+  void _checkAndStartTutorial() {
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      if (_homeKey.currentContext != null) {
+        debugPrint("Tutorial: Home key valid, starting...");
+        _showTutorial();
+      } else if (_tutorialRetryCount < 5) {
+        _tutorialRetryCount++;
+        debugPrint("Tutorial: Home key not found, retry $_tutorialRetryCount...");
+        _checkAndStartTutorial();
+      } else {
+        debugPrint("Tutorial: Gave up after 5 retries.");
       }
     });
   }
