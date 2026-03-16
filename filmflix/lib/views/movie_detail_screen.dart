@@ -8,6 +8,7 @@ import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:marquee/marquee.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cinetrackr/widgets/youtube_player.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
@@ -103,34 +104,30 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
       final results = (jsonData['results'] is List) ? jsonData['results'] as List : [];
 
-      Map<String, dynamic>? chosen;
+      final List<Map<String, dynamic>> youtubeVideos = [];
       for (final r in results) {
         final m = Map<String, dynamic>.from(r as Map);
-        final type = (m['type'] ?? '').toString().toLowerCase();
         final site = (m['site'] ?? '').toString().toLowerCase();
-        if (type == 'trailer' && site == 'youtube') {
-          chosen = m;
-          break;
-        }
-      }
-      if (chosen == null) {
-        for (final r in results) {
-          final m = Map<String, dynamic>.from(r as Map);
-          final site = (m['site'] ?? '').toString().toLowerCase();
-          if (site == 'youtube') {
-            chosen = m;
-            break;
-          }
+        if (site == 'youtube') {
+          youtubeVideos.add(m);
         }
       }
 
-      if (chosen != null) {
-        final trailerKey = chosen['key']?.toString();
-        final trailerSite = chosen['site']?.toString();
+      // Sort: Trailers first
+      youtubeVideos.sort((a, b) {
+        final aType = (a['type'] ?? '').toString().toLowerCase();
+        final bType = (b['type'] ?? '').toString().toLowerCase();
+        if (aType == 'trailer' && bType != 'trailer') return -1;
+        if (aType != 'trailer' && bType == 'trailer') return 1;
+        return 0;
+      });
 
+      if (youtubeVideos.isNotEmpty) {
         setState(() {
-          _trailerKey = trailerKey;
-          _trailerSite = trailerSite;
+          _allVideos = youtubeVideos;
+          _currentVideoIndex = 0;
+          _trailerKey = youtubeVideos[0]['key']?.toString();
+          _trailerSite = youtubeVideos[0]['site']?.toString();
         });
       }
     } catch (e) {
@@ -154,6 +151,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   String? _title;
   String? _overview;
   // trailer
+  List<Map<String, dynamic>> _allVideos = [];
+  int _currentVideoIndex = 0;
   String? _trailerKey;
   String? _trailerSite;
   bool _loadingTrailer = false;
@@ -1533,7 +1532,66 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             else if (_trailerKey != null && _trailerKey!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
-                child: YouTubePlayerWidget(videoId: _trailerKey!),
+                child: Column(
+                  children: [
+                    YouTubePlayerWidget(
+                      // Use a UniqueKey or value-based key to force a rebuild when the trailerKey changes
+                      key: ValueKey(_trailerKey),
+                      videoId: _trailerKey!,
+                    ),
+                    if (_allVideos.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_ios),
+                              onPressed: _currentVideoIndex > 0
+                                  ? () {
+                                      setState(() {
+                                        _currentVideoIndex--;
+                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
+                                      });
+                                    }
+                                  : null,
+                            ),
+                            Expanded(
+                              child: SizedBox(
+                                height: 24,
+                                child: Marquee(
+                                  text: '${_currentVideoIndex + 1} / ${_allVideos.length}: ${_allVideos[_currentVideoIndex]['name'] ?? ''}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  scrollAxis: Axis.horizontal,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  blankSpace: 50.0,
+                                  velocity: 40.0,
+                                  pauseAfterRound: const Duration(seconds: 2),
+                                  accelerationDuration: const Duration(seconds: 1),
+                                  accelerationCurve: Curves.linear,
+                                  decelerationDuration: const Duration(milliseconds: 500),
+                                  decelerationCurve: Curves.easeOut,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.arrow_forward_ios),
+                              onPressed: _currentVideoIndex < _allVideos.length - 1
+                                  ? () {
+                                      setState(() {
+                                        _currentVideoIndex++;
+                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
+                                      });
+                                    }
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
 
             const SizedBox(height: 12),

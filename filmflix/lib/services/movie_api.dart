@@ -30,9 +30,8 @@ class MovieApi {
 
     if (cursor != null) {
       final String connector = uri.query.isEmpty ? '?' : '&';
-      // Ensure cursor is appended with order_by and order_direction to maintain sorting
       uri = Uri.parse(
-        '${uri.toString()}${connector}cursor=${Uri.encodeComponent(cursor)}&order_by=rating&order_direction=desc',
+        '${uri.toString()}${connector}cursor=${Uri.encodeComponent(cursor)}',
       );
     }
 
