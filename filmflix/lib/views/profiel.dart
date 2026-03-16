@@ -393,7 +393,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       alignment: Alignment.bottomRight,
                       children: [
                         GestureDetector(
-                          onTap: _showAvatarEditor,
+                          onTap: () {
+                            if (!_isLoggedIn) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Log in om je profielfoto aan te passen',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            _showAvatarEditor();
+                          },
                           child: CircleAvatar(
                             radius: 54,
                             backgroundColor: accentColor.withOpacity(0.3),
@@ -419,10 +431,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     )
-                                  : Image.network(
-                                      'https://i.pravatar.cc/150?u=kevin',
-                                      fit: BoxFit.cover,
-                                    ),
+                                  : const Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color: Colors.white54,
+                                  ),
                             ),
                           ),
                         ),

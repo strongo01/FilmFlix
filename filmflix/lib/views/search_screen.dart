@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
+import 'dart:math' as math;
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({
@@ -112,258 +113,302 @@ class _SearchScreenState extends State<SearchScreen> {
     int? ratingMax;
     String catalogs = '';
     final Set<String> selectedGenres = {};
-    String genresRelation = 'any';
+    String genresRelation = 'and'; // Changed from 'any' as it's more predictable
     String keyword = '';
     String showOriginalLanguage = '';
     int? yearMin;
     int? yearMax;
 
+    // Controllers to preserve text during modal lifecycle
+    final keywordCtrl = TextEditingController(text: keyword);
+    final yearMinCtrl = TextEditingController(text: yearMin?.toString() ?? '');
+    final yearMaxCtrl = TextEditingController(text: yearMax?.toString() ?? '');
+    final ratingMinCtrl = TextEditingController(text: ratingMin?.toString() ?? '');
+    final ratingMaxCtrl = TextEditingController(text: ratingMax?.toString() ?? '');
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: isDark ? Colors.grey[900] : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) {
         return StatefulBuilder(
-          builder: (ctx, setState) {
-            return Padding(
+          builder: (ctx, setModalState) {
+            return Container(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+                left: 16,
+                right: 16,
+                top: 20,
               ),
               child: SingleChildScrollView(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text(
-                        'Filter zoeken',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Filters verfijnen',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    const SizedBox(height: 10),
+                    
+                    Text(
+                      'TYPE',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                        letterSpacing: 1.1,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      child: TextField(
-                        decoration: const InputDecoration(labelText: 'Keyword'),
-                        onChanged: (v) => keyword = v,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Center(child: Text('Alles')),
+                            selected: showType == '',
+                            onSelected: (v) => setModalState(() => showType = ''),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Center(child: Text('Films')),
+                            selected: showType == 'movie',
+                            onSelected: (v) => setModalState(() => showType = 'movie'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Center(child: Text('Series')),
+                            selected: showType == 'series',
+                            onSelected: (v) => setModalState(() => showType = 'series'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    Text(
+                      'ZOEKWOORD',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                        letterSpacing: 1.1,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 8,
+                    TextField(
+                      controller: keywordCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Bijv. Batman, Marvel...',
+                        prefixIcon: Icon(Icons.search),
                       ),
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _availableGenres.map((g) {
-                          final id = g['id']!;
-                          final name = g['name']!;
-                          final sel = selectedGenres.contains(id);
-                          return FilterChip(
-                            label: Text(name),
-                            selected: sel,
-                            onSelected: (v) => setState(
-                              () => v
-                                  ? selectedGenres.add(id)
-                                  : selectedGenres.remove(id),
-                            ),
-                          );
-                        }).toList(),
+                      onChanged: (v) => keyword = v,
+                    ),
+
+                    const SizedBox(height: 20),
+                    Text(
+                      'GENRES',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                        letterSpacing: 1.1,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Year min',
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 0,
+                      children: _availableGenres.map((g) {
+                        final id = g['id']!;
+                        final sel = selectedGenres.contains(id);
+                        return FilterChip(
+                          label: Text(g['name']!, style: const TextStyle(fontSize: 13)),
+                          selected: sel,
+                          selectedColor: Colors.blueAccent.withOpacity(0.2),
+                          onSelected: (v) => setModalState(
+                            () => v ? selectedGenres.add(id) : selectedGenres.remove(id),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'JAAR (VAN)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueAccent,
+                                  letterSpacing: 1.1,
+                                ),
                               ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (v) => yearMin = int.tryParse(v),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Year max',
+                              TextField(
+                                controller: yearMinCtrl,
+                                decoration: const InputDecoration(hintText: '1900'),
+                                keyboardType: TextInputType.number,
+                                onChanged: (v) => yearMin = int.tryParse(v),
                               ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (v) => yearMax = int.tryParse(v),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'JAAR (TOT)',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blueAccent,
+                                  letterSpacing: 1.1,
+                                ),
+                              ),
+                              TextField(
+                                controller: yearMaxCtrl,
+                                decoration: const InputDecoration(hintText: '2026'),
+                                keyboardType: TextInputType.number,
+                                onChanged: (v) => yearMax = int.tryParse(v),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+                    Text(
+                      'MINIMALE RATING (0-100)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                        letterSpacing: 1.1,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12.0,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Rating min (0-100)',
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (v) => ratingMin = int.tryParse(v),
-                            ),
+                    Slider(
+                      value: (ratingMin ?? 0).toDouble(),
+                      min: 0,
+                      max: 100,
+                      divisions: 10,
+                      label: (ratingMin ?? 0).toString(),
+                      onChanged: (v) => setModalState(() => ratingMin = v.toInt()),
+                    ),
+
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: 'Rating max (0-100)',
-                              ),
-                              keyboardType: TextInputType.number,
-                              onChanged: (v) => ratingMax = int.tryParse(v),
-                            ),
-                          ),
-                        ],
+                        ),
+                        onPressed: () async {
+                          if (mounted) this.setState(() => loading = true);
+                          final genresParam = selectedGenres.isEmpty
+                              ? null
+                              : selectedGenres.join(',');
+
+                          final filterParams = {
+                            'country': country,
+                            'series_granularity': 'show',
+                            'output_language': 'en',
+                            'show_type': showType.isEmpty ? null : showType,
+                            'rating_min': ratingMin ?? 0,
+                            'rating_max': ratingMax ?? 100,
+                            'catalogs': catalogs.isEmpty ? null : catalogs,
+                            'genres': genresParam,
+                            'genres_relation': genresRelation,
+                            'keyword': keyword.isEmpty ? null : keyword,
+                            'show_original_language': showOriginalLanguage.isEmpty ? null : showOriginalLanguage,
+                            'year_min': yearMin,
+                            'year_max': yearMax,
+                            'order_by': 'rating',
+                            'order_direction': 'desc',
+                          };
+
+                          Map<String, dynamic>? resp;
+                          try {
+                            resp = await MovieApi.filterAdvanced(
+                              country: country,
+                              seriesGranularity: 'show',
+                              outputLanguage: 'en',
+                              showType: showType.isEmpty ? null : showType,
+                              ratingMin: ratingMin ?? 0,
+                              ratingMax: ratingMax ?? 100,
+                              catalogs: catalogs.isEmpty ? null : catalogs,
+                              genres: genresParam,
+                              genresRelation: genresRelation,
+                              keyword: keyword.isEmpty ? null : keyword,
+                              showOriginalLanguage: showOriginalLanguage.isEmpty ? null : showOriginalLanguage,
+                              yearMin: yearMin,
+                              yearMax: yearMax,
+                              orderBy: 'rating',
+                              orderDirection: 'desc',
+                            );
+                          } catch (e) {
+                            debugPrint('Filter error: $e');
+                          }
+
+                          if (mounted) {
+                            final resultsList = resp?['shows'] ?? resp?['results'] ?? [];
+                            final List<dynamic> items = resultsList is List ? resultsList : [];
+                            
+                            this.setState(() {
+                              results = items.map((e) => MovieSearchItem.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+                              _hasMore = resp != null && resp['hasMore'] == true;
+                              _nextCursor = resp?['nextCursor']?.toString();
+                              _lastFilterParams = filterParams;
+                              loading = false;
+                            });
+                            Navigator.pop(ctx);
+                          }
+                        },
+                        child: const Text('Filters Toepassen', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Row(
-                        children: [
-                          ElevatedButton(
-                            onPressed: () async {
-                              if (mounted) this.setState(() => loading = true);
-                              // build params
-                              final genresParam = selectedGenres.isEmpty
-                                  ? null
-                                  : selectedGenres.join(',');
-
-                              final filterParams = {
-                                'country': country,
-                                'series_granularity': seriesGranularity,
-                                'output_language': outputLanguage,
-                                'show_type': showType.isEmpty ? null : showType,
-                                'rating_min': ratingMin,
-                                'rating_max': ratingMax,
-                                'catalogs': catalogs.isEmpty ? null : catalogs,
-                                'genres': genresParam,
-                                'genresRelation': genresRelation,
-                                'keyword': keyword.isEmpty ? null : keyword,
-                                'showOriginalLanguage':
-                                    showOriginalLanguage.isEmpty
-                                        ? null
-                                        : showOriginalLanguage,
-                                'yearMin': yearMin,
-                                'yearMax': yearMax,
-                                'orderBy': 'rating',
-                                'orderDirection': 'desc',
-                              };
-
-                              Map<String, dynamic>? resp;
-                              try {
-                                resp = await MovieApi.filterAdvanced(
-                                  country: country,
-                                  seriesGranularity: seriesGranularity,
-                                  outputLanguage: outputLanguage,
-                                  showType: showType.isEmpty ? null : showType,
-                                  ratingMin: ratingMin,
-                                  ratingMax: ratingMax,
-                                  catalogs: catalogs.isEmpty ? null : catalogs,
-                                  genres: genresParam,
-                                  genresRelation: genresRelation,
-                                  keyword: keyword.isEmpty ? null : keyword,
-                                  showOriginalLanguage:
-                                      showOriginalLanguage.isEmpty
-                                          ? null
-                                          : showOriginalLanguage,
-                                  yearMin: yearMin,
-                                  yearMax: yearMax,
-                                  orderBy: 'rating',
-                                  orderDirection: 'desc',
-                                );
-                              } catch (e) {
-                                // fallback: try the simpler filter endpoint which may accept minimal params (e.g., only genres)
-                                try {
-                                  resp = await MovieApi.filter(
-                                    country: country,
-                                    ratingMin: ratingMin ?? 0,
-                                    ratingMax: ratingMax ?? 100,
-                                    genres: genresParam,
-                                    catalogs: catalogs.isEmpty
-                                        ? null
-                                        : catalogs,
-                                    yearMin: yearMin,
-                                    yearMax: yearMax,
-                                    //orderBy: orderBy.isEmpty ? null : orderBy,
-                                    orderBy: 'rating',
-                                    orderDirection: 'desc',
-                                  );
-                                } catch (e2) {
-                                  debugPrint(
-                                    'Filter failed (advanced & fallback): $e / $e2',
-                                  );
-                                  if (mounted)
-                                    ScaffoldMessenger.of(ctx).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Filter mislukte — probeer het later opnieuw',
-                                        ),
-                                      ),
-                                    );
-                                  if (mounted)
-                                    this.setState(() => loading = false);
-                                  return;
-                                }
-                              }
-
-                              // debug: print raw response from filter endpoint
-                              debugPrint('Filter response keys: ${resp?.keys}');
-                              final resultsList =
-                                  resp?['shows'] ??
-                                  resp?['results'] ??
-                                  resp?['result'] ??
-                                  (resp is List ? resp : []);
-                              debugPrint(
-                                'Filter results type: ${resultsList.runtimeType}',
-                              );
-                              debugPrint(
-                                'Filter results length: ${(resultsList as Iterable).length}',
-                              );
-
-                              // map results to MovieSearchItem
-                              final List<dynamic> items =
-                                  resultsList is List ? resultsList : [];
-                              if (mounted)
-                                this.setState(() {
-                                  results =
-                                      items
-                                          .map(
-                                            (e) => MovieSearchItem.fromJson(
-                                              Map<String, dynamic>.from(
-                                                e as Map,
-                                              ),
-                                            ),
-                                          )
-                                          .toList();
-                                  _hasMore = resp != null && resp['hasMore'] == true;
-                                  _nextCursor =
-                                      resp?['nextCursor']?.toString();
-                                  _lastFilterParams = filterParams;
-                                  loading = false;
-                                });
-
-                              Navigator.of(ctx).pop();
-                            },
-                            child: const Text('Apply filters'),
-                          ),
-                          const SizedBox(width: 8),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(),
-                            child: const Text('Cancel'),
-                          ),
-                        ],
+                    const SizedBox(height: 10),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text(
+                          'Annuleren',
+                          style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                        ),
                       ),
                     ),
                   ],
@@ -372,8 +417,8 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           },
         );
-      },
-    );
+        },
+      );
   }
 
   Future<void> _loadMore() async {
@@ -428,17 +473,61 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _fetchTopRated({int page = 1}) async {
     loadingTopRated = true;
     setState(() {});
-    final uri = Uri.parse(
+    final uriMovie = Uri.parse(
       'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'top_rated', 'page': page.toString()});
+
+    final uriTv = Uri.parse(
+      'https://film-flix-olive.vercel.app/apiv2/movies',
+    ).replace(queryParameters: {'type': 'tv_top_rated', 'page': page.toString()});
     try {
       await _ensureEnvLoaded();
       final headers = <String, String>{};
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
-      final resp = await http.get(uri, headers: headers);
-      if (resp.statusCode != 200) return;
-      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
-      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      // request both movie and tv top-rated in parallel, tolerate one failing
+      final futures = await Future.wait<List<dynamic>>([
+        (() async {
+          try {
+            final r = await http.get(uriMovie, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+        (() async {
+          try {
+            final r = await http.get(uriTv, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+      ]);
+
+      final List<dynamic> moviesPart = futures.isNotEmpty ? futures[0] : <dynamic>[];
+      final List<dynamic> tvPart = futures.length > 1 ? futures[1] : <dynamic>[];
+      final int maxLen = math.max(moviesPart.length, tvPart.length);
+      final rawCombined = <dynamic>[];
+      for (int i = 0; i < maxLen; i++) {
+        if (i < moviesPart.length) rawCombined.add(moviesPart[i]);
+        if (i < tvPart.length) rawCombined.add(tvPart[i]);
+      }
+
+      // dedupe by id + type (movie vs tv) to avoid collisions
+      final Map<String, dynamic> unique = {};
+      for (final e in rawCombined) {
+        final Map m = e as Map;
+        final id = (m['id']?.toString() ?? '');
+        final typeHint = m.containsKey('first_air_date') ? 'tv' : 'movie';
+        final key = '$id|$typeHint';
+        if (!unique.containsKey(key)) unique[key] = m;
+      }
+
+      final items = unique.values.toList();
       topRated = items.map((e) {
         final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
         final id = m['id']?.toString() ?? '';
@@ -447,7 +536,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final poster = posterPath != null
             ? 'https://image.tmdb.org/t/p/w500$posterPath'
             : null;
-        final year = (m['release_date'] ?? '')
+        final year = ((m['release_date'] ?? m['first_air_date']) ?? '')
             .toString()
             .split('-')
             .firstWhere((_) => true, orElse: () => '');
@@ -471,17 +560,60 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _fetchPopular({int page = 1}) async {
     loadingPopular = true;
     setState(() {});
-    final uri = Uri.parse(
+    final uriMovie = Uri.parse(
       'https://film-flix-olive.vercel.app/apiv2/movies',
     ).replace(queryParameters: {'type': 'popular', 'page': page.toString()});
+
+    final uriTv = Uri.parse(
+      'https://film-flix-olive.vercel.app/apiv2/movies',
+    ).replace(queryParameters: {'type': 'tv_popular', 'page': page.toString()});
     try {
       await _ensureEnvLoaded();
       final headers = <String, String>{};
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
-      final resp = await http.get(uri, headers: headers);
-      if (resp.statusCode != 200) return;
-      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
-      final items = (jsonData?['results'] as List<dynamic>?) ?? [];
+      // fetch both movie and tv popular endpoints in parallel
+      final futures = await Future.wait<List<dynamic>>([
+        (() async {
+          try {
+            final r = await http.get(uriMovie, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+        (() async {
+          try {
+            final r = await http.get(uriTv, headers: headers);
+            if (r.statusCode != 200) return <dynamic>[];
+            final j = jsonDecode(r.body) as Map<String, dynamic>?;
+            return (j?['results'] as List<dynamic>?) ?? <dynamic>[];
+          } catch (_) {
+            return <dynamic>[];
+          }
+        })(),
+      ]);
+
+      final List<dynamic> moviesPart = futures.isNotEmpty ? futures[0] : <dynamic>[];
+      final List<dynamic> tvPart = futures.length > 1 ? futures[1] : <dynamic>[];
+      final int maxLen = math.max(moviesPart.length, tvPart.length);
+      final rawCombined = <dynamic>[];
+      for (int i = 0; i < maxLen; i++) {
+        if (i < moviesPart.length) rawCombined.add(moviesPart[i]);
+        if (i < tvPart.length) rawCombined.add(tvPart[i]);
+      }
+
+      final Map<String, dynamic> unique = {};
+      for (final e in rawCombined) {
+        final Map m = e as Map;
+        final id = (m['id']?.toString() ?? '');
+        final typeHint = m.containsKey('first_air_date') ? 'tv' : 'movie';
+        final key = '$id|$typeHint';
+        if (!unique.containsKey(key)) unique[key] = m;
+      }
+
+      final items = unique.values.toList();
       popular = items.map((e) {
         final Map<String, dynamic> m = Map<String, dynamic>.from(e as Map);
         final id = m['id']?.toString() ?? '';
@@ -490,7 +622,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final poster = posterPath != null
             ? 'https://image.tmdb.org/t/p/w500$posterPath'
             : null;
-        final year = (m['release_date'] ?? '')
+        final year = ((m['release_date'] ?? m['first_air_date']) ?? '')
             .toString()
             .split('-')
             .firstWhere((_) => true, orElse: () => '');
@@ -530,9 +662,10 @@ class _SearchScreenState extends State<SearchScreen> {
       final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
       final imdbId = jsonData?['imdb_id']?.toString();
       if (imdbId != null && imdbId.isNotEmpty) {
+        final imdbNonNull = imdbId!;
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbId)),
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbNonNull)),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -543,6 +676,57 @@ class _SearchScreenState extends State<SearchScreen> {
       debugPrint('Failed openTmdbMovieDetail: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Fout bij ophalen filmdetails')),
+      );
+    }
+  }
+
+  Future<void> _openTmdbDetailFromItem(MovieSearchItem item) async {
+    final tmdbId = item.tmdbId ?? '';
+    if (tmdbId.isEmpty) return;
+
+    final isTv = (item.raw['first_air_date'] != null) || (item.raw['media_type'] == 'tv');
+
+    final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies').replace(queryParameters: isTv
+        ? {'type': 'tmdbserieinfo', 'tv_id': tmdbId}
+        : {'type': 'tmdbmovieinfo', 'movie_id': tmdbId});
+
+    try {
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isTv ? 'Kon seriedetails niet ophalen' : 'Kon filmdetails niet ophalen')),
+        );
+        return;
+      }
+
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+
+      // try to find an IMDb ID (movie: imdb_id, tv: external_ids.imdb_id)
+      String? imdbId;
+      if (isTv) {
+        imdbId = jsonData?['external_ids']?['imdb_id']?.toString();
+      } else {
+        imdbId = jsonData?['imdb_id']?.toString();
+      }
+
+      if (imdbId != null && imdbId.isNotEmpty) {
+        final imdbNonNull = imdbId;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: imdbNonNull)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(isTv ? 'Geen IMDb ID gevonden voor deze serie' : 'Geen IMDb ID gevonden voor deze film')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Failed openTmdbDetail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(isTv ? 'Fout bij ophalen seriedetails' : 'Fout bij ophalen filmdetails')),
       );
     }
   }
@@ -710,6 +894,25 @@ class _SearchScreenState extends State<SearchScreen> {
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : Colors.black45,
                 ),
+                prefixIcon: controller.text.isNotEmpty || results.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                      tooltip: 'Wissen',
+                      onPressed: () {
+                        setState(() {
+                          controller.clear();
+                          results = [];
+                          loading = false;
+                          _hasMore = false;
+                          _nextCursor = null;
+                          _lastFilterParams = null;
+                        });
+                      },
+                    )
+                  : null,
                 suffixIcon: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -853,9 +1056,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   itemBuilder: (_, index) {
                                     final movie = topRated[index];
                                     return GestureDetector(
-                                      onTap: () => _openTmdbMovieDetail(
-                                        movie.tmdbId ?? '',
-                                      ),
+                                      onTap: () => _openTmdbDetailFromItem(movie),
                                       child: Column(
                                         children: [
                                           Expanded(
@@ -899,9 +1100,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   itemBuilder: (_, index) {
                                     final movie = popular[index];
                                     return GestureDetector(
-                                      onTap: () => _openTmdbMovieDetail(
-                                        movie.tmdbId ?? '',
-                                      ),
+                                      onTap: () => _openTmdbDetailFromItem(movie),
                                       child: Column(
                                         children: [
                                           Expanded(
