@@ -8,10 +8,13 @@ import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:marquee/marquee.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cinetrackr/widgets/youtube_player.dart';
 import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:cinetrackr/services/movie_api.dart';
 import 'package:http/http.dart' as http;
+// youtube player removed for web compatibility; fallback to opening embed in WebView
 
 class MovieDetailScreen extends StatefulWidget {
   // Deze screen toont de details van een specifieke film. We verwachten een imdbId als parameter, die we gebruiken om de details van de film op te halen via onze MovieRepository. In deze screen tonen we informatie zoals de poster, titel, overzicht, genres, cast, en streaming opties. We hebben ook functionaliteit voor gebruikers om films aan hun watchlist toe te voegen en om te markeren welke afleveringen ze hebben gezien (voor series). We gebruiken Firebase Authentication om gebruikers te identificeren, en Firestore om hun watchlist en seen episodes op te slaan.
@@ -59,6 +62,81 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     return rating;
   }
 
+  Future<void> _loadVideos() async {
+    try {
+      setState(() => _loadingTrailer = true);
+
+      final tmdbIdRaw = _rapidData?['tmdbId']?.toString() ?? '';
+      if (tmdbIdRaw.isEmpty) {
+        setState(() => _loadingTrailer = false);
+        return;
+      }
+
+      final parts = tmdbIdRaw.split('/');
+      final id = parts.isNotEmpty ? parts.last : tmdbIdRaw;
+
+      final isMovie = _isResponseMovie(_omdbData?['Type']?.toString()) ||
+          _isResponseMovie(_rapidData?['itemType']?.toString()) ||
+          _isResponseMovie(_rapidData?['type']?.toString()) ||
+          _isResponseMovie(_rapidData?['showType']?.toString()) ||
+          _isResponseMovie(_rapidData?['titleType']?.toString());
+
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies').replace(
+        queryParameters: isMovie
+            ? {'type': 'tmdbmovievideos', 'movie_id': id, 'language': 'en-US'}
+            : {'type': 'tmdbserievideos', 'tv_id': id, 'language': 'en-US'},
+      );
+
+      await _ensureEnvLoaded();
+      final headers = <String, String>{};
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      final resp = await http.get(uri, headers: headers);
+      if (resp.statusCode != 200) {
+        setState(() => _loadingTrailer = false);
+        return;
+      }
+
+      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      if (jsonData == null) {
+        setState(() => _loadingTrailer = false);
+        return;
+      }
+
+      final results = (jsonData['results'] is List) ? jsonData['results'] as List : [];
+
+      final List<Map<String, dynamic>> youtubeVideos = [];
+      for (final r in results) {
+        final m = Map<String, dynamic>.from(r as Map);
+        final site = (m['site'] ?? '').toString().toLowerCase();
+        if (site == 'youtube') {
+          youtubeVideos.add(m);
+        }
+      }
+
+      // Sort: Trailers first
+      youtubeVideos.sort((a, b) {
+        final aType = (a['type'] ?? '').toString().toLowerCase();
+        final bType = (b['type'] ?? '').toString().toLowerCase();
+        if (aType == 'trailer' && bType != 'trailer') return -1;
+        if (aType != 'trailer' && bType == 'trailer') return 1;
+        return 0;
+      });
+
+      if (youtubeVideos.isNotEmpty) {
+        setState(() {
+          _allVideos = youtubeVideos;
+          _currentVideoIndex = 0;
+          _trailerKey = youtubeVideos[0]['key']?.toString();
+          _trailerSite = youtubeVideos[0]['site']?.toString();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading videos: $e');
+    } finally {
+      setState(() => _loadingTrailer = false);
+    }
+  }
+
   Map<String, String> _translatedTexts = {};
   Map<String, bool> _isTranslating = {};
 
@@ -72,6 +150,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   String? _poster;
   String? _title;
   String? _overview;
+  // trailer
+  List<Map<String, dynamic>> _allVideos = [];
+  int _currentVideoIndex = 0;
+  String? _trailerKey;
+  String? _trailerSite;
+  bool _loadingTrailer = false;
   static const Map<String, String> _serviceAssetMap = {
     'Netflix': 'netflix',
     'Amazon Prime Video': 'prime_video',
@@ -558,10 +642,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Future<void> _loadMovie() async {
-    // Nieuwe aanpak: start twee RapidAPI-requests (show + episode) tegelijkertijd
-    // en toon meteen het eerste antwoord dat terugkomt. De andere response werkt
-    // de UI bij zodra die binnen is.
-    try {
+   try {
       setState(() {
         _loadingMovie = true;
         _error = null;
@@ -645,13 +726,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       }
 
       // apply first rapid result immediately
-      applyRapidAndOmdb(firstRapid, omdb as Map<String, dynamic>?);
+      applyRapidAndOmdb(firstRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
+
+      // load trailers (movie or tv) async
+      _loadVideos().catchError((e) => debugPrint('Videos load error: $e'));
 
       // When the other Rapid response arrives, merge/update UI with additional info.
       showFuture
           .then((showRapid) {
             if (firstRapid != showRapid) {
-              applyRapidAndOmdb(showRapid, omdb as Map<String, dynamic>?);
+              applyRapidAndOmdb(showRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
             }
           })
           .catchError((e) => debugPrint('Show fetch error: $e'));
@@ -659,7 +743,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       episodeFuture
           .then((episodeRapid) {
             if (firstRapid != episodeRapid) {
-              applyRapidAndOmdb(episodeRapid, omdb as Map<String, dynamic>?);
+              applyRapidAndOmdb(episodeRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
             }
           })
           .catchError((e) => debugPrint('Episode fetch error: $e'));
@@ -1438,6 +1522,77 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _posterWithFallback(context, poster, rapid),
+
+            // Trailer (YouTube) - show in-app player when available
+            if (_loadingTrailer)
+              const Padding(
+                padding: EdgeInsets.only(top: 8.0),
+                child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator())),
+              )
+            else if (_trailerKey != null && _trailerKey!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Column(
+                  children: [
+                    YouTubePlayerWidget(
+                      // Use a UniqueKey or value-based key to force a rebuild when the trailerKey changes
+                      key: ValueKey(_trailerKey),
+                      videoId: _trailerKey!,
+                    ),
+                    if (_allVideos.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back_ios),
+                              onPressed: _currentVideoIndex > 0
+                                  ? () {
+                                      setState(() {
+                                        _currentVideoIndex--;
+                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
+                                      });
+                                    }
+                                  : null,
+                            ),
+                            Expanded(
+                              child: SizedBox(
+                                height: 24,
+                                child: Marquee(
+                                  text: '${_currentVideoIndex + 1} / ${_allVideos.length}: ${_allVideos[_currentVideoIndex]['name'] ?? ''}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  scrollAxis: Axis.horizontal,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  blankSpace: 50.0,
+                                  velocity: 40.0,
+                                  pauseAfterRound: const Duration(seconds: 2),
+                                  accelerationDuration: const Duration(seconds: 1),
+                                  accelerationCurve: Curves.linear,
+                                  decelerationDuration: const Duration(milliseconds: 500),
+                                  decelerationCurve: Curves.easeOut,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.arrow_forward_ios),
+                              onPressed: _currentVideoIndex < _allVideos.length - 1
+                                  ? () {
+                                      setState(() {
+                                        _currentVideoIndex++;
+                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
+                                      });
+                                    }
+                                  : null,
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
 
             const SizedBox(height: 12),
 
