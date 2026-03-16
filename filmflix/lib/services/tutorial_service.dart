@@ -3,7 +3,12 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:chat_bubbles/chat_bubbles.dart';
 
 class TutorialService {
-  static void showTutorial(BuildContext context, List<TargetFocus> targets) {
+  static void showTutorial(
+    BuildContext context,
+    List<TargetFocus> targets, {
+    VoidCallback? onFinish,
+    VoidCallback? onSkip,
+  }) {
     TutorialCoachMark(
       targets: targets,
       colorShadow: Colors.black,
@@ -13,8 +18,13 @@ class TutorialService {
       onClickTarget: (target) {
         debugPrint('Target clicked: ${target.identify}');
       },
+      onFinish: () {
+        debugPrint("Tutorial finished");
+        if (onFinish != null) onFinish();
+      },
       onSkip: () {
         debugPrint("Skip clicked");
+        if (onSkip != null) onSkip();
         return true;
       },
     ).show(context: context);
@@ -37,10 +47,16 @@ class TutorialService {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const CircleAvatar(
-                  radius: 25,
-                  backgroundImage: AssetImage('assets/images/Kevin.png'),
-                  backgroundColor: Colors.transparent,
+                Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/Kevin.png'),
+                      fit: BoxFit.cover,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

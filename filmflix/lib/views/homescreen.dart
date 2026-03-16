@@ -20,6 +20,9 @@ import 'package:cinetrackr/views/adminscreen.dart';
 import 'package:cinetrackr/views/kaart.dart';
 import 'package:cinetrackr/views/settingscreen.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
+import 'package:cinetrackr/services/tutorial_service.dart';
+import 'package:cinetrackr/main.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 // De data-klasse voor de films
 class FilmNowItem {
@@ -74,7 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
     })();
 
     // Ensure displayName check happens only after initial loads are complete.
-    _initialLoads!.then((_) => _ensureDisplayName());
+    _initialLoads!.then((_) {
+      _ensureDisplayName();
+    });
 
     // subscribe to auth changes so we can keep badge updated realtime
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
@@ -500,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     IconButton(
+                      key: MainNavigation.kaartKey,
                       icon: Icon(Icons.map_outlined, color: textColor),
                       onPressed: () => Navigator.push(
                         context,

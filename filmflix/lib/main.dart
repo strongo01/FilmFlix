@@ -94,6 +94,8 @@ class CineTrackrApp extends StatelessWidget {
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
+  static final GlobalKey kaartKey = GlobalKey();
+
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
@@ -155,9 +157,26 @@ class _MainNavigationState extends State<MainNavigation> {
         text: "Beheer hier je profiel en instellingen.",
         align: ContentAlign.top,
       ),
+      TutorialService.createTarget(
+        identify: "kaart-target",
+        key: MainNavigation.kaartKey,
+        text: "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
+        align: ContentAlign.bottom,
+      ),
     ];
 
-    TutorialService.showTutorial(context, targets);
+    void markTutorialAsDone() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('tutorial_done', true);
+      debugPrint("Tutorial: Marked as done in SharedPreferences.");
+    }
+
+    TutorialService.showTutorial(
+      context,
+      targets,
+      onFinish: markTutorialAsDone,
+      onSkip: markTutorialAsDone,
+    );
   }
 
   @override
@@ -245,7 +264,14 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   int _tutorialRetryCount = 0;
-  void _checkAndStartTutorial() {
+  void _checkAndStartTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool isDone = prefs.getBool('tutorial_done') ?? false;
+
+    // Om de tutorial WEL elke keer te tonen (voor testen), comment de 'if (isDone) return;' hieronder uit:
+    //TUTORIAL UIT/AAN
+    if (isDone) return;
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
 

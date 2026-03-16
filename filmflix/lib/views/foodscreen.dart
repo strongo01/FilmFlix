@@ -180,7 +180,27 @@ class _FoodScreenState extends State<FoodScreen> {
               ],
             ),
             const SizedBox(height: 25),
-            Text('Dieetwens', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+            Row(
+              children: [
+                Text('Dieetwens', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Let op: Het aanbod van restaurants met specifieke dieetopties kan variëren per regio.'),
+                        duration: Duration(seconds: 4),
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: textColor.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 10,
