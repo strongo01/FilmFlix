@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-// VERGEET DEZE IMPORT NIET:
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/main.dart';
 import 'package:cinetrackr/views/loginscreen.dart';

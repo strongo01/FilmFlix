@@ -123,10 +123,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       });
 
       if (youtubeVideos.isNotEmpty) {
+        final rawKey = youtubeVideos[0]['key']?.toString();
+        final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
+        debugPrint('Selected trailer raw key: $rawKey, normalized: $normKey, site: ${youtubeVideos[0]['site']}');
         setState(() {
           _allVideos = youtubeVideos;
           _currentVideoIndex = 0;
-          _trailerKey = youtubeVideos[0]['key']?.toString();
+          _trailerKey = normKey;
           _trailerSite = youtubeVideos[0]['site']?.toString();
         });
       }
@@ -305,6 +308,37 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       return maybeListOrMap.entries.map((e) => e.value).toList();
     }
     return [];
+  }
+
+  String? _normalizeYoutubeId(String? raw) {
+    if (raw == null) return null;
+    final r = raw.trim();
+    // If it already looks like an id, return it
+    final idPattern = RegExp(r'^[a-zA-Z0-9_-]{11,}$');
+    if (idPattern.hasMatch(r) && !r.contains('http') && !r.contains('/')) {
+      return r;
+    }
+
+    try {
+      final uri = Uri.tryParse(r);
+      if (uri != null) {
+        final v = uri.queryParameters['v'];
+        if (v != null && v.isNotEmpty) return v;
+        final host = uri.host.toLowerCase();
+        if (host.contains('youtu.be')) {
+          final segs = uri.pathSegments;
+          if (segs.isNotEmpty) return segs.last;
+        }
+        // embed path e.g. /embed/VIDEOID
+        final embedIndex = uri.pathSegments.indexWhere((s) => s == 'embed');
+        if (embedIndex >= 0 && uri.pathSegments.length > embedIndex + 1) return uri.pathSegments[embedIndex + 1];
+      }
+    } catch (_) {}
+
+    // Fallback: try to extract id like v=... or youtu.be/...
+    final vidMatch = RegExp(r'(?:v=|youtu\.be/|embed/)([A-Za-z0-9_-]{6,})').firstMatch(r);
+    if (vidMatch != null) return vidMatch.group(1);
+    return r;
   }
 
   Widget _buildServiceIconAsset(
@@ -1549,9 +1583,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               icon: const Icon(Icons.arrow_back_ios),
                               onPressed: _currentVideoIndex > 0
                                   ? () {
+                                      final rawKey = _allVideos[_currentVideoIndex - 1]['key']?.toString();
+                                      final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
+                                      debugPrint('Switched trailer (prev) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex - 1]['site']}');
                                       setState(() {
                                         _currentVideoIndex--;
-                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerKey = normKey;
                                         _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
                                       });
                                     }
@@ -1579,9 +1616,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               icon: const Icon(Icons.arrow_forward_ios),
                               onPressed: _currentVideoIndex < _allVideos.length - 1
                                   ? () {
+                                      final rawKey = _allVideos[_currentVideoIndex + 1]['key']?.toString();
+                                      final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
+                                      debugPrint('Switched trailer (next) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex + 1]['site']}');
                                       setState(() {
                                         _currentVideoIndex++;
-                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerKey = normKey;
                                         _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
                                       });
                                     }

@@ -462,14 +462,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      'Film Fanaat • Level 4',
-                      style: TextStyle(
-                        color: accentColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -482,7 +474,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Statistieken in één oogopslag (Films + Watchlist)
                   Row(
                     children: [
                       _buildQuickStat(
