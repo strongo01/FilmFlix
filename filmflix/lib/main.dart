@@ -22,6 +22,9 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cinetrackr/l10n/l10n.dart';
 
+// Global notifier to allow runtime locale changes from settings.
+final ValueNotifier<Locale?> localeNotifier = ValueNotifier<Locale?>(null);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
  await SystemChrome.setPreferredOrientations([
@@ -49,6 +52,18 @@ Future<void> main() async {
   } catch (_) {
     }
 
+  // Load saved locale preference (if any) so the app can start in the chosen language.
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('app_locale');
+    if (saved != null) {
+      if (saved == 'nl') localeNotifier.value = const Locale('nl');
+      else if (saved == 'en') localeNotifier.value = const Locale('en');
+    }
+  } catch (e) {
+    debugPrint('Could not load saved locale: $e');
+  }
+
   runApp(const CineTrackrApp());
 }
 
@@ -58,7 +73,11 @@ class CineTrackrApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = L10n.of(context);
-    return MaterialApp(
+    return ValueListenableBuilder<Locale?>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return MaterialApp(
+          locale: locale,
       title: l10n?.appTitle ?? 'CineTrackr',
       debugShowCheckedModeBanner: false,
       darkTheme: ThemeData.dark().copyWith(
@@ -106,6 +125,7 @@ class CineTrackrApp extends StatelessWidget {
         '/home': (context) => const MainNavigation(),
       },
     );
+      });
   }
 }
 

@@ -80,6 +80,8 @@
   "admins_label": "Admins: {names}",
   "chat_page_title_prefix": "Chat: {prefix}",
 
+  "open": "Open",
+  "send_failed": "Versturen mislukt",
   "appTitle": "CineTrackr",
   "@appTitle": { "description": "De naam van de app" },
 

@@ -12,6 +12,7 @@ import 'package:cinetrackr/utils/fcm_service.dart';
 import 'package:cinetrackr/l10n/l10n.dart';
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _cachedUnreadCustomerReplies = 0;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
       _customerQuestionsSub;
+  String _languageCode = 'nl';
 
   @override
   void initState() {
@@ -70,6 +72,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _customerQuestionsSub = null;
         if (mounted) setState(() => _cachedUnreadCustomerReplies = 0);
       }
+    });
+
+    // Load saved language preference for display
+    SharedPreferences.getInstance().then((prefs) {
+      final lc = prefs.getString('app_locale') ?? 'nl';
+      if (mounted) setState(() => _languageCode = lc);
+    }).catchError((e) {
+      debugPrint('Failed to load saved language: $e');
     });
   }
 
@@ -162,32 +172,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSimpleTile(
                   Icons.language,
                   L10n.of(context)?.language ?? 'Taal',
-                  L10n.of(context)?.dutch ?? 'Nederlands',
+                  // Show the currently selected language label
+                  (_languageCode == 'en') ? 'English' : (L10n.of(context)?.dutch ?? 'Nederlands'),
                   textColor,
-                  () {
-                    showDialog(
+                  () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    final current = prefs.getString('app_locale') ?? _languageCode;
+                    final choice = await showDialog<String>(
                       context: context,
-                      builder: (context) => AlertDialog(
+                      builder: (ctx) => AlertDialog(
                         backgroundColor: cardColor,
-                        title: Text(
-                          L10n.of(context)?.language ?? 'Taal',
-                          style: TextStyle(color: textColor),
-                        ),
+                        title: Text(L10n.of(context)?.language ?? 'Taal', style: TextStyle(color: textColor)),
                         content: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            ListTile(
-                              title: Text(
-                                L10n.of(context)?.dutch ?? 'Nederlands',
-                                style: TextStyle(color: textColor),
-                              ),
-                              trailing: const Icon(Icons.check, color: Colors.green),
-                              onTap: () => Navigator.pop(context),
+                            RadioListTile<String>(
+                              value: 'nl',
+                              groupValue: current,
+                              title: Text(L10n.of(context)?.dutch ?? 'Nederlands', style: TextStyle(color: textColor)),
+                              onChanged: (v) => Navigator.of(ctx).pop(v),
+                            ),
+                            RadioListTile<String>(
+                              value: 'en',
+                              groupValue: current,
+                              title: Text('English', style: TextStyle(color: textColor)),
+                              onChanged: (v) => Navigator.of(ctx).pop(v),
                             ),
                           ],
                         ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(L10n.of(context)?.close ?? 'Close', style: TextStyle(color: textColor)))
+                        ],
                       ),
                     );
+
+                    if (choice != null) {
+                      await prefs.setString('app_locale', choice);
+                      if (!mounted) return;
+                      setState(() => _languageCode = choice);
+                      // Update global notifier so the app updates immediately
+                      localeNotifier.value = Locale(choice);
+                    }
                   },
                 ),
               ],
