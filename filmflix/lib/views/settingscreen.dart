@@ -9,6 +9,7 @@ import 'package:cinetrackr/main.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:cinetrackr/utils/notification_permissions.dart';
 import 'package:cinetrackr/utils/fcm_service.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
@@ -90,9 +91,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? const Color(0xFF0F171B)
           : const Color(0xFFF5F7F8),
       appBar: AppBar(
-        title: const Text(
-          'Instellingen',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Text(
+          L10n.of(context)?.settingsTitle ?? 'Instellingen',
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: movieBlue,
@@ -158,13 +159,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 _buildDivider(isDark),
-                // Hier geven we een lege functie mee voor nu
                 _buildSimpleTile(
                   Icons.language,
-                  'Taal',
-                  'Nederlands',
+                  L10n.of(context)?.language ?? 'Taal',
+                  L10n.of(context)?.dutch ?? 'Nederlands',
                   textColor,
-                  () {},
+                  () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: cardColor,
+                        title: Text(
+                          L10n.of(context)?.language ?? 'Taal',
+                          style: TextStyle(color: textColor),
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              title: Text(
+                                L10n.of(context)?.dutch ?? 'Nederlands',
+                                style: TextStyle(color: textColor),
+                              ),
+                              trailing: const Icon(Icons.check, color: Colors.green),
+                              onTap: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -296,7 +320,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Center(
             child: Text(
               'v1.0.4',
-              style: TextStyle(color: textColor.withOpacity(0.3), fontSize: 12),
+              style: TextStyle(color: textColor.withValues(alpha: 0.3), fontSize: 12),
             ),
           ),
         ],
@@ -350,6 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           );
 
           if (result != true) return;
+          if (!mounted) return;
           final newName = ctrl.text.trim();
           try {
             // 1. Update Firebase Auth Profile

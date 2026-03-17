@@ -19,6 +19,8 @@ import 'package:cinetrackr/utils/fcm_service.dart';
 import 'package:cinetrackr/views/profiel.dart';
 import 'package:cinetrackr/services/tutorial_service.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,8 +57,9 @@ class CineTrackrApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = L10n.of(context);
     return MaterialApp(
-      title: 'CineTrackr',
+      title: l10n?.appTitle ?? 'CineTrackr',
       debugShowCheckedModeBanner: false,
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
@@ -73,6 +76,16 @@ class CineTrackrApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
+      localizationsDelegates: [
+        L10n.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('nl'),
+        Locale('en'),
+      ],
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -131,41 +144,42 @@ class _MainNavigationState extends State<MainNavigation> {
       return;
     }
 
+    final l10n = L10n.of(context);
     List<TargetFocus> targets = [
       TutorialService.createTarget(
         identify: "home",
         key: _homeKey,
-        text: "Welkom! Hier vind je de nieuwste films en series.",
+        text: l10n?.tutorialHome ?? "Welkom! Hier vind je de nieuwste films en series.",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
         identify: "watchlist",
         key: _watchlistKey,
-        text: "Sla hier je favoriete films op voor later.",
+        text: l10n?.tutorialWatchlist ?? "Sla hier je favoriete films op voor later.",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
         identify: "search",
         key: _searchKey,
-        text: "Zoek naar specifieke titels of genres.",
+        text: l10n?.tutorialSearch ?? "Zoek naar specifieke titels of genres.",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
         identify: "food",
         key: _foodKey,
-        text: "Bekijk bijpassende snacks voor je filmavond!",
+        text: l10n?.tutorialFood ?? "Bekijk bijpassende snacks voor je filmavond!",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
         identify: "profile",
         key: _profileKey,
-        text: "Beheer hier je profiel en instellingen.",
+        text: l10n?.tutorialProfile ?? "Beheer hier je profiel en instellingen.",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
         identify: "kaart-target",
         key: MainNavigation.kaartKey,
-        text: "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
+        text: l10n?.tutorialMap ?? "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
         align: ContentAlign.bottom,
       ),
     ];
@@ -187,6 +201,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = L10n.of(context);
 
     return Scaffold(
       body: IndexedStack(
@@ -196,17 +211,17 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1C282E) : Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+          border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, 'Home', _homeKey),
-            _buildNavItem(1, Icons.movie_outlined, Icons.movie_filter_rounded, 'Watchlist', _watchlistKey),
-            _buildNavItem(2, Icons.search_rounded, Icons.search_rounded, 'Zoeken', _searchKey),
-            _buildNavItem(3, Icons.fastfood_outlined, Icons.fastfood_rounded, 'Food', _foodKey),
-            _buildNavItem(4, Icons.person_outline_rounded, Icons.person_rounded, 'Profiel', _profileKey),
+            _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, l10n?.navHome ?? 'Home', _homeKey),
+            _buildNavItem(1, Icons.movie_outlined, Icons.movie_filter_rounded, l10n?.navWatchlist ?? 'Watchlist', _watchlistKey),
+            _buildNavItem(2, Icons.search_rounded, Icons.search_rounded, l10n?.navSearch ?? 'Zoeken', _searchKey),
+            _buildNavItem(3, Icons.fastfood_outlined, Icons.fastfood_rounded, l10n?.navFood ?? 'Food', _foodKey),
+            _buildNavItem(4, Icons.person_outline_rounded, Icons.person_rounded, l10n?.navProfile ?? 'Profiel', _profileKey),
           ],
         ),
       ),

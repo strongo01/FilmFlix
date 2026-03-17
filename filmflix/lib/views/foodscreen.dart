@@ -164,6 +164,11 @@ class _FoodScreenState extends State<FoodScreen> {
                 labelText: 'Postcode (4 cijfers)',
                 labelStyle: TextStyle(color: textColor.withOpacity(0.6)),
                 prefixIcon: Icon(Icons.location_on, color: movieBlue),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.keyboard_hide),
+                  onPressed: () => FocusScope.of(context).unfocus(),
+                  color: movieBlue.withOpacity(0.6),
+                ),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: isDark ? Colors.white12 : Colors.grey[300]!),
                   borderRadius: BorderRadius.circular(15),

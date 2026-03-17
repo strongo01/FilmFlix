@@ -1,0 +1,111 @@
+{
+  "@@locale": "en",
+  "admin_title": "Admin",
+  "tab_chats": "Chats",
+  "tab_faqs": "FAQs",
+
+  "not_logged_in_title": "Not logged in",
+  "not_logged_in_message": "Please sign in as admin and try again.",
+  "close": "Close",
+
+  "no_users_doc": "No users doc found.",
+  "users_doc_role": "users/{uid} role = {role}",
+  "users_doc_no_role": "users/{uid} exists but has no role field.",
+  "users_doc_read_error": "Error reading users doc: {error}",
+
+  "check_permissions_title": "Check permissions",
+  "possible_causes": "Possible causes and fixes:",
+  "firestore_rules": "- Check Firestore rules: using custom claims (request.auth.token.role).",
+  "custom_claims_hint": "- If using custom claims: set role/admin via Admin SDK and have admin re-login.",
+  "rules_temp_change": "- Or temporarily change rules to read role from /users/{uid}.",
+  "current_users_doc": "Current users doc:",
+
+  "debug_info_title": "Debug info",
+  "uid_label": "uid: {uid}",
+  "idtoken_claims_label": "idToken claims: {claims}",
+  "idtoken_error_label": "idToken error: {error}",
+  "users_doc_label": "users doc: {doc}",
+  "ok": "OK",
+
+  "fetch_doc_title": "Fetch document by ID",
+  "paste_doc_id": "Paste the document ID from customerquestions:",
+  "cancel": "Cancel",
+  "fetch": "Fetch",
+  "not_found_title": "Not found",
+  "document_not_found": "Document {id} does not exist or is not readable.",
+  "document_title": "Document {id}",
+  "empty": "<empty>",
+  "fetch_error_title": "Error",
+  "fetch_error_message": "Error fetching: {error}",
+
+  "cannot_load_chats": "Cannot load chats: {error}",
+  "no_questions_found": "No questions found",
+  "show_debug_info": "Show debug info",
+
+  "delete_chat_title": "Delete chat",
+  "delete_chat_confirm": "Are you sure you want to delete this chat? This cannot be undone.",
+  "delete": "Delete",
+  "chat_deleted": "Chat deleted",
+  "delete_failed": "Delete failed",
+
+  "user_label_default": "User",
+  "reply_hint": "Type a reply...",
+  "send": "Send",
+
+  "notify_title": "New message from admin",
+  "notify_body": "{text}",
+
+  "no_faq_items": "No FAQ items yet",
+  "edit": "Edit",
+  "remove": "Remove",
+  "add_new_faq": "Add new FAQ",
+
+  "new_faq_title": "New FAQ",
+  "question_label": "Question",
+  "answer_label": "Answer",
+  "add": "Add",
+  "faq_added": "FAQ added",
+  "faq_add_failed": "Add failed",
+
+  "edit_faq_title": "Edit FAQ",
+  "save": "Save",
+  "faq_updated": "FAQ updated",
+  "faq_update_failed": "Save failed",
+
+  "delete_faq_title": "Delete FAQ",
+  "delete_faq_confirm": "Are you sure you want to delete this FAQ?",
+  "faq_deleted": "FAQ deleted",
+  "faq_delete_failed": "Delete failed",
+
+  "admins_label": "Admins: {names}",
+  "chat_page_title_prefix": "Chat: {prefix}",
+
+  "appTitle": "CineTrackr",
+  "navHome": "Home",
+  "navWatchlist": "Watchlist",
+  "navSearch": "Search",
+  "navFood": "Food",
+  "navProfile": "Profile",
+
+  "tutorialHome": "Welcome! Here are the latest movies and series.",
+  "tutorialWatchlist": "Save your favorite movies here for later.",
+  "tutorialSearch": "Search for titles or genres.",
+  "tutorialFood": "See matching snacks for your movie night!",
+  "tutorialProfile": "Manage your profile and settings here.",
+  "tutorialMap": "View the map to find nearby cinemas!",
+
+  "settingsTitle": "Settings",
+  "myDashboard": "My Dashboard",
+  "preferences": "Preferences",
+  "support": "Support",
+  "notifications": "Notifications",
+  "language": "Language",
+  "dutch": "Dutch",
+
+  "mustBeLoggedIn": "You must be logged in to change your name",
+  "changeNameTitle": "Change your name",
+  "nameLabel": "Your name",
+  "nameValidation": "Enter your name",
+  "nameUpdated": "Name updated",
+  "updateFailed": "Update failed"
+}
