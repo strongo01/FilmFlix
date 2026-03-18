@@ -273,6 +273,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialMap => 'View the map to find nearby cinemas!';
 
   @override
+  String get map_all_cinemas_title => 'All cinemas in the Netherlands';
+
+  @override
+  String map_load_error(Object error) {
+    return 'Error loading cinemas: $error';
+  }
+
+  @override
+  String get map_location_service_disabled => 'Location services are disabled';
+
+  @override
+  String get map_location_permission_denied => 'Location access denied';
+
+  @override
+  String get map_location_permission_denied_forever => 'Location permissions permanently denied. Enable in settings.';
+
+  @override
+  String map_location_fetch_error(Object error) {
+    return 'Could not fetch location: $error';
+  }
+
+  @override
+  String get map_no_website_content => 'No website available — Cinema found! 🎥';
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
   String get food_edit_favorite => 'Edit favorite';
 
   @override
@@ -310,6 +338,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get food_search_button => 'SEARCH ON THUISBEZORGD';
+
+  @override
+  String get food_postcode_label => 'Postcode (4 digits)';
+
+  @override
+  String get food_zip_required => 'Enter 4 digits of your postcode first!';
 
   @override
   String get filter_vegetarian => 'Vegetarian';
@@ -373,6 +407,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateFailed => 'Update failed';
+
+  @override
+  String get enter_name_description => 'We use your name to make the app more personal, for example for greetings.';
+
+  @override
+  String get save_and_continue => 'Save and continue';
 
   @override
   String get customerService_title => 'Customer Service';
@@ -522,4 +562,202 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get no_films_found => 'No films found';
+
+  @override
+  String get loginWelcome => 'Welcome to CineTrackr';
+
+  @override
+  String get loginCreateAccount => 'Create an account';
+
+  @override
+  String get loginName => 'Name';
+
+  @override
+  String get loginNameRequired => 'Enter your name';
+
+  @override
+  String get loginEmail => 'Email';
+
+  @override
+  String get loginEmailRequired => 'Enter your email address';
+
+  @override
+  String get loginInvalidEmail => 'Invalid email address';
+
+  @override
+  String get loginPassword => 'Password';
+
+  @override
+  String get loginPasswordRequired => 'Enter your password';
+
+  @override
+  String get loginPasswordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get loginIn => 'Sign in';
+
+  @override
+  String get loginRegister => 'Register';
+
+  @override
+  String get loginNoAccountRegister => 'No account yet? Register';
+
+  @override
+  String get loginHaveAccountLogin => 'Already have an account? Sign in';
+
+  @override
+  String get loginForgotPassword => 'Forgot password?';
+
+  @override
+  String get loginContinueAsGuest => 'Continue as guest';
+
+  @override
+  String get loginOrDivider => 'OR';
+
+  @override
+  String get loginSignInWithGoogle => 'Sign in with Google';
+
+  @override
+  String get loginSignInWithGitHub => 'Sign in with GitHub';
+
+  @override
+  String get loginSignInWithApple => 'Sign in with Apple';
+
+  @override
+  String get loginEnterValidEmail => 'Enter a valid email address';
+
+  @override
+  String get loginPasswordResetEmailSent => 'Password reset email sent';
+
+  @override
+  String get loginPasswordResetFailed => 'Could not send reset email';
+
+  @override
+  String get loginSomethingWentWrong => 'Something went wrong';
+
+  @override
+  String get authenticationFailed => 'Authentication failed';
+
+  @override
+  String get loginGithubFailed => 'GitHub login failed';
+
+  @override
+  String get googleIdTokenError => 'Error retrieving Google ID token';
+
+  @override
+  String get googleSignInCancelled => 'Google sign-in cancelled';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get translate => 'Translate';
+
+  @override
+  String get seen => 'Seen';
+
+  @override
+  String age_rating(Object rated) {
+    return 'Age rating: $rated';
+  }
+
+  @override
+  String get producers_creators => 'Producers / Creators';
+
+  @override
+  String get actors => 'Actors';
+
+  @override
+  String seasons(Object count) {
+    return 'Seasons: $count';
+  }
+
+  @override
+  String episodes(Object count) {
+    return 'Episodes: $count';
+  }
+
+  @override
+  String get streaming => 'Streaming';
+
+  @override
+  String seasons_episodes_title(Object count) {
+    return 'Seasons & Episodes ($count)';
+  }
+
+  @override
+  String get no_seasons_found => 'No seasons found';
+
+  @override
+  String get no_episodes_found => 'No episodes found';
+
+  @override
+  String get warning_title => 'Warning';
+
+  @override
+  String get warning_bioscoop_content => 'Please close any ads/popups on the website before viewing the agenda.';
+
+  @override
+  String get continue => 'Continue';
+
+  @override
+  String get mark_previous_episodes_title => 'Mark previous episodes?';
+
+  @override
+  String mark_previous_episodes_message(Object count, Object season, Object title) {
+    return 'You\'re marking \"$title\" as seen. Also mark $count previous episode(s) of season $season as seen?';
+  }
+
+  @override
+  String episodes_marked_seen(Object count) {
+    return '$count episodes marked as seen';
+  }
+
+  @override
+  String get watchlist_update_failed => 'Could not update watchlist.';
+
+  @override
+  String get episode_status_update_failed => 'Could not update episode status.';
+
+  @override
+  String get movie_seen_update_failed => 'Could not update \"Seen\" status.';
+
+  @override
+  String get included_with_subscription => 'Included with subscription';
+
+  @override
+  String get buy => 'Buy';
+
+  @override
+  String buy_with_price(Object price) {
+    return 'Buy • $price';
+  }
+
+  @override
+  String get rent => 'Rent';
+
+  @override
+  String rent_with_price(Object price) {
+    return 'Rent • $price';
+  }
+
+  @override
+  String get addon => 'Addon';
+
+  @override
+  String addon_with_price(Object price) {
+    return 'Addon • $price';
+  }
+
+  @override
+  String get details_streaming_warning => 'Click to open streaming link';
+
+  @override
+  String get yes => 'Yes';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get appleSignInNoIdentityToken => 'Apple Sign-In failed: no identity token returned';
 }

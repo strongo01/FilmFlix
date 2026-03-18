@@ -563,6 +563,54 @@ abstract class AppLocalizations {
   /// **'View the map to find nearby cinemas!'**
   String get tutorialMap;
 
+  /// AppBar title for the cinemas map
+  ///
+  /// In en, this message translates to:
+  /// **'All cinemas in the Netherlands'**
+  String get map_all_cinemas_title;
+
+  /// No description provided for @map_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading cinemas: {error}'**
+  String map_load_error(Object error);
+
+  /// No description provided for @map_location_service_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are disabled'**
+  String get map_location_service_disabled;
+
+  /// No description provided for @map_location_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access denied'**
+  String get map_location_permission_denied;
+
+  /// No description provided for @map_location_permission_denied_forever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permissions permanently denied. Enable in settings.'**
+  String get map_location_permission_denied_forever;
+
+  /// No description provided for @map_location_fetch_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch location: {error}'**
+  String map_location_fetch_error(Object error);
+
+  /// No description provided for @map_no_website_content.
+  ///
+  /// In en, this message translates to:
+  /// **'No website available — Cinema found! 🎥'**
+  String get map_no_website_content;
+
+  /// No description provided for @unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get unknown;
+
   /// No description provided for @food_edit_favorite.
   ///
   /// In en, this message translates to:
@@ -640,6 +688,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SEARCH ON THUISBEZORGD'**
   String get food_search_button;
+
+  /// No description provided for @food_postcode_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Postcode (4 digits)'**
+  String get food_postcode_label;
+
+  /// No description provided for @food_zip_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 4 digits of your postcode first!'**
+  String get food_zip_required;
 
   /// No description provided for @filter_vegetarian.
   ///
@@ -766,6 +826,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update failed'**
   String get updateFailed;
+
+  /// Explainer shown when asking the user for their display name
+  ///
+  /// In en, this message translates to:
+  /// **'We use your name to make the app more personal, for example for greetings.'**
+  String get enter_name_description;
+
+  /// Button label to save name and continue
+  ///
+  /// In en, this message translates to:
+  /// **'Save and continue'**
+  String get save_and_continue;
 
   /// No description provided for @customerService_title.
   ///
@@ -1048,6 +1120,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No films found'**
   String get no_films_found;
+
+  /// No description provided for @loginWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to CineTrackr'**
+  String get loginWelcome;
+
+  /// No description provided for @loginCreateAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account'**
+  String get loginCreateAccount;
+
+  /// No description provided for @loginName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get loginName;
+
+  /// No description provided for @loginNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name'**
+  String get loginNameRequired;
+
+  /// No description provided for @loginEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get loginEmail;
+
+  /// No description provided for @loginEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email address'**
+  String get loginEmailRequired;
+
+  /// No description provided for @loginInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email address'**
+  String get loginInvalidEmail;
+
+  /// No description provided for @loginPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get loginPassword;
+
+  /// No description provided for @loginPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get loginPasswordRequired;
+
+  /// No description provided for @loginPasswordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get loginPasswordTooShort;
+
+  /// No description provided for @loginIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get loginIn;
+
+  /// No description provided for @loginRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get loginRegister;
+
+  /// No description provided for @loginNoAccountRegister.
+  ///
+  /// In en, this message translates to:
+  /// **'No account yet? Register'**
+  String get loginNoAccountRegister;
+
+  /// No description provided for @loginHaveAccountLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get loginHaveAccountLogin;
+
+  /// No description provided for @loginForgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get loginForgotPassword;
+
+  /// No description provided for @loginContinueAsGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as guest'**
+  String get loginContinueAsGuest;
+
+  /// No description provided for @loginOrDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get loginOrDivider;
+
+  /// No description provided for @loginSignInWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get loginSignInWithGoogle;
+
+  /// No description provided for @loginSignInWithGitHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with GitHub'**
+  String get loginSignInWithGitHub;
+
+  /// No description provided for @loginSignInWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Apple'**
+  String get loginSignInWithApple;
+
+  /// No description provided for @loginEnterValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address'**
+  String get loginEnterValidEmail;
+
+  /// No description provided for @loginPasswordResetEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent'**
+  String get loginPasswordResetEmailSent;
+
+  /// No description provided for @loginPasswordResetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send reset email'**
+  String get loginPasswordResetFailed;
+
+  /// No description provided for @loginSomethingWentWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get loginSomethingWentWrong;
+
+  /// No description provided for @authenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed'**
+  String get authenticationFailed;
+
+  /// No description provided for @loginGithubFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub login failed'**
+  String get loginGithubFailed;
+
+  /// No description provided for @googleIdTokenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error retrieving Google ID token'**
+  String get googleIdTokenError;
+
+  /// No description provided for @googleSignInCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in cancelled'**
+  String get googleSignInCancelled;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @translate.
+  ///
+  /// In en, this message translates to:
+  /// **'Translate'**
+  String get translate;
+
+  /// No description provided for @seen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get seen;
+
+  /// No description provided for @age_rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Age rating: {rated}'**
+  String age_rating(Object rated);
+
+  /// No description provided for @producers_creators.
+  ///
+  /// In en, this message translates to:
+  /// **'Producers / Creators'**
+  String get producers_creators;
+
+  /// No description provided for @actors.
+  ///
+  /// In en, this message translates to:
+  /// **'Actors'**
+  String get actors;
+
+  /// No description provided for @seasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasons: {count}'**
+  String seasons(Object count);
+
+  /// No description provided for @episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes: {count}'**
+  String episodes(Object count);
+
+  /// No description provided for @streaming.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get streaming;
+
+  /// No description provided for @seasons_episodes_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Seasons & Episodes ({count})'**
+  String seasons_episodes_title(Object count);
+
+  /// No description provided for @no_seasons_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No seasons found'**
+  String get no_seasons_found;
+
+  /// No description provided for @no_episodes_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No episodes found'**
+  String get no_episodes_found;
+
+  /// No description provided for @warning_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get warning_title;
+
+  /// No description provided for @warning_bioscoop_content.
+  ///
+  /// In en, this message translates to:
+  /// **'Please close any ads/popups on the website before viewing the agenda.'**
+  String get warning_bioscoop_content;
+
+  /// No description provided for @continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continue;
+
+  /// No description provided for @mark_previous_episodes_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark previous episodes?'**
+  String get mark_previous_episodes_title;
+
+  /// No description provided for @mark_previous_episodes_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re marking \"{title}\" as seen. Also mark {count} previous episode(s) of season {season} as seen?'**
+  String mark_previous_episodes_message(Object count, Object season, Object title);
+
+  /// No description provided for @episodes_marked_seen.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} episodes marked as seen'**
+  String episodes_marked_seen(Object count);
+
+  /// No description provided for @watchlist_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update watchlist.'**
+  String get watchlist_update_failed;
+
+  /// No description provided for @episode_status_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update episode status.'**
+  String get episode_status_update_failed;
+
+  /// No description provided for @movie_seen_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update \"Seen\" status.'**
+  String get movie_seen_update_failed;
+
+  /// No description provided for @included_with_subscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Included with subscription'**
+  String get included_with_subscription;
+
+  /// No description provided for @buy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get buy;
+
+  /// No description provided for @buy_with_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy • {price}'**
+  String buy_with_price(Object price);
+
+  /// No description provided for @rent.
+  ///
+  /// In en, this message translates to:
+  /// **'Rent'**
+  String get rent;
+
+  /// No description provided for @rent_with_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Rent • {price}'**
+  String rent_with_price(Object price);
+
+  /// No description provided for @addon.
+  ///
+  /// In en, this message translates to:
+  /// **'Addon'**
+  String get addon;
+
+  /// No description provided for @addon_with_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Addon • {price}'**
+  String addon_with_price(Object price);
+
+  /// No description provided for @details_streaming_warning.
+  ///
+  /// In en, this message translates to:
+  /// **'Click to open streaming link'**
+  String get details_streaming_warning;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
+
+  /// No description provided for @appleSignInNoIdentityToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Sign-In failed: no identity token returned'**
+  String get appleSignInNoIdentityToken;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

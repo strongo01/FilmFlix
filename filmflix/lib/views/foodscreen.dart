@@ -123,7 +123,7 @@ class _FoodScreenState extends State<FoodScreen> {
 
     if (zipDigits.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vul eerst 4 cijfers van je postcode in!')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.food_zip_required)),
       );
       return;
     }
@@ -175,7 +175,7 @@ class _FoodScreenState extends State<FoodScreen> {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-                labelText: 'Postcode (4 cijfers)',
+                labelText: AppLocalizations.of(context)!.food_postcode_label,
                 labelStyle: TextStyle(color: textColor.withOpacity(0.6)),
                 prefixIcon: Icon(Icons.location_on, color: movieBlue),
                 suffixIcon: IconButton(
@@ -201,7 +201,7 @@ class _FoodScreenState extends State<FoodScreen> {
             const SizedBox(height: 25),
             Row(
               children: [
-                Text('Dieetwens', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
+                Text(AppLocalizations.of(context)!.food_diet, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () {

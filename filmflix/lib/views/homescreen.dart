@@ -23,6 +23,7 @@ import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:cinetrackr/services/tutorial_service.dart';
 import 'package:cinetrackr/main.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 
 // De data-klasse voor de films
 class FilmNowItem {
@@ -369,26 +370,25 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
+        final loc = AppLocalizations.of(ctx)!;
         return WillPopScope(
           onWillPop: () async => false,
           child: AlertDialog(
-            title: const Text('Voer je naam in.'),
+            title: Text(loc.changeNameTitle),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.',
-                ),
+                Text(loc.enter_name_description),
                 const SizedBox(height: 12),
                 Form(
                   key: formKey,
                   child: TextFormField(
                     controller: ctrl,
                     autofocus: true,
-                    decoration: const InputDecoration(labelText: 'Je naam'),
+                    decoration: InputDecoration(labelText: loc.nameLabel),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty)
-                        return 'Vul je naam in';
+                        return loc.nameValidation;
                       return null;
                     },
                   ),
@@ -419,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   if (mounted) Navigator.of(ctx).pop();
                 },
-                child: const Text('Opslaan en doorgaan'),
+                child: Text(loc.save_and_continue),
               ),
             ],
           ),
@@ -514,11 +514,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        "CineTrackr",
+                        AppLocalizations.of(context)!.appTitle,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
@@ -623,7 +623,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
               Text(
-                "Nu in de bioscoop",
+                AppLocalizations.of(context)!.nowPlayingTitle,
                 style: TextStyle(
                   color: textColor,
                   fontSize: 18,

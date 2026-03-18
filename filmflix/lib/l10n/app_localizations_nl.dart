@@ -273,6 +273,34 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tutorialMap => 'Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!';
 
   @override
+  String get map_all_cinemas_title => 'Alle bioscopen in Nederland';
+
+  @override
+  String map_load_error(Object error) {
+    return 'Fout bij laden bioscopen: $error';
+  }
+
+  @override
+  String get map_location_service_disabled => 'Locatiedienst is uitgeschakeld';
+
+  @override
+  String get map_location_permission_denied => 'Locatie toegang geweigerd';
+
+  @override
+  String get map_location_permission_denied_forever => 'Locatiepermissies permanent geweigerd. Schakel in instellingen.';
+
+  @override
+  String map_location_fetch_error(Object error) {
+    return 'Kon locatie niet ophalen: $error';
+  }
+
+  @override
+  String get map_no_website_content => 'Geen website beschikbaar — Bioscoop gevonden! 🎥';
+
+  @override
+  String get unknown => 'Onbekend';
+
+  @override
   String get food_edit_favorite => 'Pas favoriet aan';
 
   @override
@@ -310,6 +338,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get food_search_button => 'ZOEK OP THUISBEZORGD';
+
+  @override
+  String get food_postcode_label => 'Postcode (4 cijfers)';
+
+  @override
+  String get food_zip_required => 'Vul eerst 4 cijfers van je postcode in!';
 
   @override
   String get filter_vegetarian => 'Vegetarisch';
@@ -373,6 +407,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get updateFailed => 'Bijwerken mislukt';
+
+  @override
+  String get enter_name_description => 'We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.';
+
+  @override
+  String get save_and_continue => 'Opslaan en doorgaan';
 
   @override
   String get customerService_title => 'Klantenservice';
@@ -522,4 +562,202 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get no_films_found => 'Geen films gevonden';
+
+  @override
+  String get loginWelcome => 'Welkom bij CineTrackr';
+
+  @override
+  String get loginCreateAccount => 'Maak een account';
+
+  @override
+  String get loginName => 'Naam';
+
+  @override
+  String get loginNameRequired => 'Vul je naam in';
+
+  @override
+  String get loginEmail => 'E-mail';
+
+  @override
+  String get loginEmailRequired => 'Vul je e-mailadres in';
+
+  @override
+  String get loginInvalidEmail => 'Ongeldig e-mailadres';
+
+  @override
+  String get loginPassword => 'Wachtwoord';
+
+  @override
+  String get loginPasswordRequired => 'Vul je wachtwoord in';
+
+  @override
+  String get loginPasswordTooShort => 'Wachtwoord moet minstens 6 tekens zijn';
+
+  @override
+  String get loginIn => 'Inloggen';
+
+  @override
+  String get loginRegister => 'Registreren';
+
+  @override
+  String get loginNoAccountRegister => 'Nog geen account? Registreer';
+
+  @override
+  String get loginHaveAccountLogin => 'Al een account? Log in';
+
+  @override
+  String get loginForgotPassword => 'Wachtwoord vergeten?';
+
+  @override
+  String get loginContinueAsGuest => 'Verder gaan als gast';
+
+  @override
+  String get loginOrDivider => 'OF';
+
+  @override
+  String get loginSignInWithGoogle => 'Inloggen met Google';
+
+  @override
+  String get loginSignInWithGitHub => 'Inloggen met GitHub';
+
+  @override
+  String get loginSignInWithApple => 'Inloggen met Apple';
+
+  @override
+  String get loginEnterValidEmail => 'Vul een geldig e-mailadres in';
+
+  @override
+  String get loginPasswordResetEmailSent => 'Wachtwoord-reset e-mail verzonden';
+
+  @override
+  String get loginPasswordResetFailed => 'Kon geen reset-e-mail sturen';
+
+  @override
+  String get loginSomethingWentWrong => 'Er is iets misgegaan';
+
+  @override
+  String get authenticationFailed => 'Authenticatie mislukt';
+
+  @override
+  String get loginGithubFailed => 'GitHub login mislukt';
+
+  @override
+  String get googleIdTokenError => 'Fout bij ophalen van Google ID-token';
+
+  @override
+  String get googleSignInCancelled => 'Google-aanmelding geannuleerd';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get translate => 'Vertalen';
+
+  @override
+  String get seen => 'Gezien';
+
+  @override
+  String age_rating(Object rated) {
+    return 'Leeftijdsclassificatie: $rated';
+  }
+
+  @override
+  String get producers_creators => 'Producenten / Makers';
+
+  @override
+  String get actors => 'Acteurs';
+
+  @override
+  String seasons(Object count) {
+    return 'Seizoenen: $count';
+  }
+
+  @override
+  String episodes(Object count) {
+    return 'Afleveringen: $count';
+  }
+
+  @override
+  String get streaming => 'Streaming';
+
+  @override
+  String seasons_episodes_title(Object count) {
+    return 'Seizoenen & Afleveringen ($count)';
+  }
+
+  @override
+  String get no_seasons_found => 'Geen seizoenen gevonden';
+
+  @override
+  String get no_episodes_found => 'Geen afleveringen gevonden';
+
+  @override
+  String get warning_title => '!!Waarschuwing!!';
+
+  @override
+  String get warning_bioscoop_content => 'Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.';
+
+  @override
+  String get continue => 'Doorgaan';
+
+  @override
+  String get mark_previous_episodes_title => 'Vorige afleveringen markeren?';
+
+  @override
+  String mark_previous_episodes_message(Object count, Object season, Object title) {
+    return 'Je markeert \"$title\" als gezien. Wil je ook $count vorige aflevering(en) van seizoen $season markeren als gezien?';
+  }
+
+  @override
+  String episodes_marked_seen(Object count) {
+    return '$count afleveringen gemarkeerd als gezien';
+  }
+
+  @override
+  String get watchlist_update_failed => 'Kon watchlist niet bijwerken.';
+
+  @override
+  String get episode_status_update_failed => 'Kon afleveringstatus niet bijwerken.';
+
+  @override
+  String get movie_seen_update_failed => 'Kon \"Gezien\" status niet bijwerken.';
+
+  @override
+  String get included_with_subscription => 'Inbegrepen';
+
+  @override
+  String get buy => 'Kopen';
+
+  @override
+  String buy_with_price(Object price) {
+    return 'Kopen • $price';
+  }
+
+  @override
+  String get rent => 'Huren';
+
+  @override
+  String rent_with_price(Object price) {
+    return 'Huren • $price';
+  }
+
+  @override
+  String get addon => 'Uitbreiding';
+
+  @override
+  String addon_with_price(Object price) {
+    return 'Uitbreiding • $price';
+  }
+
+  @override
+  String get details_streaming_warning => 'Klik om streaminglink te openen';
+
+  @override
+  String get yes => 'Ja';
+
+  @override
+  String get no => 'Nee';
+
+  @override
+  String get appleSignInNoIdentityToken => 'Apple-aanmelding mislukt: geen identity token ontvangen';
 }

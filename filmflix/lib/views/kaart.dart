@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:cinetrackr/services/cinema_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 
 class CinemasMapView extends StatefulWidget {
   const CinemasMapView({super.key});
@@ -24,6 +25,7 @@ class _CinemasMapViewState extends State<CinemasMapView> {
   }
 
   Future<void> _loadCinemas() async {
+    final loc = AppLocalizations.of(context)!;
     // First load cached cinemas (if any) to show immediate results
     try {
       final cached = await loadCachedCinemas();
@@ -46,16 +48,17 @@ class _CinemasMapViewState extends State<CinemasMapView> {
         setState(() => _loading = false);
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fout bij laden bioscopen: $e')),
+        SnackBar(content: Text(loc.map_load_error(e.toString()))),
       );
     }
   }
 
   Future<void> _goToUserLocation() async {
     final contextMounted = mounted;
+    final loc = AppLocalizations.of(context)!;
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Locatiedienst is uitgeschakeld')));
+      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.map_location_service_disabled)));
       return;
     }
 
@@ -63,13 +66,13 @@ class _CinemasMapViewState extends State<CinemasMapView> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Locatie toegang geweigerd')));
+        if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.map_location_permission_denied)));
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Locatiepermissies permanent geweigerd. Schakel in instellingen.')));
+      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.map_location_permission_denied_forever)));
       return;
     }
 
@@ -78,7 +81,7 @@ class _CinemasMapViewState extends State<CinemasMapView> {
       final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
       _mapController.move(LatLng(pos.latitude, pos.longitude), 15.0);
     } catch (e) {
-      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Kon locatie niet ophalen: $e')));
+      if (contextMounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loc.map_location_fetch_error(e.toString()))));
     } finally {
       if (contextMounted) setState(() => _loading = false);
     }
@@ -86,6 +89,8 @@ class _CinemasMapViewState extends State<CinemasMapView> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     final markers = _cinemas.map((cinema) {
       return Marker(
         point: LatLng(cinema['lat'] as double, cinema['lng'] as double),
@@ -112,12 +117,12 @@ class _CinemasMapViewState extends State<CinemasMapView> {
             showDialog(
               context: context,
               builder: (_) => AlertDialog(
-                title: Text(cinema['name'] ?? 'Onbekend'),
-                content: const Text('Geen website beschikbaar — Bioscoop gevonden! 🎥'),
+                title: Text(cinema['name'] ?? loc.unknown),
+                content: Text(loc.map_no_website_content),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
+                    child: Text(loc.ok),
                   ),
                 ],
               ),
@@ -135,7 +140,7 @@ class _CinemasMapViewState extends State<CinemasMapView> {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        title:  Text('Alle bioscopen in Nederland', style: TextStyle(color: Colors.white)),
+        title:  Text(loc.map_all_cinemas_title, style: TextStyle(color: Colors.white)),
         backgroundColor: movieBlue,
       ),
       body: _loading
