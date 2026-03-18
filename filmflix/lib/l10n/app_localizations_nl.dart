@@ -45,6 +45,9 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
+  String get send_failed => 'Versturen mislukt';
+
+  @override
   String get check_permissions_title => 'Rechten controleren';
 
   @override
@@ -270,6 +273,69 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tutorialMap => 'Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!';
 
   @override
+  String get food_edit_favorite => 'Pas favoriet aan';
+
+  @override
+  String get food_name_label => 'Naam';
+
+  @override
+  String get food_only_emoji => 'Alleen Emoji';
+
+  @override
+  String get food_location => 'Locatie';
+
+  @override
+  String get food_diet => 'Dieetwens';
+
+  @override
+  String get food_diet_info => 'Let op: Het aanbod van restaurants met specifieke dieetopties kan variëren per regio.';
+
+  @override
+  String get food_hold_to_edit => 'Houd een icoon ingedrukt om aan te passen';
+
+  @override
+  String get food_quick_pizza => 'Pizza';
+
+  @override
+  String get food_quick_sushi => 'Sushi';
+
+  @override
+  String get food_quick_burger => 'Burger';
+
+  @override
+  String get food_quick_kapsalon => 'Kapsalon';
+
+  @override
+  String get food_search_hint => 'Zelf iets zoeken...';
+
+  @override
+  String get food_search_button => 'ZOEK OP THUISBEZORGD';
+
+  @override
+  String get filter_vegetarian => 'Vegetarisch';
+
+  @override
+  String get filter_vegan => 'Vegan';
+
+  @override
+  String get filter_gluten_free => 'Glutenvrij';
+
+  @override
+  String get filter_halal => 'Halal';
+
+  @override
+  String get food_what_do_you_want => 'Wat wil je eten?';
+
+  @override
+  String get tutorialSkip => 'Overslaan';
+
+  @override
+  String get ellipsis => '...';
+
+  @override
+  String get open => 'Open';
+
+  @override
   String get settingsTitle => 'Instellingen';
 
   @override
@@ -307,4 +373,153 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get updateFailed => 'Bijwerken mislukt';
+
+  @override
+  String get customerService_title => 'Klantenservice';
+
+  @override
+  String get contact_admin_title => 'Contact admin';
+
+  @override
+  String get emailLabel => 'E-mail';
+
+  @override
+  String get contactNameLabel => 'Naam';
+
+  @override
+  String get contactQuestionLabel => 'Vraag';
+
+  @override
+  String get question_validation => 'Vul je vraag in';
+
+  @override
+  String get mustBeLoggedInToSend => 'Je moet ingelogd zijn om te versturen';
+
+  @override
+  String get question_sent => 'Vraag verstuurd';
+
+  @override
+  String get ai_max_reached => 'Je hebt het maximale aantal AI-vragen voor vandaag gebruikt. Probeer morgen opnieuw.';
+
+  @override
+  String get ask_ai_title => 'Vraag AI';
+
+  @override
+  String get ai_wait => 'Even geduld, dit kan tot een minuut duren';
+
+  @override
+  String get ai_answer_title => 'AI Antwoord';
+
+  @override
+  String ai_answer_title_with_model(Object model) {
+    return 'AI Antwoord ($model)';
+  }
+
+  @override
+  String get ai_failed_all => 'AI aanvraag is mislukt voor alle modellen.';
+
+  @override
+  String get ai_failed => 'AI aanvraag is mislukt.';
+
+  @override
+  String get login_required_title => 'Inloggen vereist';
+
+  @override
+  String get login_required_message => 'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?';
+
+  @override
+  String get goto_login => 'Naar login';
+
+  @override
+  String get search_faqs_hint => 'Zoek in veelgestelde vragen';
+
+  @override
+  String get no_faq_matches => 'Geen FAQ matches';
+
+  @override
+  String ai_questions_used(Object max, Object used) {
+    return 'AI-vragen: $used/$max gebruikt';
+  }
+
+  @override
+  String ask_ai_with_cooldown(Object seconds) {
+    return 'Vraag AI ($seconds)';
+  }
+
+  @override
+  String get contact_admin_button => 'Contact admin';
+
+  @override
+  String get my_questions => 'Mijn vragen';
+
+  @override
+  String get no_questions_sent => 'Je hebt nog geen vragen gestuurd.';
+
+  @override
+  String get message_sent => 'Bericht verstuurd';
+
+  @override
+  String get followup_title => 'Reageer op je vraag';
+
+  @override
+  String get enter_message_hint => 'Typ een bericht...';
+
+  @override
+  String get faq_default_account_q => 'Hoe maak ik een account aan?';
+
+  @override
+  String get faq_default_account_a => 'Je kunt je registreren via het profiel-icoon rechtsboven in de app. Volg de stappen om een nieuw account aan te maken.';
+
+  @override
+  String get faq_default_watchlist_q => 'Hoe voeg ik een film toe aan mijn watchlist?';
+
+  @override
+  String get faq_default_watchlist_a => 'Open de filmpagina en klik op de knop \"Opslaan\" (bookmark-icoon) om de film aan je watchlist toe te voegen.';
+
+  @override
+  String get faq_missing_info_q => 'Waarom mist een aflevering of seizoen informatie?';
+
+  @override
+  String get faq_missing_info_a => 'Onze data komt van externe providers; soms ontbreken metadata. Probeer later opnieuw of meld het via Contact admin.';
+
+  @override
+  String get faq_report_bug_q => 'Hoe kan ik een fout in de app melden?';
+
+  @override
+  String get faq_report_bug_a => 'Gebruik de knop \"Contact admin\" hieronder om een e-mail te sturen met een beschrijving en screenshots.';
+
+  @override
+  String get faq_ai_q => 'Kan ik vragen aan een AI stellen?';
+
+  @override
+  String get faq_ai_a => 'Ja — gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.';
+
+  @override
+  String get admins_no_push => 'Admins ontvangen mogelijk geen pushmeldingen';
+
+  @override
+  String ai_cooldown_wait(Object seconds) {
+    return 'Wacht nog $seconds seconden voordat je opnieuw de AI kunt gebruiken.';
+  }
+
+  @override
+  String get ai_input_hint => 'Typ hier je vraag over films of series...';
+
+  @override
+  String get user_new_message_title => 'Nieuw bericht van gebruiker';
+
+  @override
+  String get nowPlayingTitle => 'Actuele films';
+
+  @override
+  String get imdbIdUnavailable => 'IMDb ID niet beschikbaar voor deze film';
+
+  @override
+  String get cannot_load_now_playing => 'Kon actuele films niet laden.';
+
+  @override
+  String get retry => 'Opnieuw proberen';
+
+  @override
+  String get no_films_found => 'Geen films gevonden';
 }

@@ -155,6 +155,12 @@ abstract class AppLocalizations {
   /// **'Error reading users doc: {error}'**
   String users_doc_read_error(Object error);
 
+  /// No description provided for @send_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Send failed'**
+  String get send_failed;
+
   /// No description provided for @check_permissions_title.
   ///
   /// In en, this message translates to:
@@ -557,6 +563,132 @@ abstract class AppLocalizations {
   /// **'View the map to find nearby cinemas!'**
   String get tutorialMap;
 
+  /// No description provided for @food_edit_favorite.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit favorite'**
+  String get food_edit_favorite;
+
+  /// No description provided for @food_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get food_name_label;
+
+  /// No description provided for @food_only_emoji.
+  ///
+  /// In en, this message translates to:
+  /// **'Emoji only'**
+  String get food_only_emoji;
+
+  /// No description provided for @food_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get food_location;
+
+  /// No description provided for @food_diet.
+  ///
+  /// In en, this message translates to:
+  /// **'Dietary preference'**
+  String get food_diet;
+
+  /// No description provided for @food_diet_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: Availability of restaurants with specific dietary options may vary by region.'**
+  String get food_diet_info;
+
+  /// No description provided for @food_hold_to_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Long press an icon to edit'**
+  String get food_hold_to_edit;
+
+  /// No description provided for @food_quick_pizza.
+  ///
+  /// In en, this message translates to:
+  /// **'Pizza'**
+  String get food_quick_pizza;
+
+  /// No description provided for @food_quick_sushi.
+  ///
+  /// In en, this message translates to:
+  /// **'Sushi'**
+  String get food_quick_sushi;
+
+  /// No description provided for @food_quick_burger.
+  ///
+  /// In en, this message translates to:
+  /// **'Burger'**
+  String get food_quick_burger;
+
+  /// No description provided for @food_quick_kapsalon.
+  ///
+  /// In en, this message translates to:
+  /// **'Kapsalon'**
+  String get food_quick_kapsalon;
+
+  /// No description provided for @food_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for something...'**
+  String get food_search_hint;
+
+  /// No description provided for @food_search_button.
+  ///
+  /// In en, this message translates to:
+  /// **'SEARCH ON THUISBEZORGD'**
+  String get food_search_button;
+
+  /// No description provided for @filter_vegetarian.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetarian'**
+  String get filter_vegetarian;
+
+  /// No description provided for @filter_vegan.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegan'**
+  String get filter_vegan;
+
+  /// No description provided for @filter_gluten_free.
+  ///
+  /// In en, this message translates to:
+  /// **'Gluten-free'**
+  String get filter_gluten_free;
+
+  /// No description provided for @filter_halal.
+  ///
+  /// In en, this message translates to:
+  /// **'Halal'**
+  String get filter_halal;
+
+  /// No description provided for @food_what_do_you_want.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you want to eat?'**
+  String get food_what_do_you_want;
+
+  /// No description provided for @tutorialSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tutorialSkip;
+
+  /// No description provided for @ellipsis.
+  ///
+  /// In en, this message translates to:
+  /// **'...'**
+  String get ellipsis;
+
+  /// No description provided for @open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get open;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
@@ -634,6 +766,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update failed'**
   String get updateFailed;
+
+  /// No description provided for @customerService_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer Service'**
+  String get customerService_title;
+
+  /// No description provided for @contact_admin_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact admin'**
+  String get contact_admin_title;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'E-mail'**
+  String get emailLabel;
+
+  /// No description provided for @contactNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get contactNameLabel;
+
+  /// No description provided for @contactQuestionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get contactQuestionLabel;
+
+  /// No description provided for @question_validation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your question'**
+  String get question_validation;
+
+  /// No description provided for @mustBeLoggedInToSend.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be signed in to send'**
+  String get mustBeLoggedInToSend;
+
+  /// No description provided for @question_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Question sent'**
+  String get question_sent;
+
+  /// No description provided for @ai_max_reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You have used the maximum number of AI questions for today. Try again tomorrow.'**
+  String get ai_max_reached;
+
+  /// No description provided for @ask_ai_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI'**
+  String get ask_ai_title;
+
+  /// No description provided for @ai_wait.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait, this may take up to a minute'**
+  String get ai_wait;
+
+  /// No description provided for @ai_answer_title.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Answer'**
+  String get ai_answer_title;
+
+  /// No description provided for @ai_answer_title_with_model.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Answer ({model})'**
+  String ai_answer_title_with_model(Object model);
+
+  /// No description provided for @ai_failed_all.
+  ///
+  /// In en, this message translates to:
+  /// **'AI request failed for all models.'**
+  String get ai_failed_all;
+
+  /// No description provided for @ai_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'AI request failed.'**
+  String get ai_failed;
+
+  /// No description provided for @login_required_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in required'**
+  String get login_required_title;
+
+  /// No description provided for @login_required_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be signed in to do this. Go to the login screen?'**
+  String get login_required_message;
+
+  /// No description provided for @goto_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to login'**
+  String get goto_login;
+
+  /// No description provided for @search_faqs_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in frequently asked questions'**
+  String get search_faqs_hint;
+
+  /// No description provided for @no_faq_matches.
+  ///
+  /// In en, this message translates to:
+  /// **'No FAQ matches'**
+  String get no_faq_matches;
+
+  /// No description provided for @ai_questions_used.
+  ///
+  /// In en, this message translates to:
+  /// **'AI questions: {used}/{max} used'**
+  String ai_questions_used(Object max, Object used);
+
+  /// No description provided for @ask_ai_with_cooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI ({seconds})'**
+  String ask_ai_with_cooldown(Object seconds);
+
+  /// No description provided for @contact_admin_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact admin'**
+  String get contact_admin_button;
+
+  /// No description provided for @my_questions.
+  ///
+  /// In en, this message translates to:
+  /// **'My questions'**
+  String get my_questions;
+
+  /// No description provided for @no_questions_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not sent any questions yet.'**
+  String get no_questions_sent;
+
+  /// No description provided for @message_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent'**
+  String get message_sent;
+
+  /// No description provided for @followup_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Respond to your question'**
+  String get followup_title;
+
+  /// No description provided for @enter_message_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get enter_message_hint;
+
+  /// No description provided for @faq_default_account_q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I create an account?'**
+  String get faq_default_account_q;
+
+  /// No description provided for @faq_default_account_a.
+  ///
+  /// In en, this message translates to:
+  /// **'You can register via the profile icon at the top-right of the app. Follow the steps to create a new account.'**
+  String get faq_default_account_a;
+
+  /// No description provided for @faq_default_watchlist_q.
+  ///
+  /// In en, this message translates to:
+  /// **'How do I add a movie to my watchlist?'**
+  String get faq_default_watchlist_q;
+
+  /// No description provided for @faq_default_watchlist_a.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the movie page and tap the \"Save\" (bookmark icon) to add the movie to your watchlist.'**
+  String get faq_default_watchlist_a;
+
+  /// No description provided for @faq_missing_info_q.
+  ///
+  /// In en, this message translates to:
+  /// **'Why is an episode or season missing information?'**
+  String get faq_missing_info_q;
+
+  /// No description provided for @faq_missing_info_a.
+  ///
+  /// In en, this message translates to:
+  /// **'Our data comes from external providers; sometimes metadata is missing. Try again later or report it via Contact admin.'**
+  String get faq_missing_info_a;
+
+  /// No description provided for @faq_report_bug_q.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I report a bug in the app?'**
+  String get faq_report_bug_q;
+
+  /// No description provided for @faq_report_bug_a.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the \"Contact admin\" button below to send an email with a description and screenshots.'**
+  String get faq_report_bug_a;
+
+  /// No description provided for @faq_ai_q.
+  ///
+  /// In en, this message translates to:
+  /// **'Can I ask questions to an AI?'**
+  String get faq_ai_q;
+
+  /// No description provided for @faq_ai_a.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes — use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.'**
+  String get faq_ai_a;
+
+  /// No description provided for @admins_no_push.
+  ///
+  /// In en, this message translates to:
+  /// **'Admins may not receive push notifications'**
+  String get admins_no_push;
+
+  /// No description provided for @ai_cooldown_wait.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait {seconds} seconds before using the AI again.'**
+  String ai_cooldown_wait(Object seconds);
+
+  /// No description provided for @ai_input_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your question about movies or series here...'**
+  String get ai_input_hint;
+
+  /// No description provided for @user_new_message_title.
+  ///
+  /// In en, this message translates to:
+  /// **'New message from user'**
+  String get user_new_message_title;
+
+  /// Title for the Now Playing screen
+  ///
+  /// In en, this message translates to:
+  /// **'Now playing'**
+  String get nowPlayingTitle;
+
+  /// Snackbar when IMDb ID is not available
+  ///
+  /// In en, this message translates to:
+  /// **'IMDb ID not available for this movie'**
+  String get imdbIdUnavailable;
+
+  /// Error message when now playing films failed to load
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load current films.'**
+  String get cannot_load_now_playing;
+
+  /// Retry button label
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// Message when no films are found
+  ///
+  /// In en, this message translates to:
+  /// **'No films found'**
+  String get no_films_found;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

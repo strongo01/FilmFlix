@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as Math;
+import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -23,32 +24,12 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
   List<Map<String, String>> _faqs = [];
   bool _faqLoading = true;
 
-  static const List<Map<String, String>> _defaultFaqs = [
-    {
-      'q': 'Hoe maak ik een account aan?',
-      'a':
-          'Je kunt je registreren via het profiel-icoon rechtsboven in de app. Volg de stappen om een nieuw account aan te maken.',
-    },
-    {
-      'q': 'Hoe voeg ik een film toe aan mijn watchlist?',
-      'a':
-          'Open de filmpagina en klik op de knop "Opslaan" (bookmark-icoon) om de film aan je watchlist toe te voegen.',
-    },
-    {
-      'q': 'Waarom mist een aflevering of seizoen informatie?',
-      'a':
-          'Onze data komt van externe providers; soms ontbreken metadata. Probeer later opnieuw of meld het via Contact admin.',
-    },
-    {
-      'q': 'Hoe kan ik een fout in de app melden?',
-      'a':
-          'Gebruik de knop "Contact admin" hieronder om een e-mail te sturen met een beschrijving en screenshots.',
-    },
-    {
-      'q': 'Kan ik vragen aan een AI stellen?',
-      'a':
-          'Ja — gebruik de knop "Vraag AI" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.',
-    },
+  static const List<Map<String, String>> _defaultFaqKeys = [
+    {'q': 'faq_default_account_q', 'a': 'faq_default_account_a'},
+    {'q': 'faq_default_watchlist_q', 'a': 'faq_default_watchlist_a'},
+    {'q': 'faq_missing_info_q', 'a': 'faq_missing_info_a'},
+    {'q': 'faq_report_bug_q', 'a': 'faq_report_bug_a'},
+    {'q': 'faq_ai_q', 'a': 'faq_ai_a'},
   ];
 
   String _query = '';
@@ -279,14 +260,32 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       }
       if (!mounted) return;
       setState(() {
-        _faqs = loaded.isNotEmpty ? loaded : _defaultFaqs;
+        if (loaded.isNotEmpty) {
+          _faqs = loaded;
+        } else {
+          final loc = AppLocalizations.of(context)!;
+          _faqs = [
+            {'q': loc.faq_default_account_q, 'a': loc.faq_default_account_a},
+            {'q': loc.faq_default_watchlist_q, 'a': loc.faq_default_watchlist_a},
+            {'q': loc.faq_missing_info_q, 'a': loc.faq_missing_info_a},
+            {'q': loc.faq_report_bug_q, 'a': loc.faq_report_bug_a},
+            {'q': loc.faq_ai_q, 'a': loc.faq_ai_a},
+          ];
+        }
         _faqLoading = false;
       });
     } catch (e) {
       debugPrint('Failed to load FAQs from Firestore: $e');
       if (!mounted) return;
       setState(() {
-        _faqs = _defaultFaqs;
+          final loc = AppLocalizations.of(context)!;
+        _faqs = [
+          {'q': loc.faq_default_account_q, 'a': loc.faq_default_account_a},
+          {'q': loc.faq_default_watchlist_q, 'a': loc.faq_default_watchlist_a},
+          {'q': loc.faq_missing_info_q, 'a': loc.faq_missing_info_a},
+          {'q': loc.faq_report_bug_q, 'a': loc.faq_report_bug_a},
+          {'q': loc.faq_ai_q, 'a': loc.faq_ai_a},
+        ];
         _faqLoading = false;
       });
     }
@@ -364,7 +363,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Contact admin', style: TextStyle(color: Colors.white)),
+            title: Text(AppLocalizations.of(ctx)!.contact_admin_title, style: const TextStyle(color: Colors.white)),
             backgroundColor: const Color.fromRGBO(43, 77, 91, 1),
             iconTheme: const IconThemeData(color: Colors.white),
           ),
@@ -383,24 +382,24 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                         children: [
                           TextFormField(
                             controller: emailCtrl,
-                            decoration: const InputDecoration(labelText: 'E-mail'),
+                            decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.emailLabel),
                             keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 8),
                           TextFormField(
                             controller: nameCtrl,
-                            decoration: const InputDecoration(labelText: 'Naam'),
+                            decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.contactNameLabel),
                           ),
                           const SizedBox(height: 8),
                           // Make the question field multi-line but allow scrolling of the whole page
                           TextFormField(
                             controller: questionCtrl,
-                            decoration: const InputDecoration(labelText: 'Vraag'),
+                            decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.contactQuestionLabel),
                             keyboardType: TextInputType.multiline,
                             minLines: 6,
                             maxLines: null,
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty) return 'Vul je vraag in';
+                              if (v == null || v.trim().isEmpty) return AppLocalizations.of(ctx)!.question_validation;
                               return null;
                             },
                           ),
@@ -411,7 +410,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               Expanded(
                                 child: OutlinedButton(
                                   onPressed: () => Navigator.of(ctx).pop(),
-                                  child: const Text('Annuleren'),
+                                  child: Text(AppLocalizations.of(ctx)!.cancel),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -431,7 +430,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                                     } catch (_) {}
                                     if (ctx.mounted) Navigator.of(ctx).pop();
                                   },
-                                  child: const Text('Verstuur'),
+                                  child: Text(AppLocalizations.of(ctx)!.send),
                                 ),
                               ),
                             ],
@@ -457,7 +456,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Je moet ingelogd zijn om te versturen')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.mustBeLoggedInToSend)),
       );
       return;
     }
@@ -476,7 +475,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Vraag verstuurd')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.question_sent)));
 
       // Try notify admins via backend endpoint. If no admin tokens are available
       // or notifications are disabled, inform the user.
@@ -487,7 +486,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
             body: json.encode({
               'type': 'userToAdmins',
               'userId': user.uid,
-              'title': 'Nieuwe vraag',
+              'title': AppLocalizations.of(context)!.notify_title,
               'body': question,
               'data': {'conversationId': docRef.id}
             }));
@@ -495,10 +494,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           // successCount may be 0 if admins have no tokens / declined notifications
           final j = json.decode(resp.body);
           final success = j['successCount'] ?? 0;
-          if (success == 0) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
-          }
+                  if (success == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context)!.admins_no_push)));
+      }
         } else {
           debugPrint('notify userToAdmins failed: ${resp.statusCode} ${resp.body}');
         }
@@ -509,7 +508,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       debugPrint('Failed to send customer question: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.send_failed)));
     }
   }
 
@@ -538,9 +537,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           .ceil();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Wacht nog $remaining seconden voordat je opnieuw de AI kunt gebruiken.',
-          ),
+          content: Text(AppLocalizations.of(context)!.ai_cooldown_wait(remaining)),
         ),
       );
       return false;
@@ -548,10 +545,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
 
     if (count >= _maxAiPerDay) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Je hebt het maximale aantal AI-vragen voor vandaag gebruikt. Probeer morgen opnieuw.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.ai_max_reached),
         ),
       );
       return false;
@@ -588,15 +583,15 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Vraag AI'),
+          title: Text(AppLocalizations.of(ctx)!.ask_ai_title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: c,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'Typ hier je vraag over films of series...',
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(ctx)!.ai_input_hint,
                 ),
               ),
             ],
@@ -604,11 +599,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(null),
-              child: const Text('Annuleren'),
+              child: Text(AppLocalizations.of(ctx)!.cancel),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(ctx).pop(c.text.trim()),
-              child: const Text('Stuur'),
+              child: Text(AppLocalizations.of(ctx)!.send),
             ),
           ],
         );
@@ -638,15 +633,15 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const AlertDialog(
+      builder: (ctx) => AlertDialog(
         content: SizedBox(
           height: 100,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 12),
-              Text('Even geduld, dit kan tot een minuut duren'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 12),
+              Text(AppLocalizations.of(ctx)!.ai_wait),
             ],
           ),
         ),
@@ -699,10 +694,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         // start cooldown now that AI responded
         await _beginCooldown();
 
+        final loc = AppLocalizations.of(context)!;
         final isAdmin = await _checkIfAdmin();
         final titleText = isAdmin
-            ? 'AI Antwoord (${usedModel ?? ''})'
-            : 'AI Antwoord';
+          ? loc.ai_answer_title_with_model(usedModel ?? '')
+          : loc.ai_answer_title;
 
         showDialog<void>(
           context: context,
@@ -712,7 +708,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Sluiten'),
+                child: Text(AppLocalizations.of(ctx)!.close),
               ),
             ],
           ),
@@ -727,12 +723,12 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Fout'),
-            content: const Text('AI aanvraag is mislukt voor alle modellen.'),
+            title: Text(AppLocalizations.of(ctx)!.fetch_error_title),
+            content: Text(AppLocalizations.of(ctx)!.ai_failed_all),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Sluiten'),
+                child: Text(AppLocalizations.of(ctx)!.close),
               ),
             ],
           ),
@@ -749,12 +745,12 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Fout'),
-          content: const Text('AI aanvraag is mislukt.'),
+          title: Text(AppLocalizations.of(ctx)!.fetch_error_title),
+          content: Text(AppLocalizations.of(ctx)!.ai_failed),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Sluiten'),
+              child: Text(AppLocalizations.of(ctx)!.close),
             ),
           ],
         ),
@@ -772,18 +768,18 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Inloggen vereist'),
-          content: const Text(
-            'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?',
+          title: Text(AppLocalizations.of(ctx)!.login_required_title),
+          content: Text(
+            AppLocalizations.of(ctx)!.login_required_message,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Annuleren'),
+              child: Text(AppLocalizations.of(ctx)!.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Naar login'),
+              child: Text(AppLocalizations.of(ctx)!.goto_login),
             ),
           ],
         );
@@ -893,7 +889,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       },
       child: Scaffold(
       appBar: AppBar(
-        title: const Text('Klantenservice'),
+        title: Text(AppLocalizations.of(context)!.customerService_title),
         actions: [
           // envelope with unread badge (clear red counter)
           Stack(
@@ -902,7 +898,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
               IconButton(
                 icon: const Icon(Icons.mark_email_unread),
                 onPressed: () => _openCustomerQuestionsDialog(),
-                tooltip: 'Mijn vragen',
+                tooltip: AppLocalizations.of(context)!.my_questions,
               ),
               if (_customerRepliesUnread > 0)
                 Positioned(
@@ -950,9 +946,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           children: [
             TextField(
               controller: _searchController,
-              decoration: InputDecoration(
+                decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Zoek in veelgestelde vragen',
+                hintText: AppLocalizations.of(context)!.search_faqs_hint,
                 suffixIcon: _query.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -974,8 +970,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                   ? const Center(child: CircularProgressIndicator())
                   : (_faqs.isEmpty
                         ? Center(
-                            child: Text(
-                              'Geen FAQ matches',
+                              child: Text(
+                              AppLocalizations.of(context)!.no_faq_matches,
                               style: TextStyle(
                                 color: isDark ? Colors.white70 : Colors.black54,
                               ),
@@ -1010,7 +1006,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'AI-vragen: $_aiUsedToday/$_maxAiPerDay gebruikt',
+                  AppLocalizations.of(context)!.ai_questions_used(_maxAiPerDay, _aiUsedToday),
                   style: TextStyle(
                     color: isDark ? Colors.white70 : Colors.black87,
                     fontSize: 13,
@@ -1026,8 +1022,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.smart_toy),
                     label: _aiCooldownRemaining > 0
-                        ? Text('Vraag AI ($_aiCooldownRemaining)')
-                        : const Text('Vraag AI'),
+                        ? Text(AppLocalizations.of(context)!.ask_ai_with_cooldown(_aiCooldownRemaining))
+                        : Text(AppLocalizations.of(context)!.ask_ai_title),
                     onPressed: _aiCooldownRemaining > 0 ? null : _askAiDialog,
                   ),
                 ),
@@ -1035,7 +1031,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.contact_mail),
-                    label: const Text('Contact admin'),
+                    label: Text(AppLocalizations.of(context)!.contact_admin_button),
                     onPressed: _openMailToAdmin,
                   ),
                 ),
@@ -1061,11 +1057,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Mijn vragen'),
+        title: Text(AppLocalizations.of(ctx)!.my_questions),
         content: SizedBox(
           width: double.maxFinite,
           child: _customerQuestions.isEmpty
-              ? const Text('Je hebt nog geen vragen gestuurd.')
+              ? Text(AppLocalizations.of(ctx)!.no_questions_sent)
               : ListView.separated(
                   shrinkWrap: true,
                   itemCount: _customerQuestions.length,
@@ -1232,7 +1228,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               ),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: const Text('Open'),
+                            child: Text(AppLocalizations.of(c)!.open),
                             onPressed: () {
                               Navigator.of(ctx).pop();
                               _openChatDialog(d.id);
@@ -1251,7 +1247,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Sluiten'),
+            child: Text(AppLocalizations.of(ctx)!.close),
           ),
         ],
       ),
@@ -1315,7 +1311,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final answerText = (data['answer'] ?? '').toString();
     final adminReplies = (data['adminReplies'] as List?) ?? [];
     final userReplies = (data['userReplies'] as List?) ?? [];
-    final userName = (data['name'] ?? 'Gebruiker').toString();
+    final userName = (data['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
 
     final TextEditingController replyCtrl = TextEditingController();
     final ScrollController scrollCtrl = ScrollController();
@@ -1334,7 +1330,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         'text': answerText,
         'isAdmin': true,
         'ts': data['answerAt'] ?? data['updatedAt'],
-        'name': 'Admin', // older answers may not have a name
+        'name': AppLocalizations.of(context)!.admin_title, // older answers may not have a name
       });
     for (final ar in adminReplies) {
       if (ar is Map) {
@@ -1357,10 +1353,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           }
         }
         final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
-        final adminName = (ar['adminName'] ?? 'Admin').toString();
+        final adminName = (ar['adminName'] ?? AppLocalizations.of(context)!.admin_title).toString();
         messages.add({'text': text, 'isAdmin': true, 'ts': ts, 'name': adminName});
       } else {
-        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': 'Admin'});
+        messages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': AppLocalizations.of(context)!.admin_title});
       }
     }
     for (final ur in userReplies) {
@@ -1418,11 +1414,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         final aText = (d['answer'] ?? '').toString();
         final aReplies = (d['adminReplies'] as List?) ?? [];
         final uReplies = (d['userReplies'] as List?) ?? [];
-        final uName = (d['name'] ?? 'Gebruiker').toString();
+        final uName = (d['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
 
         final List<Map<String, dynamic>> newMessages = [];
         newMessages.add({'text': qText, 'isAdmin': false, 'ts': d['createdAt'], 'name': uName});
-        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt'], 'name': 'Admin'});
+        if (aText.isNotEmpty) newMessages.add({'text': aText, 'isAdmin': true, 'ts': d['answerAt'] ?? d['updatedAt'], 'name': AppLocalizations.of(context)!.admin_title});
         for (final ar in aReplies) {
           if (ar is Map) {
             String text;
@@ -1434,10 +1430,10 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
               text = firstString?.toString() ?? ar.toString();
             }
             final ts = ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'];
-            final adminName = (ar['adminName'] ?? 'Admin').toString();
+            final adminName = (ar['adminName'] ?? AppLocalizations.of(context)!.admin_title).toString();
             newMessages.add({'text': text, 'isAdmin': true, 'ts': ts, 'name': adminName});
           } else {
-            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': 'Admin'});
+            newMessages.add({'text': ar.toString(), 'isAdmin': true, 'ts': null, 'name': AppLocalizations.of(context)!.admin_title});
           }
         }
         for (final ur in uReplies) {
@@ -1480,13 +1476,13 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           setStateDialog = setState;
           return Scaffold(
             appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.of(ctx2).pop(),
-              ),
-              title: Text(
-                'Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}',
-              ),
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.of(ctx2).pop(),
+                  ),
+                  title: Text(
+                    AppLocalizations.of(ctx2)!.chat_page_title_prefix(questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText),
+                  ),
             ),
             body: Padding(
               padding: const EdgeInsets.all(12),
@@ -1509,7 +1505,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               crossAxisAlignment: isAdmin ? CrossAxisAlignment.start : CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  m['name'] ?? (isAdmin ? 'Admin' : 'Gebruiker'),
+                                  m['name'] ?? (isAdmin ? AppLocalizations.of(context)!.admin_title : AppLocalizations.of(context)!.user_label_default),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -1524,9 +1520,9 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                                       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.66),
                                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                                       decoration: BoxDecoration(
-                                        color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
+                                                  color: isAdmin ? Colors.grey.shade200 : Theme.of(context).colorScheme.primary,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                ),
                                       child: Text(
                                         txt,
                                         style: TextStyle(
@@ -1548,7 +1544,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                         Expanded(
                           child: TextField(
                             controller: replyCtrl,
-                            decoration: const InputDecoration(hintText: 'Typ een bericht...'),
+                            decoration: InputDecoration(hintText: AppLocalizations.of(ctx2)!.enter_message_hint),
                             maxLines: 3,
                           ),
                         ),
@@ -1575,7 +1571,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                               if (scrollCtrl.hasClients) scrollCtrl.jumpTo(scrollCtrl.position.maxScrollExtent);
                             } catch (e) {
                               debugPrint('Failed to send chat reply: $e');
-                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.send_failed)));
                             }
                                 // Notify admins about the new user reply
                                 try {
@@ -1585,7 +1581,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                                       body: json.encode({
                                         'type': 'userToAdmins',
                                         'userId': FirebaseAuth.instance.currentUser?.uid,
-                                        'title': 'Nieuw bericht van gebruiker',
+                                        'title': AppLocalizations.of(context)!.user_new_message_title,
                                         'body': text,
                                         'data': {'conversationId': docId}
                                       }));
@@ -1593,14 +1589,14 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                                     final j = json.decode(resp.body);
                                     final success = j['successCount'] ?? 0;
                                     if (success == 0 && mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.admins_no_push)));
                                     }
                                   }
                                 } catch (e) {
                                   debugPrint('Failed to call notify (user reply): $e');
                                 }
                           },
-                          child: const Text('Verstuur'),
+                          child: Text(AppLocalizations.of(ctx2)!.send),
                         ),
                       ],
                     ),
@@ -1621,7 +1617,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     final res = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reageer op je vraag'),
+        title: Text(AppLocalizations.of(ctx)!.followup_title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1633,11 +1629,11 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuleren'),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Verstuur'),
+            child: Text(AppLocalizations.of(ctx)!.send),
           ),
         ],
       ),
@@ -1657,7 +1653,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Bericht verstuurd')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.message_sent)));
         // Notify admins about this follow-up message
         try {
           final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
@@ -1673,8 +1669,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           if (resp.statusCode == 200) {
             final j = json.decode(resp.body);
             final success = j['successCount'] ?? 0;
-            if (success == 0 && mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Admins ontvangen mogelijk geen pushmeldingen')));
+              if (success == 0 && mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.admins_no_push)));
             }
           }
         } catch (e) {
@@ -1684,7 +1680,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
       debugPrint('Failed to send followup: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Versturen mislukt')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.send_failed)));
     }
   }
 }

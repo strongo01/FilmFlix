@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cinetrackr/views/movie_detail_screen.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
 
 class FilmNowItem {
   final String tmdbId;
@@ -70,7 +71,8 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
       );
       await _ensureEnvLoaded();
       final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200)
         throw Exception('Upstream status ${resp.statusCode}');
@@ -156,7 +158,8 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
 
       await _ensureEnvLoaded();
       final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return;
 
@@ -185,11 +188,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
         }
         final bytes = snap.data;
         if (bytes != null && bytes.isNotEmpty) {
-          return Image.memory(
-            bytes,
-            fit: fit,
-            gaplessPlayback: true,
-          );
+          return Image.memory(bytes, fit: fit, gaplessPlayback: true);
         }
         return Container(color: Colors.grey[300]);
       },
@@ -222,12 +221,12 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
     if (_imageCache.containsKey(url)) return _imageCache[url];
     await _ensureEnvLoaded();
     try {
-      final uri = Uri.parse(baseApi).replace(queryParameters: {
-        'type': 'image-proxy',
-        'imageUrl': url,
-      });
+      final uri = Uri.parse(
+        baseApi,
+      ).replace(queryParameters: {'type': 'image-proxy', 'imageUrl': url});
       final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode == 200) {
         _imageCache[url] = resp.bodyBytes;
@@ -247,7 +246,8 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
       ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': tmdbId});
       await _ensureEnvLoaded();
       final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] = _xAppApiKey!;
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) return null;
 
@@ -312,8 +312,11 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
     } else {
       // fallback: show message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('IMDb ID niet beschikbaar voor deze film'),
+        SnackBar(
+          content: Text(
+            L10n.of(context)?.imdbIdUnavailable ??
+                'IMDb ID niet beschikbaar voor deze film',
+          ),
         ),
       );
     }
@@ -330,7 +333,7 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
       backgroundColor: isDark ? Colors.black : Colors.white,
       appBar: AppBar(
         title: Text(
-          'Actuele films',
+          L10n.of(context)?.nowPlayingTitle ?? 'Actuele films',
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         ),
         backgroundColor: isDark ? Colors.black : Colors.white,
@@ -345,17 +348,26 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Kon actuele films niet laden.'),
+                    Text(
+                      L10n.of(context)?.cannot_load_now_playing ??
+                          'Kon actuele films niet laden.',
+                    ),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: _loadNowPlaying,
-                      child: const Text('Opnieuw proberen'),
+                      child: Text(
+                        L10n.of(context)?.retry ?? 'Opnieuw proberen',
+                      ),
                     ),
                   ],
                 ),
               )
             : films.isEmpty
-            ? const Center(child: Text('Geen films gevonden'))
+            ? Center(
+                child: Text(
+                  L10n.of(context)?.no_films_found ?? 'Geen films gevonden',
+                ),
+              )
             : SingleChildScrollView(
                 child: Column(
                   children: [
@@ -454,7 +466,8 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         scrollDirection: Axis.horizontal,
                         itemCount: films.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12), // Was 8
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: 12), // Was 8
                         itemBuilder: (context, i) {
                           final f = films[i];
                           return GestureDetector(
@@ -472,7 +485,10 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                               child: SizedBox(
                                 width: 120, // Was 78
                                 child: f.poster != null
-                                    ? _proxiedImage(f.poster!, fit: BoxFit.cover)
+                                    ? _proxiedImage(
+                                        f.poster!,
+                                        fit: BoxFit.cover,
+                                      )
                                     : FutureBuilder<String?>(
                                         future: _fetchTmdbPoster(f.tmdbId),
                                         builder: (ctx, snap) {
@@ -483,7 +499,10 @@ class _FilmNowScreenState extends State<FilmNowScreen> {
                                             );
                                           final url = snap.data;
                                           if (url != null && url.isNotEmpty) {
-                                            return _proxiedImage(url, fit: BoxFit.cover);
+                                            return _proxiedImage(
+                                              url,
+                                              fit: BoxFit.cover,
+                                            );
                                           }
                                           return Container(
                                             color: Colors.grey[300],

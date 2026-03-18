@@ -37,6 +37,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    // Default to device locale unless a saved preference exists
+    try {
+      final deviceLang = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      _languageCode = deviceLang;
+    } catch (_) {
+      _languageCode = 'nl';
+    }
     _currentUser = FirebaseAuth.instance.currentUser;
     _displayName = _currentUser?.displayName;
     _email = _currentUser?.email;
@@ -76,7 +83,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     // Load saved language preference for display
     SharedPreferences.getInstance().then((prefs) {
-      final lc = prefs.getString('app_locale') ?? 'nl';
+      final lc = prefs.getString('app_locale') ?? _languageCode;
       if (mounted) setState(() => _languageCode = lc);
     }).catchError((e) {
       debugPrint('Failed to load saved language: $e');

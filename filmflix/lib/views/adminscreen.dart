@@ -7,7 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -63,12 +64,12 @@ class _AdminScreenState extends State<AdminScreen> {
           .get();
       final data = doc.data();
       if (data != null && data['role'] != null) {
-        roleText = AppLocalizations.of(context)!.usersDocRole(user.uid, data['role'].toString());
+        roleText = AppLocalizations.of(context)!.users_doc_role(user.uid, data['role'].toString());
       } else {
-        roleText = AppLocalizations.of(context)!.usersDocNoRole(user.uid);
+        roleText = AppLocalizations.of(context)!.users_doc_no_role(user.uid);
       }
     } catch (e) {
-      roleText = AppLocalizations.of(context)!.usersDocReadError(e.toString());
+      roleText = AppLocalizations.of(context)!.users_doc_read_error(e.toString());
     }
 
     await showDialog<void>(
@@ -86,7 +87,7 @@ class _AdminScreenState extends State<AdminScreen> {
               const SizedBox(height: 6),
               Text(AppLocalizations.of(ctx)!.custom_claims_hint),
               const SizedBox(height: 6),
-              Text(AppLocalizations.of(ctx)!.rules_temp_change),
+              Text(AppLocalizations.of(ctx)!.rules_temp_change(user.uid)),
               const SizedBox(height: 12),
               Text(AppLocalizations.of(ctx)!.current_users_doc),
               const SizedBox(height: 6),
@@ -143,15 +144,15 @@ class _AdminScreenState extends State<AdminScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AppLocalizations.of(ctx)!.uidLabel(uid)),
+              Text(AppLocalizations.of(ctx)!.uid_label(uid)),
               const SizedBox(height: 8),
-              Text(AppLocalizations.of(ctx)!.idtokenClaimsLabel(claims?.toString() ?? '<none>')),
+              Text(AppLocalizations.of(ctx)!.idtoken_claims_label(claims?.toString() ?? '<none>')),
               if (idTokenErr.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(AppLocalizations.of(ctx)!.idtokenErrorLabel(idTokenErr)),
+                Text(AppLocalizations.of(ctx)!.idtoken_error_label(idTokenErr)),
               ],
               const SizedBox(height: 8),
-              Text(AppLocalizations.of(ctx)!.usersDocLabel(usersDoc?.toString() ?? '<not found>')),
+              Text(AppLocalizations.of(ctx)!.users_doc_label(usersDoc?.toString() ?? '<not found>')),
             ],
           ),
         ),
@@ -536,7 +537,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         final userName = (data['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
                         final adminNames = (data['adminNames'] as List?) ?? [];
                         final adminText = adminNames.isNotEmpty
-                          ? AppLocalizations.of(context)!.adminsLabel(adminNames.map((e) => e.toString()).join(', '))
+                          ? AppLocalizations.of(context)!.admins_label(adminNames.map((e) => e.toString()).join(', '))
                           : '';
                         return adminText.isNotEmpty
                             ? Text(
@@ -569,7 +570,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         onPressed: () => _openAdminChat(d.id),
-                        child: const Text('Open'),
+                        child: Text(AppLocalizations.of(context)!.open),
                       ),
                     ],
                   ),
@@ -640,7 +641,7 @@ class _AdminScreenState extends State<AdminScreen> {
           'text': ar?.toString() ?? '',
           'isAdmin': true,
           'ts': null,
-          'name': 'Admin',
+          'name': AppLocalizations.of(context)!.admin_title,
         });
       }
     }
@@ -716,7 +717,7 @@ class _AdminScreenState extends State<AdminScreen> {
               final textVal =
                   (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
                   ar.toString();
-              final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin')
+              final adminName = (ar['adminName'] ?? ar['name'] ?? AppLocalizations.of(context)!.admin_title)
                   .toString();
               newMessages.add({
                 'text': textVal,
@@ -729,7 +730,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'text': ar?.toString() ?? '',
                 'isAdmin': true,
                 'ts': null,
-                'name': 'Admin',
+                'name': AppLocalizations.of(context)!.admin_title,
               });
             }
           }
@@ -791,8 +792,8 @@ class _AdminScreenState extends State<AdminScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(
-                AppLocalizations.of(context)!.chatPageTitlePrefix(
-                  questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText,
+                AppLocalizations.of(context)!.chat_page_title_prefix(
+                  questionText.length > 40 ? questionText.substring(0, 40) + AppLocalizations.of(context)!.ellipsis : questionText,
                 ),
               ),
             ),
@@ -898,7 +899,7 @@ class _AdminScreenState extends State<AdminScreen> {
                               onPressed: () async {
                                 final text = replyCtrl.text.trim();
                                 if (text.isEmpty) return;
-                                String adminName = 'Admin';
+                                String adminName = AppLocalizations.of(context)!.admin_title;
                                 String? adminId =
                                     FirebaseAuth.instance.currentUser?.uid;
                                 try {
@@ -914,14 +915,14 @@ class _AdminScreenState extends State<AdminScreen> {
                                     adminName =
                                         (udata != null && udata['name'] != null)
                                         ? udata['name'].toString()
-                                        : (currentUser?.displayName ?? 'Admin');
+                                        : (currentUser?.displayName ?? AppLocalizations.of(context)!.admin_title);
                                   } else {
                                     adminName =
                                         FirebaseAuth
                                             .instance
                                             .currentUser
                                             ?.displayName ??
-                                        'Admin';
+                                        AppLocalizations.of(context)!.admin_title;
                                   }
                                 } catch (_) {}
 

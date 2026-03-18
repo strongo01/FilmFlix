@@ -45,6 +45,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get send_failed => 'Send failed';
+
+  @override
   String get check_permissions_title => 'Check permissions';
 
   @override
@@ -270,6 +273,69 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialMap => 'View the map to find nearby cinemas!';
 
   @override
+  String get food_edit_favorite => 'Edit favorite';
+
+  @override
+  String get food_name_label => 'Name';
+
+  @override
+  String get food_only_emoji => 'Emoji only';
+
+  @override
+  String get food_location => 'Location';
+
+  @override
+  String get food_diet => 'Dietary preference';
+
+  @override
+  String get food_diet_info => 'Note: Availability of restaurants with specific dietary options may vary by region.';
+
+  @override
+  String get food_hold_to_edit => 'Long press an icon to edit';
+
+  @override
+  String get food_quick_pizza => 'Pizza';
+
+  @override
+  String get food_quick_sushi => 'Sushi';
+
+  @override
+  String get food_quick_burger => 'Burger';
+
+  @override
+  String get food_quick_kapsalon => 'Kapsalon';
+
+  @override
+  String get food_search_hint => 'Search for something...';
+
+  @override
+  String get food_search_button => 'SEARCH ON THUISBEZORGD';
+
+  @override
+  String get filter_vegetarian => 'Vegetarian';
+
+  @override
+  String get filter_vegan => 'Vegan';
+
+  @override
+  String get filter_gluten_free => 'Gluten-free';
+
+  @override
+  String get filter_halal => 'Halal';
+
+  @override
+  String get food_what_do_you_want => 'What do you want to eat?';
+
+  @override
+  String get tutorialSkip => 'Skip';
+
+  @override
+  String get ellipsis => '...';
+
+  @override
+  String get open => 'Open';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -307,4 +373,153 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateFailed => 'Update failed';
+
+  @override
+  String get customerService_title => 'Customer Service';
+
+  @override
+  String get contact_admin_title => 'Contact admin';
+
+  @override
+  String get emailLabel => 'E-mail';
+
+  @override
+  String get contactNameLabel => 'Name';
+
+  @override
+  String get contactQuestionLabel => 'Question';
+
+  @override
+  String get question_validation => 'Enter your question';
+
+  @override
+  String get mustBeLoggedInToSend => 'You must be signed in to send';
+
+  @override
+  String get question_sent => 'Question sent';
+
+  @override
+  String get ai_max_reached => 'You have used the maximum number of AI questions for today. Try again tomorrow.';
+
+  @override
+  String get ask_ai_title => 'Ask AI';
+
+  @override
+  String get ai_wait => 'Please wait, this may take up to a minute';
+
+  @override
+  String get ai_answer_title => 'AI Answer';
+
+  @override
+  String ai_answer_title_with_model(Object model) {
+    return 'AI Answer ($model)';
+  }
+
+  @override
+  String get ai_failed_all => 'AI request failed for all models.';
+
+  @override
+  String get ai_failed => 'AI request failed.';
+
+  @override
+  String get login_required_title => 'Sign-in required';
+
+  @override
+  String get login_required_message => 'You must be signed in to do this. Go to the login screen?';
+
+  @override
+  String get goto_login => 'Go to login';
+
+  @override
+  String get search_faqs_hint => 'Search in frequently asked questions';
+
+  @override
+  String get no_faq_matches => 'No FAQ matches';
+
+  @override
+  String ai_questions_used(Object max, Object used) {
+    return 'AI questions: $used/$max used';
+  }
+
+  @override
+  String ask_ai_with_cooldown(Object seconds) {
+    return 'Ask AI ($seconds)';
+  }
+
+  @override
+  String get contact_admin_button => 'Contact admin';
+
+  @override
+  String get my_questions => 'My questions';
+
+  @override
+  String get no_questions_sent => 'You have not sent any questions yet.';
+
+  @override
+  String get message_sent => 'Message sent';
+
+  @override
+  String get followup_title => 'Respond to your question';
+
+  @override
+  String get enter_message_hint => 'Type a message...';
+
+  @override
+  String get faq_default_account_q => 'How do I create an account?';
+
+  @override
+  String get faq_default_account_a => 'You can register via the profile icon at the top-right of the app. Follow the steps to create a new account.';
+
+  @override
+  String get faq_default_watchlist_q => 'How do I add a movie to my watchlist?';
+
+  @override
+  String get faq_default_watchlist_a => 'Open the movie page and tap the \"Save\" (bookmark icon) to add the movie to your watchlist.';
+
+  @override
+  String get faq_missing_info_q => 'Why is an episode or season missing information?';
+
+  @override
+  String get faq_missing_info_a => 'Our data comes from external providers; sometimes metadata is missing. Try again later or report it via Contact admin.';
+
+  @override
+  String get faq_report_bug_q => 'How can I report a bug in the app?';
+
+  @override
+  String get faq_report_bug_a => 'Use the \"Contact admin\" button below to send an email with a description and screenshots.';
+
+  @override
+  String get faq_ai_q => 'Can I ask questions to an AI?';
+
+  @override
+  String get faq_ai_a => 'Yes — use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.';
+
+  @override
+  String get admins_no_push => 'Admins may not receive push notifications';
+
+  @override
+  String ai_cooldown_wait(Object seconds) {
+    return 'Wait $seconds seconds before using the AI again.';
+  }
+
+  @override
+  String get ai_input_hint => 'Type your question about movies or series here...';
+
+  @override
+  String get user_new_message_title => 'New message from user';
+
+  @override
+  String get nowPlayingTitle => 'Now playing';
+
+  @override
+  String get imdbIdUnavailable => 'IMDb ID not available for this movie';
+
+  @override
+  String get cannot_load_now_playing => 'Could not load current films.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get no_films_found => 'No films found';
 }
