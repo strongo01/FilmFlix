@@ -6,6 +6,7 @@ import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/services.dart' show rootBundle;
@@ -78,30 +79,57 @@ class _SearchScreenState extends State<SearchScreen> {
     _fetchPopular();
   }
 
-  // Available genres for filter
-  static const List<Map<String, String>> _availableGenres = [
-    {"id": "action", "name": "Action"},
-    {"id": "adventure", "name": "Adventure"},
-    {"id": "animation", "name": "Animation"},
-    {"id": "comedy", "name": "Comedy"},
-    {"id": "crime", "name": "Crime"},
-    {"id": "documentary", "name": "Documentary"},
-    {"id": "drama", "name": "Drama"},
-    {"id": "family", "name": "Family"},
-    {"id": "fantasy", "name": "Fantasy"},
-    {"id": "history", "name": "History"},
-    {"id": "horror", "name": "Horror"},
-    {"id": "music", "name": "Music"},
-    {"id": "mystery", "name": "Mystery"},
-    {"id": "news", "name": "News"},
-    {"id": "reality", "name": "Reality"},
-    {"id": "romance", "name": "Romance"},
-    {"id": "scifi", "name": "Science Fiction"},
-    {"id": "talk", "name": "Talk Show"},
-    {"id": "thriller", "name": "Thriller"},
-    {"id": "war", "name": "War"},
-    {"id": "western", "name": "Western"},
+  // Available genres for filter (IDs only). Names are loaded from localization at runtime.
+  static const List<String> _availableGenreIds = [
+    'action',
+    'adventure',
+    'animation',
+    'comedy',
+    'crime',
+    'documentary',
+    'drama',
+    'family',
+    'fantasy',
+    'history',
+    'horror',
+    'music',
+    'mystery',
+    'news',
+    'reality',
+    'romance',
+    'scifi',
+    'talk',
+    'thriller',
+    'war',
+    'western',
   ];
+
+  Map<String, String> _localizedGenres(BuildContext ctx) {
+    final loc = AppLocalizations.of(ctx)!;
+    return {
+      'action': loc.genre_action,
+      'adventure': loc.genre_adventure,
+      'animation': loc.genre_animation,
+      'comedy': loc.genre_comedy,
+      'crime': loc.genre_crime,
+      'documentary': loc.genre_documentary,
+      'drama': loc.genre_drama,
+      'family': loc.genre_family,
+      'fantasy': loc.genre_fantasy,
+      'history': loc.genre_history,
+      'horror': loc.genre_horror,
+      'music': loc.genre_music,
+      'mystery': loc.genre_mystery,
+      'news': loc.genre_news,
+      'reality': loc.genre_reality,
+      'romance': loc.genre_romance,
+      'scifi': loc.genre_scifi,
+      'talk': loc.genre_talk,
+      'thriller': loc.genre_thriller,
+      'war': loc.genre_war,
+      'western': loc.genre_western,
+    };
+  }
 
   Future<void> _openFilterModal(BuildContext context) async {
     // local filter state
@@ -154,7 +182,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Filters verfijnen',
+                          AppLocalizations.of(ctx)!.filter_refine_title,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -171,7 +199,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     const SizedBox(height: 10),
                     
                     Text(
-                      'TYPE',
+                      AppLocalizations.of(ctx)!.filter_type_label,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -184,7 +212,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       children: [
                         Expanded(
                           child: ChoiceChip(
-                            label: const Center(child: Text('Alles')),
+                            label: Center(child: Text(AppLocalizations.of(ctx)!.filter_all)),
                             selected: showType == '',
                             onSelected: (v) => setModalState(() => showType = ''),
                           ),
@@ -192,7 +220,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ChoiceChip(
-                            label: const Center(child: Text('Films')),
+                            label: Center(child: Text(AppLocalizations.of(ctx)!.filter_movies)),
                             selected: showType == 'movie',
                             onSelected: (v) => setModalState(() => showType = 'movie'),
                           ),
@@ -200,7 +228,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: ChoiceChip(
-                            label: const Center(child: Text('Series')),
+                            label: Center(child: Text(AppLocalizations.of(ctx)!.filter_series)),
                             selected: showType == 'series',
                             onSelected: (v) => setModalState(() => showType = 'series'),
                           ),
@@ -210,7 +238,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     
                     const SizedBox(height: 20),
                     Text(
-                      'ZOEKWOORD',
+                      AppLocalizations.of(ctx)!.filter_keyword_label,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -220,16 +248,16 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     TextField(
                       controller: keywordCtrl,
-                      decoration: const InputDecoration(
-                        hintText: 'Bijv. Batman, Marvel...',
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(ctx)!.filter_keyword_hint,
+                        prefixIcon: const Icon(Icons.search),
                       ),
                       onChanged: (v) => keyword = v,
                     ),
 
                     const SizedBox(height: 20),
                     Text(
-                      'GENRES',
+                      AppLocalizations.of(ctx)!.filter_genres_label,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -241,11 +269,12 @@ class _SearchScreenState extends State<SearchScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 0,
-                      children: _availableGenres.map((g) {
-                        final id = g['id']!;
+                      children: _availableGenreIds.map((id) {
+                        final names = _localizedGenres(ctx);
                         final sel = selectedGenres.contains(id);
+                        final label = names[id] ?? id;
                         return FilterChip(
-                          label: Text(g['name']!, style: const TextStyle(fontSize: 13)),
+                          label: Text(label, style: const TextStyle(fontSize: 13)),
                           selected: sel,
                           selectedColor: Colors.blueAccent.withOpacity(0.2),
                           onSelected: (v) => setModalState(
@@ -263,7 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'JAAR (VAN)',
+                                AppLocalizations.of(ctx)!.filter_year_from_label,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -286,7 +315,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'JAAR (TOT)',
+                                AppLocalizations.of(ctx)!.filter_year_to_label,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -308,7 +337,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
                     const SizedBox(height: 20),
                     Text(
-                      'MINIMALE RATING (0-100)',
+                      AppLocalizations.of(ctx)!.filter_min_rating_label,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -398,7 +427,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             Navigator.pop(ctx);
                           }
                         },
-                        child: const Text('Filters Toepassen', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: Text(AppLocalizations.of(ctx)!.apply_filters, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -406,7 +435,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       child: TextButton(
                         onPressed: () => Navigator.pop(ctx),
                         child: Text(
-                          'Annuleren',
+                          AppLocalizations.of(ctx)!.cancel,
                           style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                         ),
                       ),
@@ -655,7 +684,7 @@ class _SearchScreenState extends State<SearchScreen> {
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kon filmdetails niet ophalen')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.tmdb_movie_fetch_failed)),
         );
         return;
       }
@@ -669,13 +698,13 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Geen IMDb ID gevonden voor deze film')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.no_imdb_for_movie)),
         );
       }
     } catch (e) {
       debugPrint('Failed openTmdbMovieDetail: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fout bij ophalen filmdetails')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.tmdb_movie_fetch_error)),
       );
     }
   }
@@ -697,7 +726,7 @@ class _SearchScreenState extends State<SearchScreen> {
       final resp = await http.get(uri, headers: headers);
       if (resp.statusCode != 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isTv ? 'Kon seriedetails niet ophalen' : 'Kon filmdetails niet ophalen')),
+          SnackBar(content: Text(isTv ? AppLocalizations.of(context)!.tmdb_series_fetch_failed : AppLocalizations.of(context)!.tmdb_movie_fetch_failed)),
         );
         return;
       }
@@ -720,13 +749,13 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isTv ? 'Geen IMDb ID gevonden voor deze serie' : 'Geen IMDb ID gevonden voor deze film')),
+          SnackBar(content: Text(isTv ? AppLocalizations.of(context)!.no_imdb_for_series : AppLocalizations.of(context)!.no_imdb_for_movie)),
         );
       }
     } catch (e) {
       debugPrint('Failed openTmdbDetail: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isTv ? 'Fout bij ophalen seriedetails' : 'Fout bij ophalen filmdetails')),
+        SnackBar(content: Text(isTv ? AppLocalizations.of(context)!.tmdb_series_fetch_error : AppLocalizations.of(context)!.tmdb_movie_fetch_error)),
       );
     }
   }
@@ -875,7 +904,7 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: isDark ? Colors.black : Colors.white,
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
         title: Text(
-          "Search",
+          AppLocalizations.of(context)!.navSearch,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         ),
         elevation: 0.5,
@@ -890,7 +919,7 @@ class _SearchScreenState extends State<SearchScreen> {
               onSubmitted: (_) => search(),
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
-                hintText: "Zoek serie/film...",
+                hintText: AppLocalizations.of(context)!.search_hint,
                 hintStyle: TextStyle(
                   color: isDark ? Colors.white54 : Colors.black45,
                 ),
@@ -900,7 +929,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         Icons.clear,
                         color: isDark ? Colors.white54 : Colors.black54,
                       ),
-                      tooltip: 'Wissen',
+                      tooltip: AppLocalizations.of(context)!.clear_tooltip,
                       onPressed: () {
                         setState(() {
                           controller.clear();
@@ -921,7 +950,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         Icons.filter_list,
                         color: isDark ? Colors.white54 : Colors.black54,
                       ),
-                      tooltip: 'Filter',
+                      tooltip: AppLocalizations.of(context)!.filter_tooltip,
                       onPressed: () => _openFilterModal(context),
                     ),
                     IconButton(
@@ -1013,9 +1042,9 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.grey[800],
                             ),
-                            child: const Text(
-                              'Laad meer resultaten',
-                              style: TextStyle(color: Colors.white),
+                            child: Text(
+                              AppLocalizations.of(context)!.load_more_results,
+                              style: const TextStyle(color: Colors.white),
                             ),
                           ),
                     ),
@@ -1030,9 +1059,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Column(
                   children: [
                     TabBar(
-                      tabs: const [
-                        Tab(text: 'Best Rated'),
-                        Tab(text: 'Populair'),
+                      tabs: [
+                        Tab(text: AppLocalizations.of(context)!.best_rated),
+                        Tab(text: AppLocalizations.of(context)!.popular),
                       ],
                       labelColor: isDark ? Colors.white : Colors.black87,
                       indicatorColor: isDark ? Colors.white : Colors.black87,
