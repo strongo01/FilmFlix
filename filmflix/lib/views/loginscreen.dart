@@ -13,6 +13,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -22,10 +23,7 @@ import 'package:crypto/crypto.dart';
 class LoginScreen extends StatefulWidget {
   final bool returnAfterLogin;
 
-  const LoginScreen({
-    super.key,
-    this.returnAfterLogin = false,
-  });
+  const LoginScreen({super.key, this.returnAfterLogin = false});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -69,6 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final loc = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
@@ -90,7 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
           // After reload, user is a new object from the SDK for safety
           final updatedUser = auth.currentUser;
           if (updatedUser != null) {
-            final usersRef = FirebaseFirestore.instance.collection('users').doc(updatedUser.uid);
+            final usersRef = FirebaseFirestore.instance
+                .collection('users')
+                .doc(updatedUser.uid);
             await usersRef.set({
               'displayName': _nameCtrl.text.trim(),
               'email': updatedUser.email,
@@ -106,20 +107,23 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? 'Authenticatie mislukt');
+      Fluttertoast.showToast(msg: e.message ?? loc.authenticationFailed);
     } catch (e) {
-      Fluttertoast.showToast(msg: 'Er is iets misgegaan');
+      Fluttertoast.showToast(msg: loc.loginSomethingWentWrong);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<UserCredential> _signInWithGoogle() async {
+    final loc = AppLocalizations.of(context)!;
     if (kIsWeb) {
       final googleProvider = GoogleAuthProvider();
       googleProvider.addScope('email');
       googleProvider.setCustomParameters({'prompt': 'select_account'});
-      final userCred = await FirebaseAuth.instance.signInWithPopup(googleProvider);
+      final userCred = await FirebaseAuth.instance.signInWithPopup(
+        googleProvider,
+      );
       await _saveUserDoc(userCred.user);
       return userCred;
     }
@@ -132,15 +136,18 @@ class _LoginScreenState extends State<LoginScreen> {
       if (idToken == null) {
         throw FirebaseAuthException(
           code: 'missing_id_token',
-          message: "Error retrieving Google ID token",
+          message: loc.googleIdTokenError,
         );
       }
 
       String? accessToken;
       try {
         final scopes = <String>['openid', 'email', 'profile'];
-        var authorization = await googleUser.authorizationClient.authorizationForScopes(scopes);
-        authorization ??= await googleUser.authorizationClient.authorizeScopes(scopes);
+        var authorization = await googleUser.authorizationClient
+            .authorizationForScopes(scopes);
+        authorization ??= await googleUser.authorizationClient.authorizeScopes(
+          scopes,
+        );
         accessToken = authorization.accessToken;
       } catch (_) {
         accessToken = null;
@@ -151,14 +158,16 @@ class _LoginScreenState extends State<LoginScreen> {
         accessToken: accessToken,
       );
 
-      final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCred = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
       await _saveUserDoc(userCred.user);
       return userCred;
     } on PlatformException catch (e) {
       if (e.code.toLowerCase().contains('cancel')) {
         throw FirebaseAuthException(
           code: 'sign_in_cancelled',
-          message: "Google sign-in cancelled",
+          message: loc.googleSignInCancelled,
         );
       }
       rethrow;
@@ -166,6 +175,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGitHub() async {
+    final loc = AppLocalizations.of(context)!;
+
     setState(() => _isLoading = true);
     try {
       final provider = GithubAuthProvider();
@@ -182,19 +193,25 @@ class _LoginScreenState extends State<LoginScreen> {
       await _saveUserDoc(userCred.user);
       if (!mounted) return;
       if (!widget.returnAfterLogin) {
-        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const MainNavigation()));
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const MainNavigation()),
+        );
       }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? 'GitHub login mislukt');
+      Fluttertoast.showToast(msg: e.message ?? loc.loginGithubFailed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   String generateNonce([int length = 32]) {
-    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final rand = Random.secure();
-    return List.generate(length, (_) => charset[rand.nextInt(charset.length)]).join();
+    return List.generate(
+      length,
+      (_) => charset[rand.nextInt(charset.length)],
+    ).join();
   }
 
   String sha256ofString(String input) {
@@ -204,6 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<UserCredential> signInWithApple() async {
+    final loc = AppLocalizations.of(context)!;
     final rawNonce = generateNonce();
     final nonce = sha256ofString(rawNonce);
     final appleCredential = await SignInWithApple.getAppleIDCredential(
@@ -217,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (appleCredential.identityToken == null) {
       throw FirebaseAuthException(
         code: 'null_identity_token',
-        message: "Apple Sign-In failed: no identity token returned",
+        message: loc.appleSignInNoIdentityToken,
       );
     }
     final oauthCredential = OAuthProvider("apple.com").credential(
@@ -225,13 +243,18 @@ class _LoginScreenState extends State<LoginScreen> {
       rawNonce: rawNonce,
       accessToken: appleCredential.authorizationCode,
     );
-    final userCredential = await FirebaseAuth.instance.signInWithCredential(oauthCredential);
+    final userCredential = await FirebaseAuth.instance.signInWithCredential(
+      oauthCredential,
+    );
 
     final userBefore = FirebaseAuth.instance.currentUser;
     try {
       final given = appleCredential.givenName;
-      if (userBefore != null && given != null && given.trim().isNotEmpty &&
-          (userBefore.displayName == null || userBefore.displayName!.trim().isEmpty)) {
+      if (userBefore != null &&
+          given != null &&
+          given.trim().isNotEmpty &&
+          (userBefore.displayName == null ||
+              userBefore.displayName!.trim().isEmpty)) {
         await userBefore.updateDisplayName(given.trim());
         await userBefore.reload();
       }
@@ -244,9 +267,14 @@ class _LoginScreenState extends State<LoginScreen> {
       final uid = userAfter?.uid;
       final given = appleCredential.givenName?.trim();
       if (uid != null && given != null && given.isNotEmpty) {
-        final usersRef = FirebaseFirestore.instance.collection('users').doc(uid);
+        final usersRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid);
         final doc = await usersRef.get();
-        final shouldSet = !doc.exists || (doc.data()?['displayName'] == null || (doc.data()?['displayName'] as String).trim().isEmpty);
+        final shouldSet =
+            !doc.exists ||
+            (doc.data()?['displayName'] == null ||
+                (doc.data()?['displayName'] as String).trim().isEmpty);
         if (shouldSet) {
           await usersRef.set({
             'displayName': given,
@@ -263,16 +291,23 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _resetPassword() async {
+    final loc = AppLocalizations.of(context)!;
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !EmailValidator.validate(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vul een geldig e-mailadres in')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.loginEnterValidEmail)));
       return;
     }
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Wachtwoord-reset e-mail verzonden')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(loc.loginPasswordResetEmailSent)));
     } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Kon geen reset-e-mail sturen')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? loc.loginPasswordResetFailed)),
+      );
     }
   }
 
@@ -280,7 +315,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (user == null) return;
     final name = (displayName ?? user.displayName)?.trim();
     try {
-      final usersRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final usersRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid);
       await usersRef.set({
         if (name != null && name.isNotEmpty) 'displayName': name,
         'email': user.email,
@@ -314,7 +351,10 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: const Color(0xFF22404B).withOpacity(0.5),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
@@ -335,6 +375,8 @@ class _LoginScreenState extends State<LoginScreen> {
     const Color accentColor = Color(0xFFFFC107);
     const Color textColor = Colors.white;
 
+    final loc = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: scaffoldBgColor,
       body: SafeArea(
@@ -344,7 +386,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 480),
               child: Card(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
                 elevation: 0,
                 color: cardColor,
                 child: Padding(
@@ -358,50 +402,72 @@ class _LoginScreenState extends State<LoginScreen> {
                         Center(
                           child: Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle),
-                            child: const Icon(Icons.movie_filter_rounded, size: 48, color: accentColor),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.movie_filter_rounded,
+                              size: 48,
+                              color: accentColor,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          _isLogin ? 'Welkom bij CineTrackr' : 'Maak een account',
+                          _isLogin ? loc.loginWelcome : loc.loginCreateAccount,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor),
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
                         ),
                         const SizedBox(height: 32),
                         if (!_isLogin) ...[
                           _buildCustomTextField(
                             controller: _nameCtrl,
-                            label: 'Naam',
+                            label: loc.loginName,
                             icon: Icons.person_outline,
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Vul je naam in' : null,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? loc.loginNameRequired
+                                : null,
                           ),
                           const SizedBox(height: 16),
                         ],
                         _buildCustomTextField(
                           controller: _emailCtrl,
-                          label: 'E-mail',
+                          label: loc.loginEmail,
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Vul je e-mailadres in';
-                            if (!EmailValidator.validate(v.trim())) return 'Ongeldig e-mailadres';
+                            if (v == null || v.trim().isEmpty)
+                              return loc.loginEmailRequired;
+                            if (!EmailValidator.validate(v.trim()))
+                              return loc.loginInvalidEmail;
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         _buildCustomTextField(
                           controller: _passwordCtrl,
-                          label: 'Wachtwoord',
+                          label: loc.loginPassword,
                           icon: Icons.lock_outline,
                           obscureText: _obscure,
                           suffixIcon: IconButton(
-                            icon: Icon(_obscure ? Icons.visibility : Icons.visibility_off, color: Colors.white70),
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                           validator: (v) {
-                            if (v == null || v.isEmpty) return 'Vul je wachtwoord in';
-                            if (v.length < 6) return 'Wachtwoord moet minstens 6 tekens zijn';
+                            if (v == null || v.isEmpty)
+                              return loc.loginPasswordRequired;
+                            if (v.length < 6) return loc.loginPasswordTooShort;
                             return null;
                           },
                         ),
@@ -412,21 +478,49 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: const Color(0xFF3B6372),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
                           ),
                           child: _isLoading
-                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : Text(_isLogin ? 'Inloggen' : 'Registreren', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  _isLogin ? loc.loginIn : loc.loginRegister,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                         const SizedBox(height: 16),
                         TextButton(
-                          onPressed: _isLoading ? null : () => setState(() => _isLogin = !_isLogin),
-                          child: Text(_isLogin ? 'Nog geen account? Registreer' : 'Al een account? Log in', style: const TextStyle(color: accentColor)),
+                          onPressed: _isLoading
+                              ? null
+                              : () => setState(() => _isLogin = !_isLogin),
+                          child: Text(
+                            _isLogin
+                                ? loc.loginNoAccountRegister
+                                : loc.loginHaveAccountLogin,
+                            style: const TextStyle(color: accentColor),
+                          ),
                         ),
                         if (_isLogin)
                           TextButton(
                             onPressed: _isLoading ? null : _resetPassword,
-                            child: const Text('Wachtwoord vergeten?', style: TextStyle(color: Colors.white60, fontSize: 13)),
+                            child: Text(
+                              loc.loginForgotPassword,
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
                         if (_isLogin)
                           TextButton(
@@ -440,42 +534,81 @@ class _LoginScreenState extends State<LoginScreen> {
                                         Navigator.of(context).pop(true);
                                       } else {
                                         Navigator.of(context).pushReplacement(
-                                          MaterialPageRoute(builder: (_) => const MainNavigation()),
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const MainNavigation(),
+                                          ),
                                         );
                                       }
                                     } finally {
-                                      if (mounted) setState(() => _isLoading = false);
+                                      if (mounted)
+                                        setState(() => _isLoading = false);
                                     }
                                   },
-                            child: const Text('Verder gaan als gast', style: TextStyle(color: Colors.white70)),
+                            child: Text(
+                              loc.loginContinueAsGuest,
+                              style: const TextStyle(color: Colors.white70),
+                            ),
                           ),
                         const SizedBox(height: 20),
-                        Row(children: [
-                          const Expanded(child: Divider(color: Colors.white24)),
-                          Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text("OF", style: TextStyle(color: Colors.white38, fontSize: 12))),
-                          const Expanded(child: Divider(color: Colors.white24)),
-                        ]),
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Divider(color: Colors.white24),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              child: Text(
+                                loc.loginOrDivider,
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            const Expanded(
+                              child: Divider(color: Colors.white24),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 20),
                         SignInButton(
                           Buttons.Google,
-                          text: 'Inloggen met Google',
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          onPressed: _isLoading ? null : () => _signInWithGoogle(),
+                          text: loc.loginSignInWithGoogle,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onPressed: _isLoading
+                              ? null
+                              : () => _signInWithGoogle(),
                         ),
                         const SizedBox(height: 12),
                         SignInButton(
                           Buttons.GitHub,
-                          text: 'Inloggen met GitHub',
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          onPressed: _isLoading ? null : () => _signInWithGitHub(),
+                          text: loc.loginSignInWithGitHub,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onPressed: _isLoading
+                              ? null
+                              : () => _signInWithGitHub(),
                         ),
-                        if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS)) ...[
+                        if (!kIsWeb &&
+                            (defaultTargetPlatform == TargetPlatform.iOS ||
+                                defaultTargetPlatform ==
+                                    TargetPlatform.macOS)) ...[
                           const SizedBox(height: 12),
                           SignInButton(
                             Buttons.Apple,
-                            text: 'Inloggen met Apple',
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            onPressed: _isLoading ? null : () => signInWithApple(),
+                            text: loc.loginSignInWithApple,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            onPressed: _isLoading
+                                ? null
+                                : () => signInWithApple(),
                           ),
                         ],
                       ],

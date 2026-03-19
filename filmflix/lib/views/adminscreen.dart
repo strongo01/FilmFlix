@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:math' as Math;
 
+import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -21,11 +24,11 @@ class _AdminScreenState extends State<AdminScreen> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Admin'),
-          bottom: const TabBar(
+          title: Text(AppLocalizations.of(context)!.admin_title),
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Chats'),
-              Tab(text: 'FAQs'),
+              Tab(text: AppLocalizations.of(context)!.tab_chats),
+              Tab(text: AppLocalizations.of(context)!.tab_faqs),
             ],
           ),
         ),
@@ -40,12 +43,12 @@ class _AdminScreenState extends State<AdminScreen> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Niet ingelogd'),
-          content: const Text('Log eerst in als admin en probeer het opnieuw.'),
+          title: Text(AppLocalizations.of(ctx)!.not_logged_in_title),
+          content: Text(AppLocalizations.of(ctx)!.not_logged_in_message),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Sluiten'),
+              child: Text(AppLocalizations.of(ctx)!.close),
             ),
           ],
         ),
@@ -53,7 +56,7 @@ class _AdminScreenState extends State<AdminScreen> {
       return;
     }
 
-    String roleText = 'Geen users-doc gevonden.';
+    String roleText = AppLocalizations.of(context)!.no_users_doc;
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -61,38 +64,32 @@ class _AdminScreenState extends State<AdminScreen> {
           .get();
       final data = doc.data();
       if (data != null && data['role'] != null) {
-        roleText = 'users/${user.uid} role = ${data['role'].toString()}';
+        roleText = AppLocalizations.of(context)!.users_doc_role(user.uid, data['role'].toString());
       } else {
-        roleText = 'users/${user.uid} bestaat, maar heeft geen role-veld.';
+        roleText = AppLocalizations.of(context)!.users_doc_no_role(user.uid);
       }
     } catch (e) {
-      roleText = 'Fout bij lezen users-doc: $e';
+      roleText = AppLocalizations.of(context)!.users_doc_read_error(e.toString());
     }
 
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Rechten controleren'),
+        title: Text(AppLocalizations.of(ctx)!.check_permissions_title),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Mogelijke oorzaken en oplossingen:'),
+              Text(AppLocalizations.of(ctx)!.possible_causes),
               const SizedBox(height: 8),
-              const Text(
-                '- Firestore rules controleren: regels gebruiken custom claims (request.auth.token.role).',
-              ),
+              Text(AppLocalizations.of(ctx)!.firestore_rules),
               const SizedBox(height: 6),
-              const Text(
-                '- Als je custom claims gebruikt: zet role/admin via Admin SDK (service account) en laat admin opnieuw inloggen.',
-              ),
+              Text(AppLocalizations.of(ctx)!.custom_claims_hint),
               const SizedBox(height: 6),
-              const Text(
-                '- Of wijzig tijdelijk de rules om de rol uit /users/{uid} te lezen.',
-              ),
+              Text(AppLocalizations.of(ctx)!.rules_temp_change(user.uid)),
               const SizedBox(height: 12),
-              const Text('Huidige users-doc:'),
+              Text(AppLocalizations.of(ctx)!.current_users_doc),
               const SizedBox(height: 6),
               Text(roleText),
             ],
@@ -101,7 +98,7 @@ class _AdminScreenState extends State<AdminScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Sluiten'),
+            child: Text(AppLocalizations.of(ctx)!.close),
           ),
         ],
       ),
@@ -142,27 +139,27 @@ class _AdminScreenState extends State<AdminScreen> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Debug info'),
+        title: Text(AppLocalizations.of(ctx)!.debug_info_title),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('uid: $uid'),
+              Text(AppLocalizations.of(ctx)!.uid_label(uid)),
               const SizedBox(height: 8),
-              Text('idToken claims: ${claims ?? '<none>'}'),
+              Text(AppLocalizations.of(ctx)!.idtoken_claims_label(claims?.toString() ?? '<none>')),
               if (idTokenErr.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text('idToken error: $idTokenErr'),
+                Text(AppLocalizations.of(ctx)!.idtoken_error_label(idTokenErr)),
               ],
               const SizedBox(height: 8),
-              Text('users doc: ${usersDoc ?? '<not found>'}'),
+              Text(AppLocalizations.of(ctx)!.users_doc_label(usersDoc?.toString() ?? '<not found>')),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(ctx)!.ok),
           ),
         ],
       ),
@@ -174,11 +171,11 @@ class _AdminScreenState extends State<AdminScreen> {
     final res = await showDialog<String?>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Fetch document by ID'),
+        title: Text(AppLocalizations.of(ctx)!.fetch_doc_title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Plak hier het document ID van customerquestions:'),
+            Text(AppLocalizations.of(ctx)!.paste_doc_id),
             const SizedBox(height: 8),
             TextField(controller: ctrl),
           ],
@@ -186,11 +183,11 @@ class _AdminScreenState extends State<AdminScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(null),
-            child: const Text('Annuleer'),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
-            child: const Text('Fetch'),
+            child: Text(AppLocalizations.of(ctx)!.fetch),
           ),
         ],
       ),
@@ -206,12 +203,12 @@ class _AdminScreenState extends State<AdminScreen> {
         await showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Niet gevonden'),
-            content: Text('Document ${res} bestaat niet of is niet leesbaar.'),
+            title: Text(AppLocalizations.of(ctx)!.not_found_title),
+            content: Text(AppLocalizations.of(ctx)!.document_not_found(res)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
+                child: Text(AppLocalizations.of(ctx)!.ok),
               ),
             ],
           ),
@@ -224,14 +221,14 @@ class _AdminScreenState extends State<AdminScreen> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Document ${res}'),
+          title: Text(AppLocalizations.of(ctx)!.document_title(res)),
           content: SingleChildScrollView(
-            child: Text(data?.toString() ?? '<empty>'),
+            child: Text(data?.toString() ?? AppLocalizations.of(ctx)!.empty),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
+              child: Text(AppLocalizations.of(ctx)!.ok),
             ),
           ],
         ),
@@ -241,12 +238,12 @@ class _AdminScreenState extends State<AdminScreen> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Fout'),
-          content: Text('Fout bij ophalen: $e'),
+          title: Text(AppLocalizations.of(ctx)!.fetch_error_title),
+          content: Text(AppLocalizations.of(ctx)!.fetch_error_message(e.toString())),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
+              child: Text(AppLocalizations.of(ctx)!.ok),
             ),
           ],
         ),
@@ -273,7 +270,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   const Icon(Icons.lock_outline, size: 48, color: Colors.grey),
                   const SizedBox(height: 12),
                   Text(
-                    'Kan geen chats laden: ${snap.error}',
+                    AppLocalizations.of(ctx)!.cannot_load_chats(snap.error?.toString() ?? ''),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -292,11 +289,11 @@ class _AdminScreenState extends State<AdminScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Geen vragen gevonden'),
+                  Text(AppLocalizations.of(context)!.no_questions_found),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: _promptAndFetchDoc,
-                    child: const Text('Toon debug info'),
+                    child: Text(AppLocalizations.of(context)!.show_debug_info),
                   ),
                 ],
               ),
@@ -471,11 +468,11 @@ class _AdminScreenState extends State<AdminScreen> {
                 final confirm = await showDialog<bool>(
                   context: ctx,
                   builder: (confirmCtx) => AlertDialog(
-                    title: const Text('Verwijder chat'),
-                    content: const Text('Weet je zeker dat je deze chat wilt verwijderen? Dit kan niet ongedaan gemaakt worden.'),
+                    title: Text(AppLocalizations.of(confirmCtx)!.delete_chat_title),
+                    content: Text(AppLocalizations.of(confirmCtx)!.delete_chat_confirm),
                     actions: [
-                      TextButton(onPressed: () => Navigator.of(confirmCtx).pop(false), child: const Text('Annuleer')),
-                      ElevatedButton(onPressed: () => Navigator.of(confirmCtx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Verwijder')),
+                      TextButton(onPressed: () => Navigator.of(confirmCtx).pop(false), child: Text(AppLocalizations.of(confirmCtx)!.cancel)),
+                      ElevatedButton(onPressed: () => Navigator.of(confirmCtx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: Text(AppLocalizations.of(confirmCtx)!.delete)),
                     ],
                   ),
                 );
@@ -484,10 +481,10 @@ class _AdminScreenState extends State<AdminScreen> {
               onDismissed: (direction) async {
                 try {
                   await FirebaseFirestore.instance.collection('customerquestions').doc(d.id).delete();
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chat verwijderd')));
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chat_deleted)));
                 } catch (e) {
                   debugPrint('Failed to delete chat ${d.id}: $e');
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verwijderen mislukt')));
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.delete_failed)));
                 }
               },
               child: ListTile(
@@ -537,11 +534,11 @@ class _AdminScreenState extends State<AdminScreen> {
                     const SizedBox(height: 6),
                     Builder(
                       builder: (_) {
-                        final userName = (data['name'] ?? 'Gebruiker').toString();
+                        final userName = (data['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
                         final adminNames = (data['adminNames'] as List?) ?? [];
                         final adminText = adminNames.isNotEmpty
-                            ? 'Admins: ${adminNames.map((e) => e.toString()).join(', ')}'
-                            : '';
+                          ? AppLocalizations.of(context)!.admins_label(adminNames.map((e) => e.toString()).join(', '))
+                          : '';
                         return adminText.isNotEmpty
                             ? Text(
                                 adminText,
@@ -573,7 +570,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         onPressed: () => _openAdminChat(d.id),
-                        child: const Text('Open'),
+                        child: Text(AppLocalizations.of(context)!.open),
                       ),
                     ],
                   ),
@@ -613,7 +610,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
     // build message list (include sender names)
     final List<Map<String, dynamic>> messages = [];
-    final ownerName = (data['name'] ?? 'Gebruiker').toString();
+    final ownerName = (data['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
     messages.add({
       'text': questionText,
       'isAdmin': false,
@@ -625,14 +622,14 @@ class _AdminScreenState extends State<AdminScreen> {
         'text': answerText,
         'isAdmin': true,
         'ts': data['answerAt'] ?? data['updatedAt'],
-        'name': (data['answerAdminName'] ?? 'Admin').toString(),
+        'name': (data['answerAdminName'] ?? AppLocalizations.of(context)!.admin_title).toString(),
       });
     for (final ar in adminReplies) {
       if (ar is Map) {
         final textVal =
             (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
             ar.toString();
-        final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin').toString();
+        final adminName = (ar['adminName'] ?? ar['name'] ?? AppLocalizations.of(context)!.admin_title).toString();
         messages.add({
           'text': textVal,
           'isAdmin': true,
@@ -644,7 +641,7 @@ class _AdminScreenState extends State<AdminScreen> {
           'text': ar?.toString() ?? '',
           'isAdmin': true,
           'ts': null,
-          'name': 'Admin',
+          'name': AppLocalizations.of(context)!.admin_title,
         });
       }
     }
@@ -699,7 +696,7 @@ class _AdminScreenState extends State<AdminScreen> {
           final aText = (d['answer'] ?? '').toString();
           final aReplies = (d['adminReplies'] as List?) ?? [];
           final uReplies = (d['userReplies'] as List?) ?? [];
-          final ownerName = (d['name'] ?? 'Gebruiker').toString();
+          final ownerName = (d['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
 
           final List<Map<String, dynamic>> newMessages = [];
           newMessages.add({
@@ -713,14 +710,14 @@ class _AdminScreenState extends State<AdminScreen> {
               'text': aText,
               'isAdmin': true,
               'ts': d['answerAt'] ?? d['updatedAt'],
-              'name': (d['answerAdminName'] ?? 'Admin').toString(),
+              'name': (d['answerAdminName'] ?? AppLocalizations.of(context)!.admin_title).toString(),
             });
           for (final ar in aReplies) {
             if (ar is Map) {
               final textVal =
                   (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
                   ar.toString();
-              final adminName = (ar['adminName'] ?? ar['name'] ?? 'Admin')
+              final adminName = (ar['adminName'] ?? ar['name'] ?? AppLocalizations.of(context)!.admin_title)
                   .toString();
               newMessages.add({
                 'text': textVal,
@@ -733,7 +730,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 'text': ar?.toString() ?? '',
                 'isAdmin': true,
                 'ts': null,
-                'name': 'Admin',
+                'name': AppLocalizations.of(context)!.admin_title,
               });
             }
           }
@@ -795,7 +792,9 @@ class _AdminScreenState extends State<AdminScreen> {
           return Scaffold(
             appBar: AppBar(
               title: Text(
-                'Chat: ${questionText.length > 40 ? questionText.substring(0, 40) + '...' : questionText}',
+                AppLocalizations.of(context)!.chat_page_title_prefix(
+                  questionText.length > 40 ? questionText.substring(0, 40) + AppLocalizations.of(context)!.ellipsis : questionText,
+                ),
               ),
             ),
             body: SafeArea(
@@ -814,10 +813,10 @@ class _AdminScreenState extends State<AdminScreen> {
                               final m = messages[i];
                               final isAdmin = m['isAdmin'] == true;
                               final txt = (m['text'] ?? '').toString();
-                              final senderName =
+                                final senderName =
                                   (m['name'] ??
-                                          (isAdmin ? 'Admin' : 'Gebruiker'))
-                                      .toString();
+                                      (isAdmin ? AppLocalizations.of(context)!.admin_title : AppLocalizations.of(context)!.user_label_default))
+                                    .toString();
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 6,
@@ -889,8 +888,8 @@ class _AdminScreenState extends State<AdminScreen> {
                             Expanded(
                               child: TextField(
                                 controller: replyCtrl,
-                                decoration: const InputDecoration(
-                                  hintText: 'Typ een antwoord...',
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(context)!.reply_hint,
                                 ),
                                 maxLines: 3,
                               ),
@@ -900,7 +899,7 @@ class _AdminScreenState extends State<AdminScreen> {
                               onPressed: () async {
                                 final text = replyCtrl.text.trim();
                                 if (text.isEmpty) return;
-                                String adminName = 'Admin';
+                                String adminName = AppLocalizations.of(context)!.admin_title;
                                 String? adminId =
                                     FirebaseAuth.instance.currentUser?.uid;
                                 try {
@@ -916,14 +915,14 @@ class _AdminScreenState extends State<AdminScreen> {
                                     adminName =
                                         (udata != null && udata['name'] != null)
                                         ? udata['name'].toString()
-                                        : (currentUser?.displayName ?? 'Admin');
+                                        : (currentUser?.displayName ?? AppLocalizations.of(context)!.admin_title);
                                   } else {
                                     adminName =
                                         FirebaseAuth
                                             .instance
                                             .currentUser
                                             ?.displayName ??
-                                        'Admin';
+                                        AppLocalizations.of(context)!.admin_title;
                                   }
                                 } catch (_) {}
 
@@ -965,7 +964,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                       final payload = {
                                         'type': 'adminToUser',
                                         'userId': userId,
-                                        'title': 'Nieuw bericht van admin',
+                                        'title': AppLocalizations.of(context)!.notify_title,
                                         'body': text,
                                         'data': {'conversationId': docId}
                                       };
@@ -982,15 +981,15 @@ class _AdminScreenState extends State<AdminScreen> {
                                   } catch (e) {
                                     debugPrint('AdminScreen: Failed to notify user: $e');
                                   }
-                                } catch (e) {
+                                  } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Versturen mislukt'),
+                                    SnackBar(
+                                      content: Text(AppLocalizations.of(context)!.send_failed),
                                     ),
                                   );
                                 }
                               },
-                              child: const Text('Verstuur'),
+                              child: Text(AppLocalizations.of(context)!.send),
                             ),
                           ],
                         ),
@@ -1023,7 +1022,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 return const Center(child: CircularProgressIndicator());
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty)
-                return const Center(child: Text('Nog geen FAQ items'));
+                return Center(child: Text(AppLocalizations.of(context)!.no_faq_items));
               return ListView.separated(
                 itemCount: docs.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
@@ -1046,11 +1045,11 @@ class _AdminScreenState extends State<AdminScreen> {
                         children: [
                           TextButton(
                             onPressed: () => _editFaq(d.id, q, a),
-                            child: const Text('Bewerk'),
+                            child: Text(AppLocalizations.of(context)!.edit),
                           ),
                           TextButton(
                             onPressed: () => _deleteFaq(d.id),
-                            child: const Text('Verwijder'),
+                            child: Text(AppLocalizations.of(context)!.remove),
                           ),
                         ],
                       ),
@@ -1065,7 +1064,7 @@ class _AdminScreenState extends State<AdminScreen> {
           padding: const EdgeInsets.all(12.0),
           child: ElevatedButton.icon(
             icon: const Icon(Icons.add),
-            label: const Text('Nieuwe FAQ toevoegen'),
+            label: Text(AppLocalizations.of(context)!.add_new_faq),
             onPressed: _addFaq,
           ),
         ),
@@ -1079,18 +1078,18 @@ class _AdminScreenState extends State<AdminScreen> {
     final res = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Nieuwe FAQ'),
+        title: Text(AppLocalizations.of(ctx)!.new_faq_title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: qCtrl,
-              decoration: const InputDecoration(labelText: 'Question'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.question_label),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: aCtrl,
-              decoration: const InputDecoration(labelText: 'Answer'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.answer_label),
               maxLines: 4,
             ),
           ],
@@ -1098,11 +1097,11 @@ class _AdminScreenState extends State<AdminScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuleren'),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Voeg toe'),
+            child: Text(AppLocalizations.of(ctx)!.add),
           ),
         ],
       ),
@@ -1119,12 +1118,12 @@ class _AdminScreenState extends State<AdminScreen> {
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('FAQ toegevoegd')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_added)));
     } catch (e) {
       debugPrint('Failed to add faq: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Toevoegen mislukt')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_add_failed)));
     }
   }
 
@@ -1134,18 +1133,18 @@ class _AdminScreenState extends State<AdminScreen> {
     final res = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Bewerk FAQ'),
+        title: Text(AppLocalizations.of(ctx)!.edit_faq_title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: qCtrl,
-              decoration: const InputDecoration(labelText: 'Question'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.question_label),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: aCtrl,
-              decoration: const InputDecoration(labelText: 'Answer'),
+              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.answer_label),
               maxLines: 4,
             ),
           ],
@@ -1153,11 +1152,11 @@ class _AdminScreenState extends State<AdminScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuleren'),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Opslaan'),
+            child: Text(AppLocalizations.of(ctx)!.save),
           ),
         ],
       ),
@@ -1174,12 +1173,12 @@ class _AdminScreenState extends State<AdminScreen> {
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('FAQ bijgewerkt')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_updated)));
     } catch (e) {
       debugPrint('Failed to update faq: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Opslaan mislukt')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_update_failed)));
     }
   }
 
@@ -1187,16 +1186,16 @@ class _AdminScreenState extends State<AdminScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Verwijder FAQ'),
-        content: const Text('Weet je zeker dat je deze FAQ wilt verwijderen?'),
+        title: Text(AppLocalizations.of(ctx)!.delete_faq_title),
+        content: Text(AppLocalizations.of(ctx)!.delete_faq_confirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuleren'),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Verwijder'),
+            child: Text(AppLocalizations.of(ctx)!.delete),
           ),
         ],
       ),
@@ -1206,12 +1205,12 @@ class _AdminScreenState extends State<AdminScreen> {
       await FirebaseFirestore.instance.collection('faqs').doc(id).delete();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('FAQ verwijderd')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_deleted)));
     } catch (e) {
       debugPrint('Failed to delete faq: $e');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Verwijderen mislukt')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_delete_failed)));
     }
   }
 }
