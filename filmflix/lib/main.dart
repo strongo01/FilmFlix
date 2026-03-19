@@ -104,6 +104,10 @@ class CineTrackrApp extends StatelessWidget {
       supportedLocales: const [
         Locale('nl'),
         Locale('en'),
+        Locale('de'),
+        Locale('fr'),
+        Locale('tr'),
+      Locale('es'),
       ],
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),

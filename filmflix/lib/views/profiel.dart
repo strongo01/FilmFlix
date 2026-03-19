@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_options.dart';
 import 'loginscreen.dart';
 import 'settingscreen.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 
 void main() => runApp(const MaterialApp(home: ProfileScreen()));
 
@@ -396,9 +397,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: () {
                             if (!_isLoggedIn) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                    'Log in om je profielfoto aan te passen',
+                                    AppLocalizations.of(context)!.avatar_login_prompt,
                                   ),
                                 ),
                               );
@@ -455,7 +456,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _displayName ?? 'Kevin le Goat',
+                      _displayName ?? AppLocalizations.of(context)!.profile_default_name,
                       style: TextStyle(
                         color: primaryText,
                         fontSize: 24,
@@ -479,13 +480,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildQuickStat(
                         context,
                         _isLoggedIn ? _filmsCount.toString() : '-',
-                        'Films',
+                        AppLocalizations.of(context)!.films,
                         accentColor,
                       ),
                       _buildQuickStat(
                         context,
                         _isLoggedIn ? _watchlistCount.toString() : '-',
-                        'Watchlist',
+                        AppLocalizations.of(context)!.watchlist_label,
                         Colors.blueAccent,
                       ),
                     ],
@@ -494,7 +495,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   // BADGES SECTIE (Vervangt Favorieten tekst)
                   Text(
-                    'JOUW BADGES',
+                    AppLocalizations.of(context)!.your_badges,
                     style: TextStyle(
                       color: secondaryText,
                       fontSize: 12,
@@ -511,7 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Avonturier always zichtbaar; show numeric progress and level
                         _buildBadge(
                           context,
-                          'Avonturier',
+                          AppLocalizations.of(context)!.badge_adventurer,
                           Icons.explore,
                           Colors.greenAccent,
                           count: _adventureCount,
@@ -519,7 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _buildBadge(
                           context,
-                          'Horror King',
+                          AppLocalizations.of(context)!.badge_horror_king,
                           Icons.auto_awesome,
                           Colors.purpleAccent,
                           count: _horrorCount,
@@ -527,7 +528,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _buildBadge(
                           context,
-                          'Binge Watcher',
+                          AppLocalizations.of(context)!.badge_binge_watcher,
                           Icons.bolt,
                           Colors.orangeAccent,
                           count: _bingeCount,
@@ -535,7 +536,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         _buildBadge(
                           context,
-                          'Early Bird',
+                          AppLocalizations.of(context)!.badge_early_bird,
                           Icons.wb_sunny,
                           Colors.yellowAccent,
                           count: _earlyBirdCount,
@@ -547,7 +548,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 32),
                   Text(
-                    'ACCOUNT',
+                    AppLocalizations.of(context)!.account_section,
                     style: TextStyle(
                       color: secondaryText,
                       fontSize: 12,
@@ -559,14 +560,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildMenuTile(
                     context,
                     Icons.person_outline,
-                    'Profiel bewerken',
+                    AppLocalizations.of(context)!.edit_profile,
                     cardColor,
                     onTap: () {},
                   ),
                   _buildMenuTile(
                     context,
                     Icons.settings_outlined,
-                    'Instellingen',
+                    AppLocalizations.of(context)!.settingsTitle,
                     cardColor,
                     onTap: () {
                       Navigator.of(context).push(
@@ -581,7 +582,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuTile(
                       context,
                       Icons.logout,
-                      'Uitloggen',
+                      AppLocalizations.of(context)!.logout,
                       cardColor,
                       isDestructive: true,
                       onTap: () async {
@@ -598,7 +599,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildMenuTile(
                       context,
                       Icons.login,
-                      'Inloggen',
+                      AppLocalizations.of(context)!.loginIn,
                       cardColor,
                       onTap: () {
                         Navigator.of(context).push(
@@ -612,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 30),
                   Center(
                     child: Text(
-                      'CineTrackr v1.0.4',
+                      AppLocalizations.of(context)!.appVersion,
                       style: TextStyle(
                         color: primaryText.withOpacity(0.1),
                         fontSize: 12,
@@ -722,17 +723,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Pas profielplaatje aan',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.edit_avatar_title,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Kies kleur',
-                          style: TextStyle(fontSize: 13),
+                        Text(
+                          AppLocalizations.of(context)!.choose_color,
+                          style: const TextStyle(fontSize: 13),
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -794,9 +795,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Kies emoji (optioneel)',
-                          style: TextStyle(fontSize: 13),
+                        Text(
+                          AppLocalizations.of(context)!.choose_emoji_optional,
+                          style: const TextStyle(fontSize: 13),
                         ),
                         const SizedBox(height: 8),
                         // custom emoji input
@@ -805,10 +806,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Expanded(
                               child: TextField(
                                 controller: emojiController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Plak of typ een emoji (optioneel)',
+                                decoration: InputDecoration(
+                                  hintText: AppLocalizations.of(context)!.emoji_input_hint,
                                   isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(
+                                  contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 10,
                                   ),
@@ -838,12 +839,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   showDialog<void>(
                                     context: parentContext,
                                     builder: (dctx) => AlertDialog(
-                                      title: const Text('Ongeldige invoer'),
-                                      content: const Text('Voer alleen emoji in'),
+                                      title: Text(AppLocalizations.of(parentContext)!.invalid_input),
+                                      content: Text(AppLocalizations.of(parentContext)!.only_emoji_error),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.of(dctx).pop(),
-                                          child: const Text('OK'),
+                                          child: Text(AppLocalizations.of(parentContext)!.ok),
                                         ),
                                       ],
                                     ),
@@ -854,7 +855,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   selectedEmoji = input;
                                 });
                               },
-                              child: const Text('Gebruik'),
+                              child: Text(AppLocalizations.of(context)!.use),
                             ),
                           ],
                         ),
@@ -922,7 +923,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             TextButton(
                               onPressed: () => Navigator.of(ctx).pop(),
-                              child: const Text('Annuleer'),
+                              child: Text(AppLocalizations.of(ctx)!.cancel),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
@@ -935,12 +936,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   showDialog<void>(
                                     context: parentContext,
                                     builder: (dctx) => AlertDialog(
-                                      title: const Text('Ongeldige invoer'),
-                                      content: const Text('Voer alleen emoji in'),
+                                      title: Text(AppLocalizations.of(parentContext)!.invalid_input),
+                                      content: Text(AppLocalizations.of(parentContext)!.only_emoji_error),
                                       actions: [
                                         TextButton(
                                           onPressed: () => Navigator.of(dctx).pop(),
-                                          child: const Text('OK'),
+                                          child: Text(AppLocalizations.of(parentContext)!.ok),
                                         ),
                                       ],
                                     ),
@@ -968,7 +969,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 });
                                 Navigator.of(ctx).pop();
                               },
-                              child: const Text('Opslaan'),
+                              child: Text(AppLocalizations.of(ctx)!.save),
                             ),
                           ],
                         ),
@@ -1116,7 +1117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Lv$displayLevel',
+                        '${AppLocalizations.of(context)!.badge_level_prefix}$displayLevel',
                         style: TextStyle(
                           color: color,
                           fontSize: 10,

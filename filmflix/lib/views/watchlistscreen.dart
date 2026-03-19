@@ -5,6 +5,7 @@ import 'package:cinetrackr/services/movie_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'movie_detail_screen.dart';
 import 'loginscreen.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -22,7 +23,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final u = FirebaseAuth.instance.currentUser;
     if (u == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Log in om voortgang te bewaren')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.login_progress_save_snack)),
       );
       return;
     }
@@ -47,7 +48,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     } catch (e) {
       debugPrint('Failed to toggle seen $epKey for $imdbId: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kon voortgang niet bijwerken')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.progress_update_failed)),
       );
     }
   }
@@ -96,11 +97,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final price = option['price']?['formatted'];
     switch (type) {
       case 'subscription':
-        return 'Inbegrepen';
+        return AppLocalizations.of(context)!.included_with_subscription;
       case 'buy':
-        return price != null ? 'Kopen • $price' : 'Kopen';
+        return price != null ? AppLocalizations.of(context)!.buy_with_price(price) : AppLocalizations.of(context)!.buy;
       case 'rent':
-        return price != null ? 'Huren • $price' : 'Huren';
+        return price != null ? AppLocalizations.of(context)!.rent_with_price(price) : AppLocalizations.of(context)!.rent;
       default:
         return type ?? '';
     }
@@ -138,9 +139,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         child: Icon(isSeries ? Icons.tv : Icons.movie, size: 22),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: overview.isNotEmpty
+        subtitle: overview.isNotEmpty
           ? Text(overview, maxLines: 2, overflow: TextOverflow.ellipsis)
-          : const Text('Open details'),
+          : Text(AppLocalizations.of(context)!.open_details),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -149,13 +150,13 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             children: [
               if (isSeries)
                 Chip(
-                  label: const Text('Series'),
+                  label: Text(AppLocalizations.of(context)!.label_series),
                   visualDensity: VisualDensity.compact,
                 ),
               if (showProgress) SizedBox(height: 6),
               if (showProgress)
                 Chip(
-                  label: Text('Gezien: $seenCount'),
+                  label: Text(AppLocalizations.of(context)!.seen_count(seenCount)),
                   visualDensity: VisualDensity.compact,
                 ),
             ],
@@ -163,7 +164,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.bookmark_remove_outlined),
-            tooltip: 'Verwijder uit watchlist',
+            tooltip: AppLocalizations.of(context)!.remove_from_watchlist_tooltip,
             onPressed: () => _confirmAndRemove(id),
           ),
         ],
@@ -185,7 +186,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       future: movieFuture,
       builder: (ctx, snapMovie) {
         String title = id;
-        String subtitle = 'Open details';
+        String subtitle = AppLocalizations.of(ctx)!.open_details;
         bool isSeries = false;
         int seenCount = 0;
         if (snapMovie.hasData) {
@@ -215,10 +216,10 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         if (showProgress) {
           final val = seenMap[id];
           if (val is List) seenCount = val.length;
-          // if we already have an overview subtitle, append progress else replace
-          subtitle = subtitle.isNotEmpty && subtitle != 'Open details'
-              ? '${subtitle}\nGezien: $seenCount'
-              : (isSeries ? 'Gezien afleveringen: $seenCount' : 'Open details');
+            // if we already have an overview subtitle, append progress else replace
+            subtitle = subtitle.isNotEmpty && subtitle != AppLocalizations.of(ctx)!.open_details
+              ? '${subtitle}\n${AppLocalizations.of(ctx)!.seen_count(seenCount)}'
+              : (isSeries ? AppLocalizations.of(ctx)!.seen_episodes_label(seenCount) : AppLocalizations.of(ctx)!.open_details);
         }
 
         return ListTile(
@@ -242,12 +243,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             children: [
               if (showProgress)
                 Chip(
-                  label: Text('Gezien: $seenCount'),
+                  label: Text(AppLocalizations.of(ctx)!.seen_count(seenCount)),
                   visualDensity: VisualDensity.compact,
                 ),
               IconButton(
                 icon: const Icon(Icons.bookmark_remove_outlined),
-                tooltip: 'Verwijder uit watchlist',
+                tooltip: AppLocalizations.of(ctx)!.remove_from_watchlist_tooltip,
                 onPressed: () => _confirmAndRemove(id),
               ),
             ],
@@ -264,7 +265,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final u = FirebaseAuth.instance.currentUser;
     if (u == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Log in om watchlist te beheren')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.login_manage_watchlist_snack)),
       );
       return;
     }
@@ -275,12 +276,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         'watchlist_meta.$imdbId': FieldValue.delete(),
       }, SetOptions(merge: true));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Item verwijderd uit watchlist')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.item_removed_watchlist)),
       );
     } catch (e) {
       debugPrint('Failed to remove $imdbId from watchlist: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kon item niet verwijderen')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.remove_item_failed)),
       );
     }
   }
@@ -289,18 +290,18 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Verwijderen uit watchlist'),
-        content: const Text(
-          'Weet je zeker dat je dit item uit je watchlist wilt verwijderen?',
+        title: Text(AppLocalizations.of(ctx)!.remove_from_watchlist_title),
+        content: Text(
+          AppLocalizations.of(ctx)!.remove_from_watchlist_confirm,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Annuleren'),
+            child: Text(AppLocalizations.of(ctx)!.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Verwijderen'),
+            child: Text(AppLocalizations.of(ctx)!.delete),
           ),
         ],
       ),
@@ -317,11 +318,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Watchlist'),
-          bottom: const TabBar(
+          title: Text(AppLocalizations.of(context)!.watchlist_label),
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Opgeslagen'),
-              Tab(text: 'Aan het kijken'),
+              Tab(text: AppLocalizations.of(context)!.tab_saved),
+              Tab(text: AppLocalizations.of(context)!.tab_watching),
             ],
           ),
         ),
@@ -352,15 +353,15 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                         children: [
                           Icon(Icons.lock_outline, size: 48, color: Colors.blueAccent),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Je bent nog niet ingelogd.',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          Text(
+                            AppLocalizations.of(context)!.watchlist_not_logged_in,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Tik hier om in te loggen en je watchlist te bekijken.',
+                          Text(
+                            AppLocalizations.of(context)!.watchlist_login_tap_message,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),
@@ -376,11 +377,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     .doc(user.uid)
                     .snapshots(),
                 builder: (ctx, snap) {
-                  if (snap.hasError) {
+                    if (snap.hasError) {
                     if (snap.error.toString().contains('permission-denied')) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    return Center(child: Text('Fout bij laden: ${snap.error}'));
+                    return Center(child: Text(AppLocalizations.of(ctx)!.error_loading(snap.error ?? '')));
                   }
                   if (!snap.hasData)
                     return const Center(child: CircularProgressIndicator());
@@ -513,9 +514,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     bool showProgress = false,
                   }) {
                     if (items.isEmpty)
-                      return const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Geen items'),
+                      return Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(AppLocalizations.of(ctx)!.no_items),
                       );
                     return ListView.separated(
                       itemCount: items.length,
@@ -539,9 +540,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
                   Widget buildWatchingSeries(List<String> ids) {
                     if (ids.isEmpty)
-                      return const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Geen items'),
+                      return Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(AppLocalizations.of(ctx)!.no_items),
                       );
                     return ListView.separated(
                       itemCount: ids.length,
@@ -587,8 +588,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                         'episodes': [],
                                       };
                                 final seasonTitle =
-                                    (season['title'] ?? 'Season ${si + 1}')
-                                        .toString();
+                                  (season['title'] ?? AppLocalizations.of(ctx)!.season_label(si + 1))
+                                    .toString();
                                 final epRaw = season['episodes'];
                                 final episodes = epRaw is List
                                     ? epRaw
@@ -614,7 +615,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                     ),
                                     title: Row(
                                       children: [
-                                        Chip(label: Text('S${si + 1}')),
+                                        Chip(label: Text(AppLocalizations.of(ctx)!.season_short(si + 1))),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
@@ -625,7 +626,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '$seenCount/${episodes.length} gezien',
+                                          AppLocalizations.of(ctx)!.seen_x_of_y(seenCount, episodes.length),
                                           style: const TextStyle(
                                             color: Colors.grey,
                                           ),
@@ -642,10 +643,10 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                   as Map<String, dynamic>
                                             : {'title': entry.value.toString()};
                                         final epTitle =
-                                            (ep['title'] ??
-                                                    ep['itemType'] ??
-                                                    'Episode')
-                                                .toString();
+                                          (ep['title'] ??
+                                              ep['itemType'] ??
+                                              AppLocalizations.of(ctx)!.episode)
+                                            .toString();
                                         final epKey = 's${si}_e${ei}';
 
                                         // gather episode streaming options (nl preferred)
@@ -679,11 +680,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                     final confirm = await showDialog<bool>(
                                                       context: context,
                                                       builder: (dctx) => AlertDialog(
-                                                        title: const Text('Vorige afleveringen markeren?'),
-                                                        content: Text('Je markeert "${localEpTitle}" als gezien. Wil je ook ${unseenPrev.length} vorige aflevering(en) van seizoen ${localSi + 1} markeren als gezien?'),
+                                                        title: Text(AppLocalizations.of(dctx)!.mark_previous_episodes_title),
+                                                        content: Text(AppLocalizations.of(dctx)!.mark_previous_episodes_message(unseenPrev.length, localSi + 1, localEpTitle)),
                                                         actions: [
-                                                          TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: const Text('Nee')),
-                                                          TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: const Text('Ja')),
+                                                          TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: Text(AppLocalizations.of(dctx)!.no)),
+                                                          TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: Text(AppLocalizations.of(dctx)!.yes)),
                                                         ],
                                                       ),
                                                     );
@@ -693,7 +694,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                         await _toggleEpisodeSeenForUser(localId, 's${localSi}_e${p}', true);
                                                       }
                                                       await _toggleEpisodeSeenForUser(localId, localEpKey, true);
-                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${unseenPrev.length + 1} afleveringen gemarkeerd als gezien')));
+                                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.episodes_marked_seen(unseenPrev.length + 1))));
                                                       return;
                                                     }
                                                   }
@@ -717,7 +718,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                     for (var option in epStreams) {
                                                       if (option is! Map) continue;
                                                       final typedOption = option as Map<String, dynamic>;
-                                                      final serviceName = typedOption['service']?['name']?.toString() ?? 'Unknown';
+                                                      final serviceName = typedOption['service']?['name']?.toString() ?? AppLocalizations.of(context)!.unknown;
                                                       final type = typedOption['type']?.toString() ?? 'other';
                                                       final key = '${serviceName.toLowerCase()}_$type';
                                                       deduped.putIfAbsent(key, () => typedOption);
@@ -730,7 +731,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                         return Column(
                                                           mainAxisSize: MainAxisSize.min,
                                                           children: merged.map<Widget>((option) {
-                                                            final service = option['service']?['name']?.toString() ?? 'Unknown';
+                                                            final service = option['service']?['name']?.toString() ?? AppLocalizations.of(ctx)!.unknown;
                                                             final link = option['link'] ?? option['service']?['homePage']?.toString();
                                                             return ListTile(
                                                               leading: _buildServiceIconAsset(service, context: ctx, height: 28),
@@ -760,7 +761,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                               children.add(
                                 Padding(
                                   padding: const EdgeInsets.all(12),
-                                  child: Text('$title: een moment geduld...'),
+                                  child: Text(AppLocalizations.of(ctx)!.title_wait(title)),
                                 ),
                               );
                             }
@@ -793,7 +794,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                               children: [
                                 ExpansionTile(
                                   initiallyExpanded: true,
-                                  title: const Text('Series'),
+                                  title: Text(AppLocalizations.of(ctx)!.label_series),
                                   children: [
                                     SizedBox(
                                       height: 200,
@@ -803,7 +804,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                 ),
                                 ExpansionTile(
                                   initiallyExpanded: true,
-                                  title: const Text('Films'),
+                                  title: Text(AppLocalizations.of(ctx)!.films),
                                   children: [
                                     SizedBox(
                                       height: 200,
@@ -825,7 +826,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                               children: [
                                 ExpansionTile(
                                   initiallyExpanded: true,
-                                  title: const Text('Series'),
+                                  title: Text(AppLocalizations.of(ctx)!.label_series),
                                   children: [
                                     SizedBox(
                                       height: 300,
@@ -836,15 +837,15 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                   ],
                                 ),
                                 ExpansionTile(
-                                  title: const Text('Films'),
+                                  title: Text(AppLocalizations.of(ctx)!.films),
                                   children: [
                                     SizedBox(
                                       height: 200,
                                       child: watchingFilms.isEmpty
-                                          ? const Padding(
-                                              padding: EdgeInsets.all(16),
+                                          ? Padding(
+                                              padding: const EdgeInsets.all(16),
                                               child: Text(
-                                                'Nog geen voortgang voor films',
+                                                AppLocalizations.of(ctx)!.no_progress_for_films,
                                               ),
                                             )
                                           : ListView.separated(

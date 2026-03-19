@@ -5,8 +5,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_de.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
 import 'app_localizations_nl.dart';
+import 'app_localizations_tr.dart';
 
 // ignore_for_file: type=lint
 
@@ -91,9 +95,211 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('de'),
     Locale('en'),
-    Locale('nl')
+    Locale('es'),
+    Locale('fr'),
+    Locale('nl'),
+    Locale('tr')
   ];
+
+  /// No description provided for @settingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// No description provided for @myDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'My Dashboard'**
+  String get myDashboard;
+
+  /// No description provided for @preferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get preferences;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// Snackbar shown when notifications were enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications enabled'**
+  String get notifications_enabled;
+
+  /// Message instructing user to open system settings for notifications
+  ///
+  /// In en, this message translates to:
+  /// **'Check System Settings to allow notifications.'**
+  String get notifications_check_system;
+
+  /// Snackbar shown when FCM registration failed
+  ///
+  /// In en, this message translates to:
+  /// **'Registering for notifications failed.'**
+  String get notifications_registration_failed;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// Name of the English language option
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @dutch.
+  ///
+  /// In en, this message translates to:
+  /// **'Dutch'**
+  String get dutch;
+
+  /// No description provided for @french.
+  ///
+  /// In en, this message translates to:
+  /// **'French'**
+  String get french;
+
+  /// No description provided for @german.
+  ///
+  /// In en, this message translates to:
+  /// **'German'**
+  String get german;
+
+  /// No description provided for @turkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get turkish;
+
+  /// No description provided for @spanish.
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish'**
+  String get spanish;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get nameLabel;
+
+  /// No description provided for @nameValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your name'**
+  String get nameValidation;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @mustBeLoggedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be logged in to change your name'**
+  String get mustBeLoggedIn;
+
+  /// No description provided for @profile_default_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Kevin le Goat'**
+  String get profile_default_name;
+
+  /// Fallback example email shown in profile card
+  ///
+  /// In en, this message translates to:
+  /// **'kevinlegoat@example.com'**
+  String get profile_default_email;
+
+  /// Label for number of films watched
+  ///
+  /// In en, this message translates to:
+  /// **'Films watched'**
+  String get filmsDone;
+
+  /// No description provided for @watchlist_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist'**
+  String get watchlist_label;
+
+  /// No description provided for @support.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get support;
+
+  /// No description provided for @customerService_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer Service'**
+  String get customerService_title;
+
+  /// Title of the About screen
+  ///
+  /// In en, this message translates to:
+  /// **'About CineTrackr'**
+  String get aboutTitle;
+
+  /// Long about text shown in the About screen
+  ///
+  /// In en, this message translates to:
+  /// **'CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr — enjoy watching!'**
+  String get aboutText;
+
+  /// Label for the privacy policy link
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out'**
+  String get logout;
+
+  /// No description provided for @loginIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get loginIn;
+
+  /// No description provided for @nameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated'**
+  String get nameUpdated;
+
+  /// No description provided for @nameUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed'**
+  String get nameUpdateFailed;
 
   /// No description provided for @admin_title.
   ///
@@ -124,12 +330,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please sign in as admin and try again.'**
   String get not_logged_in_message;
-
-  /// No description provided for @close.
-  ///
-  /// In en, this message translates to:
-  /// **'Close'**
-  String get close;
 
   /// No description provided for @no_users_doc.
   ///
@@ -244,12 +444,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paste the document ID from customerquestions:'**
   String get paste_doc_id;
-
-  /// No description provided for @cancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get cancel;
 
   /// No description provided for @fetch.
   ///
@@ -436,12 +630,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit FAQ'**
   String get edit_faq_title;
-
-  /// No description provided for @save.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get save;
 
   /// No description provided for @faq_updated.
   ///
@@ -749,77 +937,11 @@ abstract class AppLocalizations {
   /// **'Open'**
   String get open;
 
-  /// No description provided for @settingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Settings'**
-  String get settingsTitle;
-
-  /// No description provided for @myDashboard.
-  ///
-  /// In en, this message translates to:
-  /// **'My Dashboard'**
-  String get myDashboard;
-
-  /// No description provided for @preferences.
-  ///
-  /// In en, this message translates to:
-  /// **'Preferences'**
-  String get preferences;
-
-  /// No description provided for @support.
-  ///
-  /// In en, this message translates to:
-  /// **'Support'**
-  String get support;
-
-  /// No description provided for @notifications.
-  ///
-  /// In en, this message translates to:
-  /// **'Notifications'**
-  String get notifications;
-
-  /// No description provided for @language.
-  ///
-  /// In en, this message translates to:
-  /// **'Language'**
-  String get language;
-
-  /// No description provided for @dutch.
-  ///
-  /// In en, this message translates to:
-  /// **'Dutch'**
-  String get dutch;
-
-  /// No description provided for @mustBeLoggedIn.
-  ///
-  /// In en, this message translates to:
-  /// **'You must be logged in to change your name'**
-  String get mustBeLoggedIn;
-
   /// No description provided for @changeNameTitle.
   ///
   /// In en, this message translates to:
   /// **'Change your name'**
   String get changeNameTitle;
-
-  /// No description provided for @nameLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Your name'**
-  String get nameLabel;
-
-  /// No description provided for @nameValidation.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your name'**
-  String get nameValidation;
-
-  /// No description provided for @nameUpdated.
-  ///
-  /// In en, this message translates to:
-  /// **'Name updated'**
-  String get nameUpdated;
 
   /// No description provided for @updateFailed.
   ///
@@ -838,12 +960,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save and continue'**
   String get save_and_continue;
-
-  /// No description provided for @customerService_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Customer Service'**
-  String get customerService_title;
 
   /// No description provided for @contact_admin_title.
   ///
@@ -1181,12 +1297,6 @@ abstract class AppLocalizations {
   /// **'Password must be at least 6 characters'**
   String get loginPasswordTooShort;
 
-  /// No description provided for @loginIn.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in'**
-  String get loginIn;
-
   /// No description provided for @loginRegister.
   ///
   /// In en, this message translates to:
@@ -1373,11 +1483,11 @@ abstract class AppLocalizations {
   /// **'Please close any ads/popups on the website before viewing the agenda.'**
   String get warning_bioscoop_content;
 
-  /// No description provided for @continue.
+  /// No description provided for @continue_label.
   ///
   /// In en, this message translates to:
   /// **'Continue'**
-  String get continue;
+  String get continue_label;
 
   /// No description provided for @mark_previous_episodes_title.
   ///
@@ -1475,11 +1585,539 @@ abstract class AppLocalizations {
   /// **'No'**
   String get no;
 
+  /// No description provided for @stars.
+  ///
+  /// In en, this message translates to:
+  /// **'stars'**
+  String get stars;
+
   /// No description provided for @appleSignInNoIdentityToken.
   ///
   /// In en, this message translates to:
   /// **'Apple Sign-In failed: no identity token returned'**
   String get appleSignInNoIdentityToken;
+
+  /// No description provided for @avatar_login_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to change your profile picture'**
+  String get avatar_login_prompt;
+
+  /// No description provided for @invalid_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid input'**
+  String get invalid_input;
+
+  /// No description provided for @only_emoji_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter only emoji'**
+  String get only_emoji_error;
+
+  /// No description provided for @use.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get use;
+
+  /// No description provided for @emoji_input_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste or type an emoji (optional)'**
+  String get emoji_input_hint;
+
+  /// No description provided for @edit_avatar_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile picture'**
+  String get edit_avatar_title;
+
+  /// No description provided for @choose_color.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose color'**
+  String get choose_color;
+
+  /// No description provided for @choose_emoji_optional.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose emoji (optional)'**
+  String get choose_emoji_optional;
+
+  /// No description provided for @your_badges.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR BADGES'**
+  String get your_badges;
+
+  /// No description provided for @account_section.
+  ///
+  /// In en, this message translates to:
+  /// **'ACCOUNT'**
+  String get account_section;
+
+  /// No description provided for @edit_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get edit_profile;
+
+  /// No description provided for @films.
+  ///
+  /// In en, this message translates to:
+  /// **'Films'**
+  String get films;
+
+  /// No description provided for @badge_level_prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv'**
+  String get badge_level_prefix;
+
+  /// No description provided for @badge_adventurer.
+  ///
+  /// In en, this message translates to:
+  /// **'Avonturer'**
+  String get badge_adventurer;
+
+  /// No description provided for @badge_horror_king.
+  ///
+  /// In en, this message translates to:
+  /// **'Horror King'**
+  String get badge_horror_king;
+
+  /// No description provided for @badge_binge_watcher.
+  ///
+  /// In en, this message translates to:
+  /// **'Binge Watcher'**
+  String get badge_binge_watcher;
+
+  /// No description provided for @badge_early_bird.
+  ///
+  /// In en, this message translates to:
+  /// **'Early Bird'**
+  String get badge_early_bird;
+
+  /// App version label shown in profile footer
+  ///
+  /// In en, this message translates to:
+  /// **'CineTrackr v1.0.4'**
+  String get appVersion;
+
+  /// No description provided for @search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search series/movie...'**
+  String get search_hint;
+
+  /// No description provided for @clear_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clear_tooltip;
+
+  /// No description provided for @filter_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter_tooltip;
+
+  /// No description provided for @filter_refine_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine filters'**
+  String get filter_refine_title;
+
+  /// No description provided for @filter_type_label.
+  ///
+  /// In en, this message translates to:
+  /// **'TYPE'**
+  String get filter_type_label;
+
+  /// No description provided for @filter_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filter_all;
+
+  /// No description provided for @filter_movies.
+  ///
+  /// In en, this message translates to:
+  /// **'Movies'**
+  String get filter_movies;
+
+  /// No description provided for @filter_series.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get filter_series;
+
+  /// No description provided for @filter_keyword_label.
+  ///
+  /// In en, this message translates to:
+  /// **'KEYWORD'**
+  String get filter_keyword_label;
+
+  /// No description provided for @filter_keyword_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Batman, Marvel...'**
+  String get filter_keyword_hint;
+
+  /// No description provided for @filter_genres_label.
+  ///
+  /// In en, this message translates to:
+  /// **'GENRES'**
+  String get filter_genres_label;
+
+  /// No description provided for @filter_year_from_label.
+  ///
+  /// In en, this message translates to:
+  /// **'YEAR (FROM)'**
+  String get filter_year_from_label;
+
+  /// No description provided for @filter_year_to_label.
+  ///
+  /// In en, this message translates to:
+  /// **'YEAR (TO)'**
+  String get filter_year_to_label;
+
+  /// No description provided for @filter_min_rating_label.
+  ///
+  /// In en, this message translates to:
+  /// **'MINIMUM RATING (0-100)'**
+  String get filter_min_rating_label;
+
+  /// No description provided for @apply_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Filters'**
+  String get apply_filters;
+
+  /// No description provided for @tmdb_movie_fetch_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch movie details'**
+  String get tmdb_movie_fetch_failed;
+
+  /// No description provided for @no_imdb_for_movie.
+  ///
+  /// In en, this message translates to:
+  /// **'No IMDb ID found for this movie'**
+  String get no_imdb_for_movie;
+
+  /// No description provided for @tmdb_movie_fetch_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching movie details'**
+  String get tmdb_movie_fetch_error;
+
+  /// No description provided for @tmdb_series_fetch_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch series details'**
+  String get tmdb_series_fetch_failed;
+
+  /// No description provided for @no_imdb_for_series.
+  ///
+  /// In en, this message translates to:
+  /// **'No IMDb ID found for this series'**
+  String get no_imdb_for_series;
+
+  /// No description provided for @tmdb_series_fetch_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error fetching series details'**
+  String get tmdb_series_fetch_error;
+
+  /// No description provided for @load_more_results.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more results'**
+  String get load_more_results;
+
+  /// No description provided for @best_rated.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Rated'**
+  String get best_rated;
+
+  /// No description provided for @popular.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get popular;
+
+  /// No description provided for @genre_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get genre_action;
+
+  /// No description provided for @genre_adventure.
+  ///
+  /// In en, this message translates to:
+  /// **'Adventure'**
+  String get genre_adventure;
+
+  /// No description provided for @genre_animation.
+  ///
+  /// In en, this message translates to:
+  /// **'Animation'**
+  String get genre_animation;
+
+  /// No description provided for @genre_comedy.
+  ///
+  /// In en, this message translates to:
+  /// **'Comedy'**
+  String get genre_comedy;
+
+  /// No description provided for @genre_crime.
+  ///
+  /// In en, this message translates to:
+  /// **'Crime'**
+  String get genre_crime;
+
+  /// No description provided for @genre_documentary.
+  ///
+  /// In en, this message translates to:
+  /// **'Documentary'**
+  String get genre_documentary;
+
+  /// No description provided for @genre_drama.
+  ///
+  /// In en, this message translates to:
+  /// **'Drama'**
+  String get genre_drama;
+
+  /// No description provided for @genre_family.
+  ///
+  /// In en, this message translates to:
+  /// **'Family'**
+  String get genre_family;
+
+  /// No description provided for @genre_fantasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Fantasy'**
+  String get genre_fantasy;
+
+  /// No description provided for @genre_history.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get genre_history;
+
+  /// No description provided for @genre_horror.
+  ///
+  /// In en, this message translates to:
+  /// **'Horror'**
+  String get genre_horror;
+
+  /// No description provided for @genre_music.
+  ///
+  /// In en, this message translates to:
+  /// **'Music'**
+  String get genre_music;
+
+  /// No description provided for @genre_mystery.
+  ///
+  /// In en, this message translates to:
+  /// **'Mystery'**
+  String get genre_mystery;
+
+  /// No description provided for @genre_news.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get genre_news;
+
+  /// No description provided for @genre_reality.
+  ///
+  /// In en, this message translates to:
+  /// **'Reality'**
+  String get genre_reality;
+
+  /// No description provided for @genre_romance.
+  ///
+  /// In en, this message translates to:
+  /// **'Romance'**
+  String get genre_romance;
+
+  /// No description provided for @genre_scifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Science Fiction'**
+  String get genre_scifi;
+
+  /// No description provided for @genre_talk.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk Show'**
+  String get genre_talk;
+
+  /// No description provided for @genre_thriller.
+  ///
+  /// In en, this message translates to:
+  /// **'Thriller'**
+  String get genre_thriller;
+
+  /// No description provided for @genre_war.
+  ///
+  /// In en, this message translates to:
+  /// **'War'**
+  String get genre_war;
+
+  /// No description provided for @genre_western.
+  ///
+  /// In en, this message translates to:
+  /// **'Western'**
+  String get genre_western;
+
+  /// No description provided for @login_progress_save_snack.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to save progress'**
+  String get login_progress_save_snack;
+
+  /// No description provided for @progress_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update progress'**
+  String get progress_update_failed;
+
+  /// No description provided for @open_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Open details'**
+  String get open_details;
+
+  /// No description provided for @label_series.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get label_series;
+
+  /// No description provided for @seen_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen: {count}'**
+  String seen_count(Object count);
+
+  /// No description provided for @remove_from_watchlist_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from watchlist'**
+  String get remove_from_watchlist_tooltip;
+
+  /// No description provided for @login_manage_watchlist_snack.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to manage your watchlist'**
+  String get login_manage_watchlist_snack;
+
+  /// No description provided for @item_removed_watchlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Item removed from watchlist'**
+  String get item_removed_watchlist;
+
+  /// No description provided for @remove_item_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not remove item'**
+  String get remove_item_failed;
+
+  /// No description provided for @remove_from_watchlist_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from watchlist'**
+  String get remove_from_watchlist_title;
+
+  /// No description provided for @remove_from_watchlist_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove this item from your watchlist?'**
+  String get remove_from_watchlist_confirm;
+
+  /// No description provided for @tab_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get tab_saved;
+
+  /// No description provided for @tab_watching.
+  ///
+  /// In en, this message translates to:
+  /// **'Watching'**
+  String get tab_watching;
+
+  /// No description provided for @watchlist_not_logged_in.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not logged in.'**
+  String get watchlist_not_logged_in;
+
+  /// No description provided for @watchlist_login_tap_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here to log in and view your watchlist.'**
+  String get watchlist_login_tap_message;
+
+  /// No description provided for @error_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading: {error}'**
+  String error_loading(Object error);
+
+  /// No description provided for @no_items.
+  ///
+  /// In en, this message translates to:
+  /// **'No items'**
+  String get no_items;
+
+  /// No description provided for @season_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Season {number}'**
+  String season_label(Object number);
+
+  /// Short season label
+  ///
+  /// In en, this message translates to:
+  /// **'S{num}'**
+  String season_short(Object num);
+
+  /// No description provided for @seen_x_of_y.
+  ///
+  /// In en, this message translates to:
+  /// **'{seen}/{total} seen'**
+  String seen_x_of_y(Object seen, Object total);
+
+  /// No description provided for @title_wait.
+  ///
+  /// In en, this message translates to:
+  /// **'{title}: please wait...'**
+  String title_wait(Object title);
+
+  /// No description provided for @no_progress_for_films.
+  ///
+  /// In en, this message translates to:
+  /// **'No progress for films yet'**
+  String get no_progress_for_films;
+
+  /// No description provided for @episode.
+  ///
+  /// In en, this message translates to:
+  /// **'Episode'**
+  String get episode;
+
+  /// No description provided for @seen_episodes_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen episodes: {count}'**
+  String seen_episodes_label(Object count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -1491,7 +2129,7 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'nl'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['de', 'en', 'es', 'fr', 'nl', 'tr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1502,8 +2140,12 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'de': return AppLocalizationsDe();
     case 'en': return AppLocalizationsEn();
+    case 'es': return AppLocalizationsEs();
+    case 'fr': return AppLocalizationsFr();
     case 'nl': return AppLocalizationsNl();
+    case 'tr': return AppLocalizationsTr();
   }
 
   throw FlutterError(

@@ -42,7 +42,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   String _formatRating(String? rating) {
     if (rating == null || rating.isEmpty || rating == '-') return rating ?? '';
-    
+        final loc = AppLocalizations.of(context)!;
     // Some ratings come as "73." or "73" (out of 100)
     // or "7.3" (out of 10). Let's clean and parse.
     String cleanRating = rating.replaceAll(',', '.');
@@ -54,9 +54,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (doubleRating != null) {
       if (doubleRating == 0) return '-';
       if (doubleRating > 10 && doubleRating <= 100) {
-        return '${(doubleRating / 10).toStringAsFixed(1)}/10 sterren';
+        return '${(doubleRating / 10).toStringAsFixed(1)}/10 ${loc.stars}';
       } else if (doubleRating <= 10) {
-        return '${doubleRating.toStringAsFixed(1)}/10 sterren';
+        return '${doubleRating.toStringAsFixed(1)}/10 ${loc.stars}';
       }
     }
     

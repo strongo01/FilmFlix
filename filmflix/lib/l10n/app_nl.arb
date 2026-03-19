@@ -1,32 +1,61 @@
 {
   "@@locale": "nl",
+  "settingsTitle": "Instellingen",
+  "myDashboard": "Mijn Dashboard",
+  "preferences": "Voorkeuren",
+  "notifications": "Meldingen",
+  "notifications_enabled": "Meldingen ingeschakeld",
+  "notifications_check_system": "Controleer de Systeem Instellingen om meldingen toe te laten.",
+  "notifications_registration_failed": "Aanmelden voor notificaties mislukt.",
+  "language": "Taal",
+  "english": "English",
+  "dutch": "Nederlands",
+  "french": "Frans",
+  "german": "Duits",
+  "turkish": "Turks",
+  "spanish": "Spaans",
+  "close": "Sluiten",
+  "nameLabel": "Je naam",
+  "nameValidation": "Vul je naam in",
+  "cancel": "Annuleer",
+  "save": "Opslaan",
+  "mustBeLoggedIn": "Je moet ingelogd zijn om je naam te wijzigen",
+  "profile_default_name": "Kevin le Goat",
+  "profile_default_email": "kevinlegoat@example.com",
+  "filmsDone": "Films af",
+  "watchlist_label": "Watchlist",
+  "support": "Support",
+  "customerService_title": "Klantenservice",
+  "aboutTitle": "Over CineTrackr",
+  "aboutText": "CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma's bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr — veel kijkplezier!",
+  "privacyPolicy": "Privacybeleid",
+  "logout": "Uitloggen",
+  "loginIn": "Inloggen",
+  "nameUpdated": "Naam bijgewerkt",
+  "nameUpdateFailed": "Bijwerken mislukt",
+  "@@locale": "nl",
   "admin_title": "Admin",
   "tab_chats": "Chats",
   "tab_faqs": "FAQs",
-
   "not_logged_in_title": "Niet ingelogd",
   "not_logged_in_message": "Log eerst in als admin en probeer het opnieuw.",
   "close": "Sluiten",
-
   "no_users_doc": "Geen users-doc gevonden.",
   "users_doc_role": "users/{uid} role = {role}",
   "users_doc_no_role": "users/{uid} bestaat, maar heeft geen role-veld.",
   "users_doc_read_error": "Fout bij lezen users-doc: {error}",
-
   "check_permissions_title": "Rechten controleren",
   "possible_causes": "Mogelijke oorzaken en oplossingen:",
   "firestore_rules": "- Firestore rules controleren: regels gebruiken custom claims (request.auth.token.role).",
   "custom_claims_hint": "- Als je custom claims gebruikt: zet role/admin via Admin SDK (service account) en laat admin opnieuw inloggen.",
   "rules_temp_change": "- Of wijzig tijdelijk de rules om de rol uit /users/{uid} te lezen.",
   "current_users_doc": "Huidige users-doc:",
-
   "debug_info_title": "Debug info",
   "uid_label": "uid: {uid}",
   "idtoken_claims_label": "idToken claims: {claims}",
   "idtoken_error_label": "idToken error: {error}",
   "users_doc_label": "users doc: {doc}",
   "ok": "OK",
-
   "fetch_doc_title": "Fetch document by ID",
   "paste_doc_id": "Plak hier het document ID van customerquestions:",
   "cancel": "Annuleer",
@@ -37,87 +66,113 @@
   "empty": "<empty>",
   "fetch_error_title": "Fout",
   "fetch_error_message": "Fout bij ophalen: {error}",
-
   "cannot_load_chats": "Kan geen chats laden: {error}",
   "no_questions_found": "Geen vragen gevonden",
   "show_debug_info": "Toon debug info",
-
   "delete_chat_title": "Verwijder chat",
   "delete_chat_confirm": "Weet je zeker dat je deze chat wilt verwijderen? Dit kan niet ongedaan gemaakt worden.",
   "delete": "Verwijder",
   "chat_deleted": "Chat verwijderd",
   "delete_failed": "Verwijderen mislukt",
-
   "user_label_default": "Gebruiker",
   "reply_hint": "Typ een antwoord...",
   "send": "Verstuur",
-
   "notify_title": "Nieuw bericht van admin",
   "notify_body": "{text}",
-
   "no_faq_items": "Nog geen FAQ items",
   "edit": "Bewerk",
   "remove": "Verwijder",
   "add_new_faq": "Nieuwe FAQ toevoegen",
-
   "new_faq_title": "Nieuwe FAQ",
   "question_label": "Question",
   "answer_label": "Answer",
   "add": "Voeg toe",
   "faq_added": "FAQ toegevoegd",
   "faq_add_failed": "Toevoegen mislukt",
-
   "edit_faq_title": "Bewerk FAQ",
   "save": "Opslaan",
   "faq_updated": "FAQ bijgewerkt",
   "faq_update_failed": "Opslaan mislukt",
-
   "delete_faq_title": "Verwijder FAQ",
   "delete_faq_confirm": "Weet je zeker dat je deze FAQ wilt verwijderen?",
   "faq_deleted": "FAQ verwijderd",
   "faq_delete_failed": "Verwijderen mislukt",
-
   "admins_label": "Admins: {names}",
   "chat_page_title_prefix": "Chat: {prefix}",
   "ellipsis": "...",
   "open": "Open",
   "send_failed": "Versturen mislukt",
   "appTitle": "CineTrackr",
-  "@appTitle": { "description": "De naam van de app" },
-"tutorialSkip": "Overslaan",
-"@tutorialSkip": { "description": "Tekst voor de skip-knop in de tutorial" },
+  "@appTitle": {
+    "description": "De naam van de app"
+  },
+  "tutorialSkip": "Overslaan",
+  "@tutorialSkip": {
+    "description": "Tekst voor de skip-knop in de tutorial"
+  },
   "navHome": "Home",
-  "@navHome": { "description": "Bottom navigation: Home" },
+  "@navHome": {
+    "description": "Bottom navigation: Home"
+  },
   "navWatchlist": "Watchlist",
-  "@navWatchlist": { "description": "Bottom navigation: Watchlist" },
+  "@navWatchlist": {
+    "description": "Bottom navigation: Watchlist"
+  },
   "navSearch": "Zoeken",
-  "@navSearch": { "description": "Bottom navigation: Search" },
+  "@navSearch": {
+    "description": "Bottom navigation: Search"
+  },
   "navFood": "Food",
-  "@navFood": { "description": "Bottom navigation: Food" },
+  "@navFood": {
+    "description": "Bottom navigation: Food"
+  },
   "navProfile": "Profiel",
-  "@navProfile": { "description": "Bottom navigation: Profile" },
-
+  "@navProfile": {
+    "description": "Bottom navigation: Profile"
+  },
   "tutorialHome": "Welkom! Hier vind je de nieuwste films en series.",
-  "@tutorialHome": { "description": "Tutorial text for home" },
+  "@tutorialHome": {
+    "description": "Tutorial text for home"
+  },
   "tutorialWatchlist": "Sla hier je favoriete films op voor later.",
-  "@tutorialWatchlist": { "description": "Tutorial text for watchlist" },
+  "@tutorialWatchlist": {
+    "description": "Tutorial text for watchlist"
+  },
   "tutorialSearch": "Zoek naar specifieke titels of genres.",
-  "@tutorialSearch": { "description": "Tutorial text for search" },
+  "@tutorialSearch": {
+    "description": "Tutorial text for search"
+  },
   "tutorialFood": "Bekijk bijpassende snacks voor je filmavond!",
-  "@tutorialFood": { "description": "Tutorial text for food" },
+  "@tutorialFood": {
+    "description": "Tutorial text for food"
+  },
   "tutorialProfile": "Beheer hier je profiel en instellingen.",
-  "@tutorialProfile": { "description": "Tutorial text for profile" },
+  "@tutorialProfile": {
+    "description": "Tutorial text for profile"
+  },
   "tutorialMap": "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
-  "@tutorialMap": { "description": "Tutorial text for map" },
+  "@tutorialMap": {
+    "description": "Tutorial text for map"
+  },
   "map_all_cinemas_title": "Alle bioscopen in Nederland",
-  "@map_all_cinemas_title": { "description": "AppBar title for the cinemas map" },
+  "@map_all_cinemas_title": {
+    "description": "AppBar title for the cinemas map"
+  },
   "map_load_error": "Fout bij laden bioscopen: {error}",
-  "@map_load_error": { "placeholders": { "error": {} } },
+  "@map_load_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "map_location_service_disabled": "Locatiedienst is uitgeschakeld",
   "map_location_permission_denied": "Locatie toegang geweigerd",
   "map_location_permission_denied_forever": "Locatiepermissies permanent geweigerd. Schakel in instellingen.",
   "map_location_fetch_error": "Kon locatie niet ophalen: {error}",
-  "@map_location_fetch_error": { "placeholders": { "error": {} } },
+  "@map_location_fetch_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "map_no_website_content": "Geen website beschikbaar — Bioscoop gevonden! 🎥",
   "unknown": "Onbekend",
   "food_edit_favorite": "Pas favoriet aan",
@@ -140,39 +195,102 @@
   "filter_gluten_free": "Glutenvrij",
   "filter_halal": "Halal",
   "food_what_do_you_want": "Wat wil je eten?",
-
   "settingsTitle": "Instellingen",
-  "@settingsTitle": { "description": "De titel van het instellingenscherm" },
+  "@settingsTitle": {
+    "description": "De titel van het instellingenscherm"
+  },
   "myDashboard": "Mijn Dashboard",
-  "@myDashboard": { "description": "Section label: My Dashboard" },
+  "@myDashboard": {
+    "description": "Section label: My Dashboard"
+  },
   "preferences": "Voorkeuren",
-  "@preferences": { "description": "Section label: Preferences" },
+  "@preferences": {
+    "description": "Section label: Preferences"
+  },
   "support": "Support",
-  "@support": { "description": "Section label: Support" },
+  "@support": {
+    "description": "Section label: Support"
+  },
   "notifications": "Meldingen",
-  "@notifications": { "description": "Toggle label for notifications" },
+  "@notifications": {
+    "description": "Toggle label for notifications"
+  },
   "language": "Taal",
-  "@language": { "description": "Label for language setting" },
+  "@language": {
+    "description": "Label for language setting"
+  },
   "dutch": "Nederlands",
-  "@dutch": { "description": "Name of the Dutch language option" },
-
+  "@dutch": {
+    "description": "Name of the Dutch language option"
+  },
   "mustBeLoggedIn": "Je moet ingelogd zijn om je naam te wijzigen",
-  "@mustBeLoggedIn": { "description": "Snackbar shown when user is not logged in" },
+  "@mustBeLoggedIn": {
+    "description": "Snackbar shown when user is not logged in"
+  },
   "changeNameTitle": "Wijzig je naam",
-  "@changeNameTitle": { "description": "Dialog title for changing display name" },
+  "@changeNameTitle": {
+    "description": "Dialog title for changing display name"
+  },
   "nameLabel": "Je naam",
-  "@nameLabel": { "description": "Label for name input" },
+  "@nameLabel": {
+    "description": "Label for name input"
+  },
   "nameValidation": "Vul je naam in",
-  "@nameValidation": { "description": "Validation message when name is empty" },
+  "@nameValidation": {
+    "description": "Validation message when name is empty"
+  },
   "nameUpdated": "Naam bijgewerkt",
-  "@nameUpdated": { "description": "Snackbar on successful name update" },
+  "@nameUpdated": {
+    "description": "Snackbar on successful name update"
+  },
   "updateFailed": "Bijwerken mislukt",
-  "@updateFailed": { "description": "Snackbar on failed name update" }
-  ,
+  "@updateFailed": {
+    "description": "Snackbar on failed name update"
+  },
+  "english": "English",
+  "@english": {
+    "description": "Name of the English language option"
+  },
+  "notifications_enabled": "Meldingen ingeschakeld",
+  "@notifications_enabled": {
+    "description": "Snackbar shown when notifications were enabled"
+  },
+  "notifications_check_system": "Controleer de Systeem Instellingen om meldingen toe te laten.",
+  "@notifications_check_system": {
+    "description": "Message instructing user to open system settings for notifications"
+  },
+  "notifications_registration_failed": "Aanmelden voor notificaties mislukt.",
+  "@notifications_registration_failed": {
+    "description": "Snackbar shown when FCM registration failed"
+  },
+  "aboutTitle": "Over CineTrackr",
+  "@aboutTitle": {
+    "description": "Title of the About screen"
+  },
+  "aboutText": "CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma's bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr — veel kijkplezier!",
+  "@aboutText": {
+    "description": "Long about text shown in the About screen"
+  },
+  "privacyPolicy": "Privacybeleid",
+  "@privacyPolicy": {
+    "description": "Label for the privacy policy link"
+  },
+  "profile_default_email": "kevinlegoat@example.com",
+  "@profile_default_email": {
+    "description": "Fallback example email shown in profile card"
+  },
+  "filmsDone": "Films af",
+  "@filmsDone": {
+    "description": "Label for number of films watched"
+  },
   "enter_name_description": "We gebruiken je naam om de app persoonlijker te maken, bijvoorbeeld voor begroetingen.",
-  "@enter_name_description": { "description": "Explainer shown when asking the user for their display name" },
+  "@enter_name_description": {
+    "description": "Explainer shown when asking the user for their display name"
+  },
   "save_and_continue": "Opslaan en doorgaan",
-  "@save_and_continue": { "description": "Button label to save name and continue" },
+  "@save_and_continue": {
+    "description": "Button label to save name and continue"
+  },
   "customerService_title": "Klantenservice",
   "contact_admin_title": "Contact admin",
   "emailLabel": "E-mail",
@@ -201,7 +319,6 @@
   "message_sent": "Bericht verstuurd",
   "followup_title": "Reageer op je vraag",
   "enter_message_hint": "Typ een bericht...",
-
   "faq_default_account_q": "Hoe maak ik een account aan?",
   "faq_default_account_a": "Je kunt je registreren via het profiel-icoon rechtsboven in de app. Volg de stappen om een nieuw account aan te maken.",
   "faq_default_watchlist_q": "Hoe voeg ik een film toe aan mijn watchlist?",
@@ -211,25 +328,31 @@
   "faq_report_bug_q": "Hoe kan ik een fout in de app melden?",
   "faq_report_bug_a": "Gebruik de knop \"Contact admin\" hieronder om een e-mail te sturen met een beschrijving en screenshots.",
   "faq_ai_q": "Kan ik vragen aan een AI stellen?",
-  "faq_ai_a": "Ja — gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn."
-  ,
+  "faq_ai_a": "Ja — gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.",
   "admins_no_push": "Admins ontvangen mogelijk geen pushmeldingen",
   "ai_cooldown_wait": "Wacht nog {seconds} seconden voordat je opnieuw de AI kunt gebruiken.",
-  "ai_input_hint": "Typ hier je vraag over films of series..."
-  ,
-  "user_new_message_title": "Nieuw bericht van gebruiker"
-  ,
+  "ai_input_hint": "Typ hier je vraag over films of series...",
+  "user_new_message_title": "Nieuw bericht van gebruiker",
   "nowPlayingTitle": "Actuele films",
-  "@nowPlayingTitle": { "description": "Title for the Now Playing screen" },
+  "@nowPlayingTitle": {
+    "description": "Title for the Now Playing screen"
+  },
   "imdbIdUnavailable": "IMDb ID niet beschikbaar voor deze film",
-  "@imdbIdUnavailable": { "description": "Snackbar when IMDb ID is not available" },
+  "@imdbIdUnavailable": {
+    "description": "Snackbar when IMDb ID is not available"
+  },
   "cannot_load_now_playing": "Kon actuele films niet laden.",
-  "@cannot_load_now_playing": { "description": "Error message when now playing films failed to load" },
+  "@cannot_load_now_playing": {
+    "description": "Error message when now playing films failed to load"
+  },
   "retry": "Opnieuw proberen",
-  "@retry": { "description": "Retry button label" },
+  "@retry": {
+    "description": "Retry button label"
+  },
   "no_films_found": "Geen films gevonden",
-  "@no_films_found": { "description": "Message when no films are found" }
-,
+  "@no_films_found": {
+    "description": "Message when no films are found"
+  },
   "loginWelcome": "Welkom bij CineTrackr",
   "loginCreateAccount": "Maak een account",
   "loginName": "Naam",
@@ -258,7 +381,6 @@
   "loginGithubFailed": "GitHub login mislukt",
   "googleIdTokenError": "Fout bij ophalen van Google ID-token",
   "googleSignInCancelled": "Google-aanmelding geannuleerd",
-
   "details": "Details",
   "translate": "Vertalen",
   "save": "Opslaan",
@@ -275,7 +397,7 @@
   "no_episodes_found": "Geen afleveringen gevonden",
   "warning_title": "!!Waarschuwing!!",
   "warning_bioscoop_content": "Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.",
-  "continue": "Doorgaan",
+  "continue_label": "Doorgaan",
   "mark_previous_episodes_title": "Vorige afleveringen markeren?",
   "mark_previous_episodes_message": "Je markeert \"{title}\" als gezien. Wil je ook {count} vorige aflevering(en) van seizoen {season} markeren als gezien?",
   "episodes_marked_seen": "{count} afleveringen gemarkeerd als gezien",
@@ -292,5 +414,105 @@
   "details_streaming_warning": "Klik om streaminglink te openen",
   "yes": "Ja",
   "no": "Nee",
-  "appleSignInNoIdentityToken": "Apple-aanmelding mislukt: geen identity token ontvangen"
+  "stars": "sterren",
+  "appleSignInNoIdentityToken": "Apple-aanmelding mislukt: geen identity token ontvangen",
+  "avatar_login_prompt": "Log in om je profielfoto aan te passen",
+  "invalid_input": "Ongeldige invoer",
+  "only_emoji_error": "Voer alleen emoji in",
+  "use": "Gebruik",
+  "emoji_input_hint": "Plak of typ een emoji (optioneel)",
+  "edit_avatar_title": "Pas profielplaatje aan",
+  "choose_color": "Kies kleur",
+  "choose_emoji_optional": "Kies emoji (optioneel)",
+  "profile_default_name": "Kevin le Goat",
+  "your_badges": "JOUW BADGES",
+  "account_section": "ACCOUNT",
+  "edit_profile": "Profiel bewerken",
+  "logout": "Uitloggen",
+  "films": "Films",
+  "watchlist_label": "Watchlist",
+  "badge_level_prefix": "Lv",
+  "badge_adventurer": "Avonturier",
+  "badge_horror_king": "Horror King",
+  "badge_binge_watcher": "Binge Watcher",
+  "badge_early_bird": "Early Bird",
+  "appVersion": "CineTrackr v1.0.4",
+  "@appVersion": {
+    "description": "App version label shown in profile footer"
+  },
+  "search_hint": "Zoek serie/film...",
+  "clear_tooltip": "Wissen",
+  "filter_tooltip": "Filter",
+  "filter_refine_title": "Filters verfijnen",
+  "filter_type_label": "TYPE",
+  "filter_all": "Alles",
+  "filter_movies": "Films",
+  "filter_series": "Series",
+  "filter_keyword_label": "ZOEKWOORD",
+  "filter_keyword_hint": "Bijv. Batman, Marvel...",
+  "filter_genres_label": "GENRES",
+  "filter_year_from_label": "JAAR (VAN)",
+  "filter_year_to_label": "JAAR (TOT)",
+  "filter_min_rating_label": "MINIMALE RATING (0-100)",
+  "apply_filters": "Filters Toepassen",
+  "tmdb_movie_fetch_failed": "Kon filmdetails niet ophalen",
+  "no_imdb_for_movie": "Geen IMDb ID gevonden voor deze film",
+  "tmdb_movie_fetch_error": "Fout bij ophalen filmdetails",
+  "tmdb_series_fetch_failed": "Kon seriedetails niet ophalen",
+  "no_imdb_for_series": "Geen IMDb ID gevonden voor deze serie",
+  "tmdb_series_fetch_error": "Fout bij ophalen seriedetails",
+  "load_more_results": "Laad meer resultaten",
+  "best_rated": "Best beoordeeld",
+  "popular": "Populair",
+  "genre_action": "Actie",
+  "genre_adventure": "Avontuur",
+  "genre_animation": "Animatie",
+  "login_progress_save_snack": "Log in om voortgang te bewaren",
+  "progress_update_failed": "Kon voortgang niet bijwerken",
+  "open_details": "Open details",
+  "label_series": "Series",
+  "seen_count": "Gezien: {count}",
+  "remove_from_watchlist_tooltip": "Verwijder uit watchlist",
+  "login_manage_watchlist_snack": "Log in om watchlist te beheren",
+  "item_removed_watchlist": "Item verwijderd uit watchlist",
+  "remove_item_failed": "Kon item niet verwijderen",
+  "remove_from_watchlist_title": "Verwijderen uit watchlist",
+  "remove_from_watchlist_confirm": "Weet je zeker dat je dit item uit je watchlist wilt verwijderen?",
+  "tab_saved": "Opgeslagen",
+  "tab_watching": "Aan het kijken",
+  "watchlist_not_logged_in": "Je bent nog niet ingelogd.",
+  "watchlist_login_tap_message": "Tik hier om in te loggen en je watchlist te bekijken.",
+  "error_loading": "Fout bij laden: {error}",
+  "no_items": "Geen items",
+  "season_label": "Seizoen {number}",
+  "season_short": "S{num}",
+  "@season_short": {
+    "description": "Short season label",
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "seen_x_of_y": "{seen}/{total} gezien",
+  "title_wait": "{title}: een moment geduld...",
+  "no_progress_for_films": "Nog geen voortgang voor films",
+  "episode": "Aflevering",
+  "seen_episodes_label": "Gezien afleveringen: {count}",
+  "genre_comedy": "Komedie",
+  "genre_crime": "Misdaad",
+  "genre_documentary": "Documentaire",
+  "genre_drama": "Drama",
+  "genre_family": "Familie",
+  "genre_fantasy": "Fantasie",
+  "genre_history": "Geschiedenis",
+  "genre_horror": "Horror",
+  "genre_music": "Muziek",
+  "genre_mystery": "Mysterie",
+  "genre_news": "Nieuws",
+  "genre_reality": "Reality",
+  "genre_romance": "Romantiek",
+  "genre_scifi": "Sciencefiction",
+  "genre_talk": "Talkshow",
+  "genre_thriller": "Thriller",
+  "genre_war": "Oorlog",
+  "genre_western": "Western"
 }

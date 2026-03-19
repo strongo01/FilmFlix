@@ -9,6 +9,105 @@ class AppLocalizationsNl extends AppLocalizations {
   AppLocalizationsNl([String locale = 'nl']) : super(locale);
 
   @override
+  String get settingsTitle => 'Instellingen';
+
+  @override
+  String get myDashboard => 'Mijn Dashboard';
+
+  @override
+  String get preferences => 'Voorkeuren';
+
+  @override
+  String get notifications => 'Meldingen';
+
+  @override
+  String get notifications_enabled => 'Meldingen ingeschakeld';
+
+  @override
+  String get notifications_check_system => 'Controleer de Systeem Instellingen om meldingen toe te laten.';
+
+  @override
+  String get notifications_registration_failed => 'Aanmelden voor notificaties mislukt.';
+
+  @override
+  String get language => 'Taal';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get dutch => 'Nederlands';
+
+  @override
+  String get french => 'Frans';
+
+  @override
+  String get german => 'Duits';
+
+  @override
+  String get turkish => 'Turks';
+
+  @override
+  String get spanish => 'Spaans';
+
+  @override
+  String get close => 'Sluiten';
+
+  @override
+  String get nameLabel => 'Je naam';
+
+  @override
+  String get nameValidation => 'Vul je naam in';
+
+  @override
+  String get cancel => 'Annuleer';
+
+  @override
+  String get save => 'Opslaan';
+
+  @override
+  String get mustBeLoggedIn => 'Je moet ingelogd zijn om je naam te wijzigen';
+
+  @override
+  String get profile_default_name => 'Kevin le Goat';
+
+  @override
+  String get profile_default_email => 'kevinlegoat@example.com';
+
+  @override
+  String get filmsDone => 'Films af';
+
+  @override
+  String get watchlist_label => 'Watchlist';
+
+  @override
+  String get support => 'Support';
+
+  @override
+  String get customerService_title => 'Klantenservice';
+
+  @override
+  String get aboutTitle => 'Over CineTrackr';
+
+  @override
+  String get aboutText => 'CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma\'s bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr — veel kijkplezier!';
+
+  @override
+  String get privacyPolicy => 'Privacybeleid';
+
+  @override
+  String get logout => 'Uitloggen';
+
+  @override
+  String get loginIn => 'Inloggen';
+
+  @override
+  String get nameUpdated => 'Naam bijgewerkt';
+
+  @override
+  String get nameUpdateFailed => 'Bijwerken mislukt';
+
+  @override
   String get admin_title => 'Admin';
 
   @override
@@ -22,9 +121,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get not_logged_in_message => 'Log eerst in als admin en probeer het opnieuw.';
-
-  @override
-  String get close => 'Sluiten';
 
   @override
   String get no_users_doc => 'Geen users-doc gevonden.';
@@ -98,9 +194,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get paste_doc_id => 'Plak hier het document ID van customerquestions:';
-
-  @override
-  String get cancel => 'Annuleer';
 
   @override
   String get fetch => 'Fetch';
@@ -204,9 +297,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get edit_faq_title => 'Bewerk FAQ';
-
-  @override
-  String get save => 'Opslaan';
 
   @override
   String get faq_updated => 'FAQ bijgewerkt';
@@ -370,40 +460,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get open => 'Open';
 
   @override
-  String get settingsTitle => 'Instellingen';
-
-  @override
-  String get myDashboard => 'Mijn Dashboard';
-
-  @override
-  String get preferences => 'Voorkeuren';
-
-  @override
-  String get support => 'Support';
-
-  @override
-  String get notifications => 'Meldingen';
-
-  @override
-  String get language => 'Taal';
-
-  @override
-  String get dutch => 'Nederlands';
-
-  @override
-  String get mustBeLoggedIn => 'Je moet ingelogd zijn om je naam te wijzigen';
-
-  @override
   String get changeNameTitle => 'Wijzig je naam';
-
-  @override
-  String get nameLabel => 'Je naam';
-
-  @override
-  String get nameValidation => 'Vul je naam in';
-
-  @override
-  String get nameUpdated => 'Naam bijgewerkt';
 
   @override
   String get updateFailed => 'Bijwerken mislukt';
@@ -413,9 +470,6 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get save_and_continue => 'Opslaan en doorgaan';
-
-  @override
-  String get customerService_title => 'Klantenservice';
 
   @override
   String get contact_admin_title => 'Contact admin';
@@ -594,9 +648,6 @@ class AppLocalizationsNl extends AppLocalizations {
   String get loginPasswordTooShort => 'Wachtwoord moet minstens 6 tekens zijn';
 
   @override
-  String get loginIn => 'Inloggen';
-
-  @override
   String get loginRegister => 'Registreren';
 
   @override
@@ -698,7 +749,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get warning_bioscoop_content => 'Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.';
 
   @override
-  String get continue => 'Doorgaan';
+  String get continue_label => 'Doorgaan';
 
   @override
   String get mark_previous_episodes_title => 'Vorige afleveringen markeren?';
@@ -759,5 +810,283 @@ class AppLocalizationsNl extends AppLocalizations {
   String get no => 'Nee';
 
   @override
+  String get stars => 'sterren';
+
+  @override
   String get appleSignInNoIdentityToken => 'Apple-aanmelding mislukt: geen identity token ontvangen';
+
+  @override
+  String get avatar_login_prompt => 'Log in om je profielfoto aan te passen';
+
+  @override
+  String get invalid_input => 'Ongeldige invoer';
+
+  @override
+  String get only_emoji_error => 'Voer alleen emoji in';
+
+  @override
+  String get use => 'Gebruik';
+
+  @override
+  String get emoji_input_hint => 'Plak of typ een emoji (optioneel)';
+
+  @override
+  String get edit_avatar_title => 'Pas profielplaatje aan';
+
+  @override
+  String get choose_color => 'Kies kleur';
+
+  @override
+  String get choose_emoji_optional => 'Kies emoji (optioneel)';
+
+  @override
+  String get your_badges => 'JOUW BADGES';
+
+  @override
+  String get account_section => 'ACCOUNT';
+
+  @override
+  String get edit_profile => 'Profiel bewerken';
+
+  @override
+  String get films => 'Films';
+
+  @override
+  String get badge_level_prefix => 'Lv';
+
+  @override
+  String get badge_adventurer => 'Avonturier';
+
+  @override
+  String get badge_horror_king => 'Horror King';
+
+  @override
+  String get badge_binge_watcher => 'Binge Watcher';
+
+  @override
+  String get badge_early_bird => 'Early Bird';
+
+  @override
+  String get appVersion => 'CineTrackr v1.0.4';
+
+  @override
+  String get search_hint => 'Zoek serie/film...';
+
+  @override
+  String get clear_tooltip => 'Wissen';
+
+  @override
+  String get filter_tooltip => 'Filter';
+
+  @override
+  String get filter_refine_title => 'Filters verfijnen';
+
+  @override
+  String get filter_type_label => 'TYPE';
+
+  @override
+  String get filter_all => 'Alles';
+
+  @override
+  String get filter_movies => 'Films';
+
+  @override
+  String get filter_series => 'Series';
+
+  @override
+  String get filter_keyword_label => 'ZOEKWOORD';
+
+  @override
+  String get filter_keyword_hint => 'Bijv. Batman, Marvel...';
+
+  @override
+  String get filter_genres_label => 'GENRES';
+
+  @override
+  String get filter_year_from_label => 'JAAR (VAN)';
+
+  @override
+  String get filter_year_to_label => 'JAAR (TOT)';
+
+  @override
+  String get filter_min_rating_label => 'MINIMALE RATING (0-100)';
+
+  @override
+  String get apply_filters => 'Filters Toepassen';
+
+  @override
+  String get tmdb_movie_fetch_failed => 'Kon filmdetails niet ophalen';
+
+  @override
+  String get no_imdb_for_movie => 'Geen IMDb ID gevonden voor deze film';
+
+  @override
+  String get tmdb_movie_fetch_error => 'Fout bij ophalen filmdetails';
+
+  @override
+  String get tmdb_series_fetch_failed => 'Kon seriedetails niet ophalen';
+
+  @override
+  String get no_imdb_for_series => 'Geen IMDb ID gevonden voor deze serie';
+
+  @override
+  String get tmdb_series_fetch_error => 'Fout bij ophalen seriedetails';
+
+  @override
+  String get load_more_results => 'Laad meer resultaten';
+
+  @override
+  String get best_rated => 'Best beoordeeld';
+
+  @override
+  String get popular => 'Populair';
+
+  @override
+  String get genre_action => 'Actie';
+
+  @override
+  String get genre_adventure => 'Avontuur';
+
+  @override
+  String get genre_animation => 'Animatie';
+
+  @override
+  String get genre_comedy => 'Komedie';
+
+  @override
+  String get genre_crime => 'Misdaad';
+
+  @override
+  String get genre_documentary => 'Documentaire';
+
+  @override
+  String get genre_drama => 'Drama';
+
+  @override
+  String get genre_family => 'Familie';
+
+  @override
+  String get genre_fantasy => 'Fantasie';
+
+  @override
+  String get genre_history => 'Geschiedenis';
+
+  @override
+  String get genre_horror => 'Horror';
+
+  @override
+  String get genre_music => 'Muziek';
+
+  @override
+  String get genre_mystery => 'Mysterie';
+
+  @override
+  String get genre_news => 'Nieuws';
+
+  @override
+  String get genre_reality => 'Reality';
+
+  @override
+  String get genre_romance => 'Romantiek';
+
+  @override
+  String get genre_scifi => 'Sciencefiction';
+
+  @override
+  String get genre_talk => 'Talkshow';
+
+  @override
+  String get genre_thriller => 'Thriller';
+
+  @override
+  String get genre_war => 'Oorlog';
+
+  @override
+  String get genre_western => 'Western';
+
+  @override
+  String get login_progress_save_snack => 'Log in om voortgang te bewaren';
+
+  @override
+  String get progress_update_failed => 'Kon voortgang niet bijwerken';
+
+  @override
+  String get open_details => 'Open details';
+
+  @override
+  String get label_series => 'Series';
+
+  @override
+  String seen_count(Object count) {
+    return 'Gezien: $count';
+  }
+
+  @override
+  String get remove_from_watchlist_tooltip => 'Verwijder uit watchlist';
+
+  @override
+  String get login_manage_watchlist_snack => 'Log in om watchlist te beheren';
+
+  @override
+  String get item_removed_watchlist => 'Item verwijderd uit watchlist';
+
+  @override
+  String get remove_item_failed => 'Kon item niet verwijderen';
+
+  @override
+  String get remove_from_watchlist_title => 'Verwijderen uit watchlist';
+
+  @override
+  String get remove_from_watchlist_confirm => 'Weet je zeker dat je dit item uit je watchlist wilt verwijderen?';
+
+  @override
+  String get tab_saved => 'Opgeslagen';
+
+  @override
+  String get tab_watching => 'Aan het kijken';
+
+  @override
+  String get watchlist_not_logged_in => 'Je bent nog niet ingelogd.';
+
+  @override
+  String get watchlist_login_tap_message => 'Tik hier om in te loggen en je watchlist te bekijken.';
+
+  @override
+  String error_loading(Object error) {
+    return 'Fout bij laden: $error';
+  }
+
+  @override
+  String get no_items => 'Geen items';
+
+  @override
+  String season_label(Object number) {
+    return 'Seizoen $number';
+  }
+
+  @override
+  String season_short(Object num) {
+    return 'S$num';
+  }
+
+  @override
+  String seen_x_of_y(Object seen, Object total) {
+    return '$seen/$total gezien';
+  }
+
+  @override
+  String title_wait(Object title) {
+    return '$title: een moment geduld...';
+  }
+
+  @override
+  String get no_progress_for_films => 'Nog geen voortgang voor films';
+
+  @override
+  String get episode => 'Aflevering';
+
+  @override
+  String seen_episodes_label(Object count) {
+    return 'Gezien afleveringen: $count';
+  }
 }
