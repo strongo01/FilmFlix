@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +42,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   String _formatRating(String? rating) {
     if (rating == null || rating.isEmpty || rating == '-') return rating ?? '';
-    
+        final loc = AppLocalizations.of(context)!;
     // Some ratings come as "73." or "73" (out of 100)
     // or "7.3" (out of 10). Let's clean and parse.
     String cleanRating = rating.replaceAll(',', '.');
@@ -53,9 +54,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (doubleRating != null) {
       if (doubleRating == 0) return '-';
       if (doubleRating > 10 && doubleRating <= 100) {
-        return '${(doubleRating / 10).toStringAsFixed(1)}/10 sterren';
+        return '${(doubleRating / 10).toStringAsFixed(1)}/10 ${loc.stars}';
       } else if (doubleRating <= 10) {
-        return '${doubleRating.toStringAsFixed(1)}/10 sterren';
+        return '${doubleRating.toStringAsFixed(1)}/10 ${loc.stars}';
       }
     }
     
@@ -123,10 +124,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       });
 
       if (youtubeVideos.isNotEmpty) {
+        final rawKey = youtubeVideos[0]['key']?.toString();
+        final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
+        debugPrint('Selected trailer raw key: $rawKey, normalized: $normKey, site: ${youtubeVideos[0]['site']}');
         setState(() {
           _allVideos = youtubeVideos;
           _currentVideoIndex = 0;
-          _trailerKey = youtubeVideos[0]['key']?.toString();
+          _trailerKey = normKey;
           _trailerSite = youtubeVideos[0]['site']?.toString();
         });
       }
@@ -174,20 +178,23 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     'Zee5': 'zee5',
   };
 
-  String _formatStreamingType(Map<String, dynamic> option) {
+  String _formatStreamingType(BuildContext context, Map<String, dynamic> option) {
     // Deze functie neemt een streaming optie (zoals die we van de API krijgen) en formatteert het type van de optie in een leesbaar formaat. We kijken naar het 'type' veld van de optie, en afhankelijk van of het een abonnement, koopoptie, of huur optie is, formatteren we het label dienovereenkomstig. Voor koop- en huur opties voegen we ook de prijs toe als deze beschikbaar is. Dit maakt het duidelijker voor de gebruiker wat voor soort streaming optie het is en wat de kosten zijn.
     final type = option['type']?.toString();
 
+    final loc = AppLocalizations.of(context)!;
     switch (type) {
-      // We gebruiken een switch statement om het type te bepalen en het juiste label te retourneren
       case 'subscription':
-        return 'Included with subscription';
+        return loc.included_with_subscription;
       case 'buy':
         final price = option['price']?['formatted'];
-        return price != null ? 'Buy • $price' : 'Buy';
+        return price != null ? loc.buy_with_price(price.toString()) : loc.buy;
       case 'rent':
         final price = option['price']?['formatted'];
-        return price != null ? 'Rent • $price' : 'Rent';
+        return price != null ? loc.rent_with_price(price.toString()) : loc.rent;
+      case 'addon':
+        final price = option['price']?['formatted'];
+        return price != null ? loc.addon_with_price(price.toString()) : loc.addon;
       default:
         return type ?? '';
     }
@@ -243,29 +250,30 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   // Badge met kleur
-  Widget _buildTypeChip(Map<String, dynamic> option) {
+  Widget _buildTypeChip(BuildContext context, Map<String, dynamic> option) {
     final type = option['type']?.toString();
     final price = option['price']?['formatted'];
 
     Color bg;
     String label;
 
+    final loc = AppLocalizations.of(context)!;
     switch (type) {
       case 'subscription':
         bg = Colors.green.shade100;
-        label = 'Inbegrepen';
+        label = loc.included_with_subscription;
         break;
       case 'rent':
         bg = Colors.blue.shade100;
-        label = price != null ? 'Huren • $price' : 'Huren';
+        label = price != null ? loc.rent_with_price(price.toString()) : loc.rent;
         break;
       case 'buy':
         bg = Colors.orange.shade100;
-        label = price != null ? 'Kopen • $price' : 'Kopen';
+        label = price != null ? loc.buy_with_price(price.toString()) : loc.buy;
         break;
       case 'addon':
         bg = Colors.grey.shade100;
-        label = price != null ? 'Uitbreiding • $price' : 'Uitbreiding';
+        label = price != null ? loc.addon_with_price(price.toString()) : loc.addon;
         break;
       default:
         bg = Colors.grey.shade200;
@@ -280,7 +288,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         style: TextStyle(color: isDark ? Colors.black : Colors.black),
       ),
       backgroundColor: bg,
-    ); // Deze functie bouwt een Chip widget die het type van de streaming optie weergeeft met een bijpassende achtergrondkleur. Abonnementen krijgen een groene achtergrond, huur opties krijgen blauw, koopopties krijgen oranje, en andere types krijgen grijs. De chip toont ook de prijs als deze beschikbaar is. Dit maakt het visueel gemakkelijk te onderscheiden welke opties inbegrepen zijn bij een abonnement en welke extra kosten met zich meebrengen.
+    );
   }
 
   Future<void> _openLink(String? url) async {
@@ -305,6 +313,37 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       return maybeListOrMap.entries.map((e) => e.value).toList();
     }
     return [];
+  }
+
+  String? _normalizeYoutubeId(String? raw) {
+    if (raw == null) return null;
+    final r = raw.trim();
+    // If it already looks like an id, return it
+    final idPattern = RegExp(r'^[a-zA-Z0-9_-]{11,}$');
+    if (idPattern.hasMatch(r) && !r.contains('http') && !r.contains('/')) {
+      return r;
+    }
+
+    try {
+      final uri = Uri.tryParse(r);
+      if (uri != null) {
+        final v = uri.queryParameters['v'];
+        if (v != null && v.isNotEmpty) return v;
+        final host = uri.host.toLowerCase();
+        if (host.contains('youtu.be')) {
+          final segs = uri.pathSegments;
+          if (segs.isNotEmpty) return segs.last;
+        }
+        // embed path e.g. /embed/VIDEOID
+        final embedIndex = uri.pathSegments.indexWhere((s) => s == 'embed');
+        if (embedIndex >= 0 && uri.pathSegments.length > embedIndex + 1) return uri.pathSegments[embedIndex + 1];
+      }
+    } catch (_) {}
+
+    // Fallback: try to extract id like v=... or youtu.be/...
+    final vidMatch = RegExp(r'(?:v=|youtu\.be/|embed/)([A-Za-z0-9_-]{6,})').firstMatch(r);
+    if (vidMatch != null) return vidMatch.group(1);
+    return r;
   }
 
   Widget _buildServiceIconAsset(
@@ -864,18 +903,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: const Text('Inloggen vereist'),
-          content: const Text(
-            'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?',
-          ),
+          title: Text(AppLocalizations.of(context)!.login_required_title),
+          content: Text(AppLocalizations.of(context)!.login_required_message),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Annuleren'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Naar login'),
+              child: Text(AppLocalizations.of(context)!.goto_login),
             ),
           ],
         );
@@ -940,7 +977,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       // rollback UI if firestore fails
       setState(() => _isInWatchlist = !newState);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kon watchlist niet bijwerken.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.watchlist_update_failed)),
       );
     }
   }
@@ -994,7 +1031,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         }
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kon afleveringstatus niet bijwerken.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.episode_status_update_failed)),
       );
     }
   }
@@ -1045,7 +1082,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           _seenSet.add(epKey);
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kon "Gezien" status niet bijwerken.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.movie_seen_update_failed)),
       );
     }
   }
@@ -1157,7 +1194,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               ? Colors.grey[800]
                               : Colors.grey[200],
                         )
-                      : _buildTypeChip(option);
+                      : _buildTypeChip(context, option);
 
                   return GestureDetector(
                     onTap: () async {
@@ -1166,16 +1203,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         final proceed = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text('!!Waarschuwing!!', style: TextStyle(fontWeight: FontWeight.bold)),
-                            content: const Text('Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.'),
+                            title: Text(AppLocalizations.of(context)!.warning_title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            content: Text(AppLocalizations.of(context)!.warning_bioscoop_content),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(ctx).pop(false),
-                                child: const Text('Annuleren'),
+                                child: Text(AppLocalizations.of(context)!.cancel),
                               ),
                               ElevatedButton(
                                 onPressed: () => Navigator.of(ctx).pop(true),
-                                child: const Text('Doorgaan'),
+                                child: Text(AppLocalizations.of(context)!.continue_label),
                               ),
                             ],
                           ),
@@ -1307,9 +1344,9 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.translate, size: 16),
-                      label: const Text(
-                        'Vertalen',
-                        style: TextStyle(fontSize: 12),
+                      label: Text(
+                        AppLocalizations.of(context)!.translate,
+                        style: const TextStyle(fontSize: 12),
                       ),
                       onPressed: _isTranslating[epKey] == true
                           ? null
@@ -1363,7 +1400,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 height: 28,
                               ),
                               title: Text(service),
-                              subtitle: Text(_formatStreamingType(option)),
+                              subtitle: Text(_formatStreamingType(context, option)),
                               onTap: () {
                                 Navigator.pop(ctx);
                                 _openLink(link?.toString());
@@ -1399,21 +1436,21 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (dctx) => AlertDialog(
-                          title: const Text('Vorige afleveringen markeren?'),
-                          content: Text('Je markeert "${epTitle}" als gezien. Wil je ook ${unseenPrev.length} vorige aflevering(en) van seizoen ${seasonIndex + 1} markeren als gezien?'),
+                          title: Text(AppLocalizations.of(context)!.mark_previous_episodes_title),
+                          content: Text(AppLocalizations.of(context)!.mark_previous_episodes_message(epTitle, unseenPrev.length, seasonIndex + 1)),
                           actions: [
-                            TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: const Text('Nee')),
-                            TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: const Text('Ja')),
+                            TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: Text(AppLocalizations.of(context)!.no)),
+                            TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: Text(AppLocalizations.of(context)!.yes)),
                           ],
                         ),
                       );
 
-                      if (confirm == true) {
+                        if (confirm == true) {
                         for (final p in unseenPrev) {
                           await _toggleEpisodeSeen('s${seasonIndex}_e${p}', true);
                         }
                         await _toggleEpisodeSeen(epKey, true);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${unseenPrev.length + 1} afleveringen gemarkeerd als gezien')));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.episodes_marked_seen(unseenPrev.length + 1))));
                         setState(() {});
                         return;
                       }
@@ -1460,7 +1497,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                               Icons.translate,
                                               size: 16,
                                             ),
-                                      label: const Text('Vertalen'),
+                                      label: Text(AppLocalizations.of(context)!.translate),
                                       onPressed: _isTranslating[epKey] == true
                                           ? null
                                           : () async {
@@ -1476,10 +1513,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 ),
                               ),
                             ),
-                            actions: [
+                              actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(ctx).pop(),
-                                child: const Text('Sluiten'),
+                                child: Text(AppLocalizations.of(context)!.close),
                               ),
                             ],
                           );
@@ -1497,11 +1534,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     if (_loadingMovie) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_error != null) {
-      return Scaffold(body: Center(child: Text('Error: $_error')));
+      final loc = AppLocalizations.of(context)!;
+      return Scaffold(body: Center(child: Text(loc.fetch_error_message(_error ?? ''))));
     }
     final isMovie =
         _isResponseMovie(_omdbData?['Type']?.toString()) ||
@@ -1515,7 +1554,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Details')),
+      appBar: AppBar(title: Text(loc.details)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -1549,9 +1588,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               icon: const Icon(Icons.arrow_back_ios),
                               onPressed: _currentVideoIndex > 0
                                   ? () {
+                                      final rawKey = _allVideos[_currentVideoIndex - 1]['key']?.toString();
+                                      final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
+                                      debugPrint('Switched trailer (prev) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex - 1]['site']}');
                                       setState(() {
                                         _currentVideoIndex--;
-                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerKey = normKey;
                                         _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
                                       });
                                     }
@@ -1579,9 +1621,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               icon: const Icon(Icons.arrow_forward_ios),
                               onPressed: _currentVideoIndex < _allVideos.length - 1
                                   ? () {
+                                      final rawKey = _allVideos[_currentVideoIndex + 1]['key']?.toString();
+                                      final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
+                                      debugPrint('Switched trailer (next) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex + 1]['site']}');
                                       setState(() {
                                         _currentVideoIndex++;
-                                        _trailerKey = _allVideos[_currentVideoIndex]['key']?.toString();
+                                        _trailerKey = normKey;
                                         _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
                                       });
                                     }
@@ -1636,7 +1681,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                   ),
                                 )
                               : const Icon(Icons.translate, size: 18),
-                          label: const Text('Vertalen'),
+                              label: Text(loc.translate),
                           onPressed: _isTranslating['overview'] == true
                               ? null
                               : () {
@@ -1697,7 +1742,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                       size: 20,
                                     ),
                                     label: Text(
-                                      _isInWatchlist ? 'Verwijder' : 'Opslaan',
+                                      _isInWatchlist ? loc.remove : loc.save,
                                       style: const TextStyle(fontSize: 14),
                                     ),
                                     onPressed: () async {
@@ -1735,7 +1780,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Gezien',
+                                          loc.seen,
                                           style: TextStyle(
                                             color: isDark
                                                 ? Colors.white
@@ -1756,7 +1801,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             const Icon(Icons.family_restroom_rounded, size: 18),
                             const SizedBox(width: 6),
                             Text(
-                              'Leeftijdsclassificatie: $_rated',
+                              loc.age_rating(_rated ?? ''),
                               style: TextStyle(
                                 color: isDark
                                     ? Colors.grey.shade300
@@ -1796,7 +1841,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
-                              'Producers / Creators',
+                              loc.producers_creators,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -1838,7 +1883,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
-                              'Actors',
+                              loc.actors,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -1872,13 +1917,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                     const SizedBox(height: 12),
                     Text(
-                      'Seizoenen: ${rapid['seasonCount'] ?? '-'}',
+                      loc.seasons(rapid['seasonCount'] ?? '-'),
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                     Text(
-                      'Afleveringen: ${rapid['episodeCount'] ?? '-'}',
+                      loc.episodes(rapid['episodeCount'] ?? '-'),
                       style: TextStyle(
                         color: isDark ? Colors.white : Colors.black,
                       ),

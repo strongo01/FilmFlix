@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,9 +17,20 @@ import 'package:cinetrackr/views/settingscreen.dart';
 import 'package:cinetrackr/views/watchlistscreen.dart';
 import 'package:cinetrackr/utils/fcm_service.dart';
 import 'package:cinetrackr/views/profiel.dart';
+import 'package:cinetrackr/services/tutorial_service.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
+
+// Global notifier to allow runtime locale changes from settings.
+final ValueNotifier<Locale?> localeNotifier = ValueNotifier<Locale?>(null);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+ await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final analytics = FirebaseAnalytics.instance;
 
@@ -40,6 +52,18 @@ Future<void> main() async {
   } catch (_) {
     }
 
+  // Load saved locale preference (if any) so the app can start in the chosen language.
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('app_locale');
+    if (saved != null) {
+      if (saved == 'nl') localeNotifier.value = const Locale('nl');
+      else if (saved == 'en') localeNotifier.value = const Locale('en');
+    }
+  } catch (e) {
+    debugPrint('Could not load saved locale: $e');
+  }
+
   runApp(const CineTrackrApp());
 }
 
@@ -48,8 +72,13 @@ class CineTrackrApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CineTrackr',
+    final l10n = L10n.of(context);
+    return ValueListenableBuilder<Locale?>(
+      valueListenable: localeNotifier,
+      builder: (context, locale, _) {
+        return MaterialApp(
+          locale: locale,
+      title: l10n?.appTitle ?? 'CineTrackr',
       debugShowCheckedModeBanner: false,
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
@@ -66,6 +95,20 @@ class CineTrackrApp extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system,
+      localizationsDelegates: [
+        L10n.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('nl'),
+        Locale('en'),
+        Locale('de'),
+        Locale('fr'),
+        Locale('tr'),
+      Locale('es'),
+      ],
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -86,11 +129,14 @@ class CineTrackrApp extends StatelessWidget {
         '/home': (context) => const MainNavigation(),
       },
     );
+      });
   }
 }
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
+
+  static final GlobalKey kaartKey = GlobalKey();
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -99,6 +145,12 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
   StreamSubscription<User?>? _authSub;
+
+  final GlobalKey _homeKey = GlobalKey();
+  final GlobalKey _watchlistKey = GlobalKey();
+  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _foodKey = GlobalKey();
+  final GlobalKey _profileKey = GlobalKey();
 
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
@@ -109,48 +161,119 @@ class _MainNavigationState extends State<MainNavigation> {
     const ProfileScreen(),      // Index 4
   ];
 
+  void _showTutorial() {
+    // Check of de eerste key wel echt in de widget tree zit
+    if (_homeKey.currentContext == null) {
+      debugPrint("Tutorial: _homeKey context is null, skipping tutorial trigger.");
+      return;
+    }
+
+    final l10n = L10n.of(context);
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "home",
+        key: _homeKey,
+        text: l10n?.tutorialHome ?? "Welkom! Hier vind je de nieuwste films en series.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "watchlist",
+        key: _watchlistKey,
+        text: l10n?.tutorialWatchlist ?? "Sla hier je favoriete films op voor later.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "search",
+        key: _searchKey,
+        text: l10n?.tutorialSearch ?? "Zoek naar specifieke titels of genres.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "food",
+        key: _foodKey,
+        text: l10n?.tutorialFood ?? "Bekijk bijpassende snacks voor je filmavond!",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "profile",
+        key: _profileKey,
+        text: l10n?.tutorialProfile ?? "Beheer hier je profiel en instellingen.",
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "kaart-target",
+        key: MainNavigation.kaartKey,
+        text: l10n?.tutorialMap ?? "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
+        align: ContentAlign.bottom,
+      ),
+    ];
+
+    void markTutorialAsDone() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('tutorial_done', true);
+      debugPrint("Tutorial: Marked as done in SharedPreferences.");
+    }
+
+    TutorialService.showTutorial(
+      context,
+      targets,
+      onFinish: markTutorialAsDone,
+      onSkip: markTutorialAsDone,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = L10n.of(context);
 
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        type: BottomNavigationBarType.fixed, // Noodzakelijk bij 5 knoppen
-        backgroundColor: isDark ? const Color(0xFF1C282E) : Colors.white,
-        selectedItemColor: const Color(0xFFD4AF37),
-        unselectedItemColor: Colors.grey,
-        selectedFontSize: 12,
-        unselectedFontSize: 10,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1C282E) : Colors.white,
+          border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+        ),
+        padding: const EdgeInsets.only(top: 8, bottom: 24),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(0, Icons.home_outlined, Icons.home_rounded, l10n?.navHome ?? 'Home', _homeKey),
+            _buildNavItem(1, Icons.movie_outlined, Icons.movie_filter_rounded, l10n?.navWatchlist ?? 'Watchlist', _watchlistKey),
+            _buildNavItem(2, Icons.search_rounded, Icons.search_rounded, l10n?.navSearch ?? 'Zoeken', _searchKey),
+            _buildNavItem(3, Icons.fastfood_outlined, Icons.fastfood_rounded, l10n?.navFood ?? 'Food', _foodKey),
+            _buildNavItem(4, Icons.person_outline_rounded, Icons.person_rounded, l10n?.navProfile ?? 'Profiel', _profileKey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, IconData activeIcon, String label, GlobalKey key) {
+    final isSelected = _selectedIndex == index;
+    final color = isSelected ? const Color(0xFFD4AF37) : Colors.grey;
+    
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isSelected ? activeIcon : icon,
+            key: key,
+            color: color,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.movie_outlined),
-            activeIcon: Icon(Icons.movie_filter_rounded),
-            label: 'Watchlist',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search_rounded),
-            label: 'Zoeken',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.fastfood_outlined),
-            activeIcon: Icon(Icons.fastfood_rounded),
-            label: 'Food',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline_rounded),
-            activeIcon: Icon(Icons.person_rounded),
-            label: 'Profiel',
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+            ),
           ),
         ],
       ),
@@ -160,6 +283,10 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Gebruik een herhalende check om te wachten tot de key beschikbaar is
+      _checkAndStartTutorial();
+    });
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
       // Keep analytics user id in sync with auth state.
       final analytics = FirebaseAnalytics.instance;
@@ -176,6 +303,31 @@ class _MainNavigationState extends State<MainNavigation> {
           await prefs.setString('analytics_anon_id', anon);
         }
         await analytics.setUserId(id: anon);
+      }
+    });
+  }
+
+  int _tutorialRetryCount = 0;
+  void _checkAndStartTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool isDone = prefs.getBool('tutorial_done') ?? false;
+
+    // Om de tutorial WEL elke keer te tonen (voor testen), comment de 'if (isDone) return;' hieronder uit:
+    //TUTORIAL UIT/AAN
+    if (isDone) return;
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+
+      if (_homeKey.currentContext != null) {
+        debugPrint("Tutorial: Home key valid, starting...");
+        _showTutorial();
+      } else if (_tutorialRetryCount < 5) {
+        _tutorialRetryCount++;
+        debugPrint("Tutorial: Home key not found, retry $_tutorialRetryCount...");
+        _checkAndStartTutorial();
+      } else {
+        debugPrint("Tutorial: Gave up after 5 retries.");
       }
     });
   }
