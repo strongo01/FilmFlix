@@ -4,14 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
-// VERGEET DEZE IMPORT NIET:
 import 'package:cinetrackr/views/customer_service.dart';
 import 'package:cinetrackr/main.dart';
 import 'package:cinetrackr/views/loginscreen.dart';
 import 'package:cinetrackr/utils/notification_permissions.dart';
 import 'package:cinetrackr/utils/fcm_service.dart';
+import 'package:cinetrackr/l10n/l10n.dart';
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,10 +32,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int _cachedUnreadCustomerReplies = 0;
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
       _customerQuestionsSub;
+  String _languageCode = 'nl';
 
   @override
   void initState() {
     super.initState();
+    // Default to device locale unless a saved preference exists
+    try {
+      final deviceLang = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      _languageCode = deviceLang;
+    } catch (_) {
+      _languageCode = 'nl';
+    }
     _currentUser = FirebaseAuth.instance.currentUser;
     _displayName = _currentUser?.displayName;
     _email = _currentUser?.email;
@@ -71,6 +80,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) setState(() => _cachedUnreadCustomerReplies = 0);
       }
     });
+
+    // Load saved language preference for display
+    SharedPreferences.getInstance().then((prefs) {
+      final lc = prefs.getString('app_locale') ?? _languageCode;
+      if (mounted) setState(() => _languageCode = lc);
+    }).catchError((e) {
+      debugPrint('Failed to load saved language: $e');
+    });
   }
 
   @override
@@ -91,9 +108,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? const Color(0xFF0F171B)
           : const Color(0xFFF5F7F8),
       appBar: AppBar(
-        title: const Text(
-          'Instellingen',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Text(
+          L10n.of(context)?.settingsTitle ?? 'Instellingen',
+          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: movieBlue,
@@ -103,19 +120,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          _buildSectionLabel('Mijn Dashboard'),
+          _buildSectionLabel(L10n.of(context)?.myDashboard ?? 'Mijn Dashboard'),
           _buildAccountCard(cardColor, textColor),
 
           const SizedBox(height: 24),
 
-          _buildSectionLabel('Voorkeuren'),
+          _buildSectionLabel(L10n.of(context)?.preferences ?? 'Voorkeuren'),
           _buildProfessionalCard(
             cardColor,
             child: Column(
               children: [
                 SwitchListTile.adaptive(
                   secondary: Icon(Icons.notifications_none, color: movieBlue),
-                  title: const Text('Meldingen'),
+                  title: Text(L10n.of(context)?.notifications ?? 'Meldingen'),
                   value: _notificationsEnabled,
                   activeColor: goldAccent,
                   onChanged: (val) async {
@@ -134,19 +151,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       if (granted && ok) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Meldingen ingeschakeld')),
+                          SnackBar(content: Text(L10n.of(context)?.notifications_enabled ?? 'Meldingen ingeschakeld')),
                         );
                       } else if (!granted) {
                         // OS had permissie geblokkeerd of we zitten in Android Settings. Het token gokken we succesvol geupload.
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Controleer de Systeem Instellingen om meldingen toe te laten.'),
-                              duration: Duration(seconds: 4),
+                          SnackBar(
+                              content: Text(L10n.of(context)?.notifications_check_system ?? 'Controleer de Systeem Instellingen om meldingen toe te laten.'),
+                              duration: const Duration(seconds: 4),
                           ),
                         );
                       } else {
                          ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Aanmelden voor notificaties mislukt.')),
+                          SnackBar(content: Text(L10n.of(context)?.notifications_registration_failed ?? 'Aanmelden voor notificaties mislukt.')),
                         );
                          setState(() => _notificationsEnabled = false);
                       }
@@ -159,13 +176,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 _buildDivider(isDark),
-                // Hier geven we een lege functie mee voor nu
                 _buildSimpleTile(
                   Icons.language,
-                  'Taal',
-                  'Nederlands',
+                  L10n.of(context)?.language ?? 'Taal',
+                  // Show the currently selected language label
+                  _languageLabel(_languageCode, context),
                   textColor,
-                  () {},
+                  () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    final current = prefs.getString('app_locale') ?? _languageCode;
+
+                    final langOptions = [
+                      {'code': 'nl', 'label': L10n.of(context)?.dutch ?? 'Nederlands'},
+                      {'code': 'en', 'label': L10n.of(context)?.english ?? 'English'},
+                      {'code': 'fr', 'label': L10n.of(context)?.french ?? 'Français'},
+                      {'code': 'de', 'label': L10n.of(context)?.german ?? 'Deutsch'},
+                      {'code': 'es', 'label': L10n.of(context)?.spanish ?? 'Español'},
+                      {'code': 'tr', 'label': L10n.of(context)?.turkish ?? 'Türkçe'},
+                    ];
+
+                    final choice = await showDialog<String>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: cardColor,
+                        title: Text(L10n.of(context)?.language ?? 'Taal', style: TextStyle(color: textColor)),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: langOptions.map((opt) {
+                            return RadioListTile<String>(
+                              value: opt['code']!,
+                              groupValue: current,
+                              title: Text(opt['label']!, style: TextStyle(color: textColor)),
+                              onChanged: (v) => Navigator.of(ctx).pop(v),
+                            );
+                          }).toList(),
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(L10n.of(context)?.close ?? 'Close', style: TextStyle(color: textColor)))
+                        ],
+                      ),
+                    );
+
+                    if (choice != null) {
+                      await prefs.setString('app_locale', choice);
+                      if (!mounted) return;
+                      setState(() => _languageCode = choice);
+                      // Update global notifier so the app updates immediately
+                      localeNotifier.value = Locale(choice);
+                    }
+                  },
                 ),
               ],
             ),
@@ -173,7 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 24),
 
-          _buildSectionLabel('Support'),
+          _buildSectionLabel(L10n.of(context)?.support ?? 'Support'),
           _buildProfessionalCard(
             cardColor,
             child: Column(
@@ -182,7 +241,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   leading: Icon(Icons.help_outline, color: movieBlue.withOpacity(0.7)),
                   title: Text(
-                    'Klantenservice',
+                    L10n.of(context)?.customerService_title ?? 'Klantenservice',
                     style: TextStyle(
                       color: textColor,
                       fontSize: 15,
@@ -229,7 +288,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildDivider(isDark),
                 _buildSimpleTile(
                   Icons.info_outline,
-                  'Over CineTrackr',
+                  L10n.of(context)?.aboutTitle ?? 'Over CineTrackr',
                   '',
                   textColor,
                   () {
@@ -243,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildDivider(isDark),
                 _buildSimpleTile(
                   Icons.lock_outline,
-                  'Privacybeleid',
+                  L10n.of(context)?.privacyPolicy ?? 'Privacybeleid',
                   '',
                   textColor,
                   () {
@@ -256,7 +315,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           const SizedBox(height: 40),
           Center(
-            child: _currentUser != null
+                child: _currentUser != null
                 ? TextButton(
                     onPressed: () async {
                       await FirebaseAuth.instance.signOut();
@@ -267,9 +326,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       );
                     },
-                    child: const Text(
-                      'UITLOGGEN',
-                      style: TextStyle(
+                    child: Text(
+                      (L10n.of(context)?.logout ?? 'Uitloggen').toUpperCase(),
+                      style: const TextStyle(
                         color: Colors.redAccent,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -282,9 +341,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     },
-                    child: const Text(
-                      'INLOGGEN',
-                      style: TextStyle(
+                    child: Text(
+                      (L10n.of(context)?.loginIn ?? 'Inloggen').toUpperCase(),
+                      style: const TextStyle(
                         color: Colors.blueAccent,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.2,
@@ -297,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Center(
             child: Text(
               'v1.0.4',
-              style: TextStyle(color: textColor.withOpacity(0.3), fontSize: 12),
+              style: TextStyle(color: textColor.withValues(alpha: 0.3), fontSize: 12),
             ),
           ),
         ],
@@ -314,7 +373,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (user == null) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Je moet ingelogd zijn om je naam te wijzigen')),
+              SnackBar(content: Text(L10n.of(context)?.mustBeLoggedIn ?? 'Je moet ingelogd zijn om je naam te wijzigen')),
             );
             return;
           }
@@ -324,33 +383,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final result = await showDialog<bool>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: const Text('Wijzig je naam'),
+              title: Text(L10n.of(context)?.changeNameTitle ?? 'Wijzig je naam'),
               content: Form(
                 key: formKey,
                 child: TextFormField(
                   controller: ctrl,
                   autofocus: true,
-                  decoration: const InputDecoration(labelText: 'Je naam'),
+                  decoration: InputDecoration(labelText: L10n.of(context)?.nameLabel ?? 'Je naam'),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Vul je naam in';
+                    if (v == null || v.trim().isEmpty) return L10n.of(context)?.nameValidation ?? 'Vul je naam in';
                     return null;
                   },
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Annuleer')),
+                TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(L10n.of(context)?.cancel ?? 'Annuleer')),
                 ElevatedButton(
                   onPressed: () {
                     if (!formKey.currentState!.validate()) return;
                     Navigator.of(ctx).pop(true);
                   },
-                  child: const Text('Opslaan'),
+                  child: Text(L10n.of(context)?.save ?? 'Opslaan'),
                 ),
               ],
             ),
           );
 
           if (result != true) return;
+          if (!mounted) return;
           final newName = ctrl.text.trim();
           try {
             // 1. Update Firebase Auth Profile
@@ -368,11 +428,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             setState(() {
               _displayName = newName;
             });
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Naam bijgewerkt')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(L10n.of(context)?.nameUpdated ?? 'Naam bijgewerkt')),
+            );
           } catch (e) {
             debugPrint('Failed to update displayName: $e');
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bijwerken mislukt')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(L10n.of(context)?.nameUpdateFailed ?? 'Bijwerken mislukt')),
+            );
           }
         },
         child: Padding(
@@ -400,7 +464,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _displayName ?? 'Kevin le Goat',
+                          _displayName ?? L10n.of(context)?.profile_default_name ?? 'Kevin le Goat',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -410,7 +474,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           maxLines: 1,
                         ),
                         Text(
-                          _email ?? 'kevinlegoat@example.com',
+                          _email ?? L10n.of(context)?.profile_default_email ?? 'kevinlegoat@example.com',
                           style: TextStyle(
                             color: textColor.withOpacity(0.5),
                             fontSize: 14,
@@ -440,8 +504,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatItem('—', 'Films af', textColor),
-                        _buildStatItem('—', 'Watchlist', textColor),
+                        _buildStatItem('—', L10n.of(context)?.filmsDone ?? 'Films af', textColor),
+                        _buildStatItem('—', L10n.of(context)?.watchlist_label ?? 'Watchlist', textColor),
                       ],
                     );
                   }
@@ -513,12 +577,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       _buildStatItem(
                         filmIds.length.toString(),
-                        'Films af',
+                        L10n.of(context)?.filmsDone ?? 'Films af',
                         textColor,
                       ),
                       _buildStatItem(
                         watchlist.length.toString(),
-                        'Watchlist',
+                        L10n.of(context)?.watchlist_label ?? 'Watchlist',
                         textColor,
                       ),
                     ],
@@ -612,6 +676,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       debugPrint('Could not launch privacy policy url: $e');
+    }
+  }
+
+  String _languageLabel(String code, BuildContext context) {
+    switch (code) {
+      case 'en':
+        return L10n.of(context)?.english ?? 'English';
+      case 'nl':
+        return L10n.of(context)?.dutch ?? 'Nederlands';
+      case 'fr':
+        return L10n.of(context)?.french ?? 'Français';
+      case 'de':
+        return L10n.of(context)?.german ?? 'Deutsch';
+      case 'es':
+        return L10n.of(context)?.spanish ?? 'Español';
+      case 'tr':
+        return L10n.of(context)?.turkish ?? 'Türkçe';
+      default:
+        return code;
     }
   }
 
@@ -723,15 +806,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-const String _kAboutText = '''
-CineTrackr
-
-Welkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.
-
-Met CineTrackr kun je eenvoudig filmprogramma's bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.
-
-Bedankt voor het gebruiken van CineTrackr — veel kijkplezier!
-''';
+// About text is provided via localization (app_nl.arb / app_en.arb)
 
 class AboutCineTrackrScreen extends StatelessWidget {
   const AboutCineTrackrScreen({super.key});
@@ -743,9 +818,9 @@ class AboutCineTrackrScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          'Over CineTrackr',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          L10n.of(context)?.aboutTitle ?? 'Over CineTrackr',
+          style: const TextStyle(color: Colors.white),
         ),
 
         backgroundColor: const Color.fromRGBO(43, 77, 91, 1),
@@ -754,10 +829,10 @@ class AboutCineTrackrScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
-          child: Text(
-            _kAboutText,
-            style: TextStyle(color: textColor, fontSize: 16, height: 1.5),
-          ),
+            child: Text(
+              L10n.of(context)?.aboutText ?? '',
+              style: TextStyle(color: textColor, fontSize: 16, height: 1.5),
+            ),
         ),
       ),
     );

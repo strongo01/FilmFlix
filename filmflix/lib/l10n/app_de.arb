@@ -1,0 +1,487 @@
+{
+  "@@locale": "de",
+  "settingsTitle": "Einstellungen",
+  "myDashboard": "Mein Dashboard",
+  "preferences": "Präferenzen",
+  "notifications": "Benachrichtigungen",
+  "notifications_enabled": "Benachrichtigungen aktiviert",
+  "notifications_check_system": "Überprüfen Sie die Systemeinstellungen, um Benachrichtigungen zuzulassen.",
+  "notifications_registration_failed": "Anmeldung für Benachrichtigungen fehlgeschlagen.",
+  "language": "Sprache",
+  "english": "English",
+  "dutch": "Nederlands",
+  "french": "Französisch",
+  "german": "Deutsch",
+  "turkish": "Türkisch",
+  "spanish": "Spanisch",
+  "close": "Schließen",
+  "nameLabel": "Ihr Name",
+  "nameValidation": "Bitte geben Sie Ihren Namen ein",
+  "cancel": "Abbrechen",
+  "save": "Speichern",
+  "mustBeLoggedIn": "Sie müssen eingeloggt sein, um Ihren Namen zu ändern",
+  "profile_default_name": "Kevin le Goat",
+  "profile_default_email": "kevinlegoat@example.com",
+  "filmsDone": "Filme abgeschlossen",
+  "watchlist_label": "Watchlist",
+  "support": "Support",
+  "customerService_title": "Kundenservice",
+  "aboutTitle": "Über CineTrackr",
+  "aboutText": "CineTrackr\n\nWillkommen bei CineTrackr, Ihrem persönlichen Guide für Filme und Kinobesuche.\n\nMit CineTrackr können Sie ganz einfach Kinoprogramme einsehen, Ihre eigene Watchlist führen und schnell auf Kinostandorte sowie den Kundenservice zugreifen.\n\nVielen Dank, dass Sie CineTrackr nutzen — viel Spaß beim Schauen!",
+  "privacyPolicy": "Datenschutzbestimmungen",
+  "logout": "Abmelden",
+  "loginIn": "Anmelden",
+  "nameUpdated": "Name aktualisiert",
+  "nameUpdateFailed": "Aktualisierung fehlgeschlagen",
+  "admin_title": "Admin",
+  "tab_chats": "Chats",
+  "tab_faqs": "FAQs",
+  "not_logged_in_title": "Nicht eingeloggt",
+  "not_logged_in_message": "Bitte melden Sie sich zuerst als Admin an und versuchen Sie es erneut.",
+  "no_users_doc": "Kein User-Dokument gefunden.",
+  "users_doc_role": "users/{uid} role = {role}",
+  "users_doc_no_role": "users/{uid} existiert, hat aber kein Rollen-Feld.",
+  "users_doc_read_error": "Fehler beim Lesen des User-Dokuments: {error}",
+  "check_permissions_title": "Berechtigungen prüfen",
+  "possible_causes": "Mögliche Ursachen und Lösungen:",
+  "firestore_rules": "- Firestore-Regeln prüfen: Regeln verwenden Custom Claims (request.auth.token.role).",
+  "custom_claims_hint": "- Falls Sie Custom Claims nutzen: Setzen Sie role/admin über das Admin SDK (Service Account) und lassen Sie den Admin sich neu anmelden.",
+  "rules_temp_change": "- Oder ändern Sie vorübergehend die Regeln, um die Rolle aus /users/{uid} zu lesen.",
+  "current_users_doc": "Aktuelles User-Dokument:",
+  "debug_info_title": "Debug-Info",
+  "uid_label": "UID: {uid}",
+  "idtoken_claims_label": "idToken Claims: {claims}",
+  "idtoken_error_label": "idToken Fehler: {error}",
+  "users_doc_label": "User-Dokument: {doc}",
+  "ok": "OK",
+  "fetch_doc_title": "Dokument nach ID abrufen",
+  "paste_doc_id": "Fügen Sie hier die Dokument-ID von customerquestions ein:",
+  "fetch": "Abrufen",
+  "not_found_title": "Nicht gefunden",
+  "document_not_found": "Dokument {id} existiert nicht oder ist nicht lesbar.",
+  "document_title": "Dokument {id}",
+  "empty": "<leer>",
+  "fetch_error_title": "Fehler",
+  "fetch_error_message": "Fehler beim Abrufen: {error}",
+  "cannot_load_chats": "Chats können nicht geladen werden: {error}",
+  "no_questions_found": "Keine Fragen gefunden",
+  "show_debug_info": "Debug-Info anzeigen",
+  "delete_chat_title": "Chat löschen",
+  "delete_chat_confirm": "Sind Sie sicher, dass Sie diesen Chat löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+  "delete": "Löschen",
+  "chat_deleted": "Chat gelöscht",
+  "delete_failed": "Löschen fehlgeschlagen",
+  "user_label_default": "Benutzer",
+  "reply_hint": "Antwort schreiben...",
+  "send": "Senden",
+  "notify_title": "Neue Nachricht vom Admin",
+  "notify_body": "{text}",
+  "no_faq_items": "Noch keine FAQ-Einträge",
+  "edit": "Bearbeiten",
+  "remove": "Entfernen",
+  "add_new_faq": "Neues FAQ hinzufügen",
+  "new_faq_title": "Neues FAQ",
+  "question_label": "Frage",
+  "answer_label": "Antwort",
+  "add": "Hinzufügen",
+  "faq_added": "FAQ hinzugefügt",
+  "faq_add_failed": "Hinzufügen fehlgeschlagen",
+  "edit_faq_title": "FAQ bearbeiten",
+  "faq_updated": "FAQ aktualisiert",
+  "faq_update_failed": "Speichern fehlgeschlagen",
+  "delete_faq_title": "FAQ löschen",
+  "delete_faq_confirm": "Sind Sie sicher, dass Sie dieses FAQ löschen möchten?",
+  "faq_deleted": "FAQ gelöscht",
+  "faq_delete_failed": "Löschen fehlgeschlagen",
+  "admins_label": "Admins: {names}",
+  "chat_page_title_prefix": "Chat: {prefix}",
+  "ellipsis": "...",
+  "open": "Öffnen",
+  "send_failed": "Senden fehlgeschlagen",
+  "appTitle": "CineTrackr",
+  "@appTitle": {
+    "description": "De naam van de app"
+  },
+  "tutorialSkip": "Überspringen",
+  "@tutorialSkip": {
+    "description": "Tekst voor de skip-knop in de tutorial"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Bottom navigation: Home"
+  },
+  "navWatchlist": "Watchlist",
+  "@navWatchlist": {
+    "description": "Bottom navigation: Watchlist"
+  },
+  "navSearch": "Suchen",
+  "@navSearch": {
+    "description": "Bottom navigation: Search"
+  },
+  "navFood": "Food",
+  "@navFood": {
+    "description": "Bottom navigation: Food"
+  },
+  "navProfile": "Profil",
+  "@navProfile": {
+    "description": "Bottom navigation: Profile"
+  },
+  "tutorialHome": "Willkommen! Hier finden Sie die neuesten Filme und Serien.",
+  "@tutorialHome": {
+    "description": "Tutorial text for home"
+  },
+  "tutorialWatchlist": "Speichern Sie hier Ihre Lieblingsfilme für später.",
+  "@tutorialWatchlist": {
+    "description": "Tutorial text for watchlist"
+  },
+  "tutorialSearch": "Suchen Sie nach bestimmten Titeln oder Genres.",
+  "@tutorialSearch": {
+    "description": "Tutorial text for search"
+  },
+  "tutorialFood": "Entdecken Sie passende Snacks für Ihren Filmabend!",
+  "@tutorialFood": {
+    "description": "Tutorial text for food"
+  },
+  "tutorialProfile": "Verwalten Sie hier Ihr Profil und Ihre Einstellungen.",
+  "@tutorialProfile": {
+    "description": "Tutorial text for profile"
+  },
+  "tutorialMap": "Hier können Sie die Karte ansehen, um Kinos in Ihrer Nähe zu finden!",
+  "@tutorialMap": {
+    "description": "Tutorial text for map"
+  },
+  "map_all_cinemas_title": "Alle Kinos in den Niederlanden",
+  "@map_all_cinemas_title": {
+    "description": "AppBar title for the cinemas map"
+  },
+  "map_load_error": "Fehler beim Laden der Kinos: {error}",
+  "@map_load_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "map_location_service_disabled": "Standortdienst ist deaktiviert",
+  "map_location_permission_denied": "Standortzugriff verweigert",
+  "map_location_permission_denied_forever": "Standortberechtigungen dauerhaft verweigert. Bitte in den Einstellungen aktivieren.",
+  "map_location_fetch_error": "Standort konnte nicht abgerufen werden: {error}",
+  "@map_location_fetch_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "map_no_website_content": "Keine Website verfügbar — Kino gefunden! 🎥",
+  "unknown": "Unbekannt",
+  "food_edit_favorite": "Favorit anpassen",
+  "food_name_label": "Name",
+  "food_only_emoji": "Nur Emoji",
+  "food_location": "Standort",
+  "food_diet": "Ernährungswunsch",
+  "food_diet_info": "Hinweis: Das Angebot an Restaurants mit speziellen Ernährungsoptionen kann je nach Region variieren.",
+  "food_hold_to_edit": "Halten Sie ein Symbol gedrückt, um es zu bearbeiten",
+  "food_quick_pizza": "Pizza",
+  "food_quick_sushi": "Sushi",
+  "food_quick_burger": "Burger",
+  "food_quick_kapsalon": "Kapsalon",
+  "food_search_hint": "Selbst etwas suchen...",
+  "food_search_button": "AUF THUISBEZORGD SUCHEN",
+  "food_postcode_label": "Postleitzahl (4 Ziffern)",
+  "food_zip_required": "Bitte geben Sie zuerst die 4 Ziffern Ihrer Postleitzahl ein!",
+  "filter_vegetarian": "Vegetarisch",
+  "filter_vegan": "Vegan",
+  "filter_gluten_free": "Glutenfrei",
+  "filter_halal": "Halal",
+  "food_what_do_you_want": "Was möchten Sie essen?",
+  "@settingsTitle": {
+    "description": "De titel van het instellingenscherm"
+  },
+  "@myDashboard": {
+    "description": "Section label: My Dashboard"
+  },
+  "@preferences": {
+    "description": "Section label: Preferences"
+  },
+  "@support": {
+    "description": "Section label: Support"
+  },
+  "@notifications": {
+    "description": "Toggle label for notifications"
+  },
+  "@language": {
+    "description": "Label for language setting"
+  },
+  "@dutch": {
+    "description": "Name of the Dutch language option"
+  },
+  "@mustBeLoggedIn": {
+    "description": "Snackbar shown when user is not logged in"
+  },
+  "changeNameTitle": "Namen ändern",
+  "@changeNameTitle": {
+    "description": "Dialog title for changing display name"
+  },
+  "@nameLabel": {
+    "description": "Label for name input"
+  },
+  "@nameValidation": {
+    "description": "Validation message when name is empty"
+  },
+  "@nameUpdated": {
+    "description": "Snackbar on successful name update"
+  },
+  "updateFailed": "Aktualisierung fehlgeschlagen",
+  "@updateFailed": {
+    "description": "Snackbar on failed name update"
+  },
+  "@english": {
+    "description": "Name of the English language option"
+  },
+  "@notifications_enabled": {
+    "description": "Snackbar shown when notifications were enabled"
+  },
+  "@notifications_check_system": {
+    "description": "Message instructing user to open system settings for notifications"
+  },
+  "@notifications_registration_failed": {
+    "description": "Snackbar shown when FCM registration failed"
+  },
+  "@aboutTitle": {
+    "description": "Title of the About screen"
+  },
+  "@aboutText": {
+    "description": "Long about text shown in the About screen"
+  },
+  "@privacyPolicy": {
+    "description": "Label for the privacy policy link"
+  },
+  "@profile_default_email": {
+    "description": "Fallback example email shown in profile card"
+  },
+  "@filmsDone": {
+    "description": "Label for number of films watched"
+  },
+  "enter_name_description": "Wir verwenden Ihren Namen, um die App persönlicher zu gestalten, z. B. für Begrüßungen.",
+  "@enter_name_description": {
+    "description": "Explainer shown when asking the user for their display name"
+  },
+  "save_and_continue": "Speichern und Fortfahren",
+  "@save_and_continue": {
+    "description": "Button label to save name and continue"
+  },
+  "contact_admin_title": "Admin kontaktieren",
+  "emailLabel": "E-Mail",
+  "contactNameLabel": "Name",
+  "contactQuestionLabel": "Frage",
+  "question_validation": "Bitte geben Sie Ihre Frage ein",
+  "mustBeLoggedInToSend": "Sie müssen eingeloggt sein, um zu senden",
+  "question_sent": "Frage gesendet",
+  "ai_max_reached": "Sie haben die maximale Anzahl an KI-Fragen für heute erreicht. Bitte versuchen Sie es morgen erneut.",
+  "ask_ai_title": "KI fragen",
+  "ai_wait": "Einen Moment Geduld, dies kann bis zu einer Minute dauern",
+  "ai_answer_title": "KI-Antwort",
+  "ai_answer_title_with_model": "KI-Antwort ({model})",
+  "ai_failed_all": "KI-Anfrage ist für alle Modelle fehlgeschlagen.",
+  "ai_failed": "KI-Anfrage fehlgeschlagen.",
+  "login_required_title": "Anmeldung erforderlich",
+  "login_required_message": "Sie müssen eingeloggt sein, um dies zu tun. Möchten Sie zum Login-Bildschirm?",
+  "goto_login": "Zum Login",
+  "search_faqs_hint": "Häufig gestellte Fragen durchsuchen",
+  "no_faq_matches": "Keine FAQ-Treffer",
+  "ai_questions_used": "KI-Fragen: {used}/{max} verwendet",
+  "ask_ai_with_cooldown": "KI fragen ({seconds}s)",
+  "contact_admin_button": "Admin kontaktieren",
+  "my_questions": "Meine Fragen",
+  "no_questions_sent": "Sie haben noch keine Fragen gesendet.",
+  "message_sent": "Nachricht gesendet",
+  "followup_title": "Auf Ihre Frage antworten",
+  "enter_message_hint": "Nachricht eingeben...",
+  "faq_default_account_q": "Wie erstelle ich ein Konto?",
+  "faq_default_account_a": "Sie können sich über das Profil-Icon oben rechts in der App registrieren. Folgen Sie den Schritten, um ein neues Konto zu erstellen.",
+  "faq_default_watchlist_q": "Wie füge ich einen Film zu meiner Watchlist hinzu?",
+  "faq_default_watchlist_a": "Öffnen Sie die Filmseite und klicken Sie auf die Schaltfläche \"Speichern\" (Lesezeichen-Symbol), um den Film zu Ihrer Watchlist hinzuzufügen.",
+  "faq_missing_info_q": "Warum fehlen Informationen zu einer Folge oder Staffel?",
+  "faq_missing_info_a": "Unsere Daten stammen von externen Anbietern; manchmal fehlen Metadaten. Bitte versuchen Sie es später erneut oder melden Sie es über \"Admin kontaktieren\".",
+  "faq_report_bug_q": "Wie kann ich einen Fehler in der App melden?",
+  "faq_report_bug_a": "Nutzen Sie die Schaltfläche \"Admin kontaktieren\" unten, um eine E-Mail mit einer Beschreibung und Screenshots zu senden.",
+  "faq_ai_q": "Kann ich Fragen an eine KI stellen?",
+  "faq_ai_a": "Ja — nutzen Sie die Schaltfläche \"KI fragen\", um eine Frage zu stellen. Bitte beachten Sie, dass Antworten automatisch generiert werden.",
+  "admins_no_push": "Admins erhalten möglicherweise keine Push-Benachrichtigungen",
+  "ai_cooldown_wait": "Bitte warten Sie noch {seconds} Sekunden, bevor Sie die KI erneut nutzen.",
+  "ai_input_hint": "Geben Sie hier Ihre Frage zu Filmen oder Serien ein...",
+  "user_new_message_title": "Neue Nachricht vom Benutzer",
+  "nowPlayingTitle": "Aktuelle Filme",
+  "@nowPlayingTitle": {
+    "description": "Title for the Now Playing screen"
+  },
+  "imdbIdUnavailable": "IMDb-ID für diesen Film nicht verfügbar",
+  "@imdbIdUnavailable": {
+    "description": "Snackbar when IMDb ID is not available"
+  },
+  "cannot_load_now_playing": "Aktuelle Filme konnten nicht geladen werden.",
+  "@cannot_load_now_playing": {
+    "description": "Error message when now playing films failed to load"
+  },
+  "retry": "Erneut versuchen",
+  "@retry": {
+    "description": "Retry button label"
+  },
+  "no_films_found": "Keine Filme gefunden",
+  "@no_films_found": {
+    "description": "Message when no films are found"
+  },
+  "loginWelcome": "Willkommen bei CineTrackr",
+  "loginCreateAccount": "Konto erstellen",
+  "loginName": "Name",
+  "loginNameRequired": "Bitte geben Sie Ihren Namen ein",
+  "loginEmail": "E-Mail",
+  "loginEmailRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+  "loginInvalidEmail": "Ungültige E-Mail-Adresse",
+  "loginPassword": "Passwort",
+  "loginPasswordRequired": "Bitte geben Sie Ihr Passwort ein",
+  "loginPasswordTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein",
+  "loginRegister": "Registrieren",
+  "loginNoAccountRegister": "Noch kein Konto? Registrieren",
+  "loginHaveAccountLogin": "Bereits ein Konto? Einloggen",
+  "loginForgotPassword": "Passwort vergessen?",
+  "loginContinueAsGuest": "Als Gast fortfahren",
+  "loginOrDivider": "ODER",
+  "loginSignInWithGoogle": "Mit Google anmelden",
+  "loginSignInWithGitHub": "Mit GitHub anmelden",
+  "loginSignInWithApple": "Mit Apple anmelden",
+  "loginEnterValidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+  "loginPasswordResetEmailSent": "Passwort-Reset-E-Mail gesendet",
+  "loginPasswordResetFailed": "Reset-E-Mail konnte nicht gesendet werden",
+  "loginSomethingWentWrong": "Etwas ist schiefgelaufen",
+  "authenticationFailed": "Authentifizierung fehlgeschlagen",
+  "loginGithubFailed": "GitHub-Login fehlgeschlagen",
+  "googleIdTokenError": "Fehler beim Abrufen des Google ID-Tokens",
+  "googleSignInCancelled": "Google-Anmeldung abgebrochen",
+  "details": "Details",
+  "translate": "Übersetzen",
+  "seen": "Gesehen",
+  "age_rating": "Altersfreigabe: {rated}",
+  "producers_creators": "Produzenten / Macher",
+  "actors": "Schauspieler",
+  "seasons": "Staffeln: {count}",
+  "episodes": "Folgen: {count}",
+  "streaming": "Streaming",
+  "seasons_episodes_title": "Staffeln & Folgen ({count})",
+  "no_seasons_found": "Keine Staffeln gefunden",
+  "no_episodes_found": "Keine Folgen gefunden",
+  "warning_title": "!!Warnung!!",
+  "warning_bioscoop_content": "Bitte schließen Sie zuerst eventuelle Werbung/Pop-ups auf der Website, bevor Sie den Spielplan einsehen.",
+  "continue_label": "Fortfahren",
+  "mark_previous_episodes_title": "Vorherige Folgen als gesehen markieren?",
+  "mark_previous_episodes_message": "Sie markieren \"{title}\" als gesehen. Möchten Sie auch {count} vorherige Folge(n) von Staffel {season} als gesehen markieren?",
+  "episodes_marked_seen": "{count} Folgen als gesehen markiert",
+  "watchlist_update_failed": "Watchlist konnte nicht aktualisiert werden.",
+  "episode_status_update_failed": "Folgenstatus konnte nicht aktualisiert werden.",
+  "movie_seen_update_failed": "\"Gesehen\"-Status konnte nicht aktualisiert werden.",
+  "included_with_subscription": "Inbegriffen",
+  "buy": "Kaufen",
+  "buy_with_price": "Kaufen • {price}",
+  "rent": "Leihen",
+  "rent_with_price": "Leihen • {price}",
+  "addon": "Erweiterung",
+  "addon_with_price": "Erweiterung • {price}",
+  "details_streaming_warning": "Klicken, um Streaming-Link zu öffnen",
+  "yes": "Ja",
+  "no": "Nein",
+  "stars": "Sterne",
+  "appleSignInNoIdentityToken": "Apple-Anmeldung fehlgeschlagen: Kein Identity-Token empfangen",
+  "avatar_login_prompt": "Loggen Sie sich ein, um Ihr Profilbild anzupassen",
+  "invalid_input": "Ungültige Eingabe",
+  "only_emoji_error": "Bitte nur Emojis eingeben",
+  "use": "Verwenden",
+  "emoji_input_hint": "Emoji einfügen oder tippen (optional)",
+  "edit_avatar_title": "Profilbild anpassen",
+  "choose_color": "Farbe wählen",
+  "choose_emoji_optional": "Emoji wählen (optional)",
+  "your_badges": "IHRE BADGES",
+  "account_section": "KONTO",
+  "edit_profile": "Profil bearbeiten",
+  "films": "Filme",
+  "badge_level_prefix": "Lv",
+  "badge_adventurer": "Abenteurer",
+  "badge_horror_king": "Horror-König",
+  "badge_binge_watcher": "Binge-Watcher",
+  "badge_early_bird": "Früher Vogel",
+  "appVersion": "CineTrackr v1.0.4",
+  "@appVersion": {
+    "description": "App version label shown in profile footer"
+  },
+  "search_hint": "Serie/Film suchen...",
+  "clear_tooltip": "Löschen",
+  "filter_tooltip": "Filter",
+  "filter_refine_title": "Filter verfeinern",
+  "filter_type_label": "TYP",
+  "filter_all": "Alles",
+  "filter_movies": "Filme",
+  "filter_series": "Serien",
+  "filter_keyword_label": "SUCHWORT",
+  "filter_keyword_hint": "Z.B. Batman, Marvel...",
+  "filter_genres_label": "GENRES",
+  "filter_year_from_label": "JAHR (VON)",
+  "filter_year_to_label": "JAUR (BIS)",
+  "filter_min_rating_label": "MINDESTBEWERTUNG (0-100)",
+  "apply_filters": "Filter anwenden",
+  "tmdb_movie_fetch_failed": "Filmdetails konnten nicht abgerufen werden",
+  "no_imdb_for_movie": "Keine IMDb-ID für diesen Film gefunden",
+  "tmdb_movie_fetch_error": "Fehler beim Abrufen der Filmdetails",
+  "tmdb_series_fetch_failed": "Seriendetails konnten nicht abgerufen werden",
+  "no_imdb_for_series": "Keine IMDb-ID für diese Serie gefunden",
+  "tmdb_series_fetch_error": "Fehler beim Abrufen der Seriendetails",
+  "load_more_results": "Mehr Ergebnisse laden",
+  "best_rated": "Bestbewertet",
+  "popular": "Beliebt",
+  "genre_action": "Action",
+  "genre_adventure": "Abenteuer",
+  "genre_animation": "Animation",
+  "login_progress_save_snack": "Einloggen, um Fortschritt zu speichern",
+  "progress_update_failed": "Fortschritt konnte nicht aktualisiert werden",
+  "open_details": "Details öffnen",
+  "label_series": "Serien",
+  "seen_count": "Gesehen: {count}",
+  "remove_from_watchlist_tooltip": "Aus Watchlist entfernen",
+  "login_manage_watchlist_snack": "Einloggen, um Watchlist zu verwalten",
+  "item_removed_watchlist": "Eintrag aus Watchlist entfernt",
+  "remove_item_failed": "Eintrag konnte nicht entfernt werden",
+  "remove_from_watchlist_title": "Aus Watchlist entfernen",
+  "remove_from_watchlist_confirm": "Sind Sie sicher, dass Sie diesen Eintrag aus Ihrer Watchlist entfernen möchten?",
+  "tab_saved": "Gespeichert",
+  "tab_watching": "Am Schauen",
+  "watchlist_not_logged_in": "Sie sind noch nicht eingeloggt.",
+  "watchlist_login_tap_message": "Tippen Sie hier, um sich einzuloggen und Ihre Watchlist zu sehen.",
+  "error_loading": "Fehler beim Laden: {error}",
+  "no_items": "Keine Einträge",
+  "season_label": "Staffel {number}",
+  "season_short": "S{num}",
+  "@season_short": {
+    "description": "Short season label",
+    "placeholders": {
+      "num": {}
+    }
+  },
+  "seen_x_of_y": "{seen}/{total} gesehen",
+  "title_wait": "{title}: einen Moment Geduld...",
+  "no_progress_for_films": "Noch kein Fortschritt für Filme",
+  "episode": "Folge",
+  "seen_episodes_label": "Gesehene Folgen: {count}",
+  "genre_comedy": "Komödie",
+  "genre_crime": "Krimi",
+  "genre_documentary": "Dokumentation",
+  "genre_drama": "Drama",
+  "genre_family": "Familie",
+  "genre_fantasy": "Fantasy",
+  "genre_history": "Historie",
+  "genre_horror": "Horror",
+  "genre_music": "Musik",
+  "genre_mystery": "Mystery",
+  "genre_news": "Nachrichten",
+  "genre_reality": "Reality",
+  "genre_romance": "Romanze",
+  "genre_scifi": "Science Fiction",
+  "genre_talk": "Talkshow",
+  "genre_thriller": "Thriller",
+  "genre_war": "Krieg",
+  "genre_western": "Western"
+}
