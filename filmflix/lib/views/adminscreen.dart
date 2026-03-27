@@ -64,12 +64,16 @@ class _AdminScreenState extends State<AdminScreen> {
           .get();
       final data = doc.data();
       if (data != null && data['role'] != null) {
-        roleText = AppLocalizations.of(context)!.users_doc_role(user.uid, data['role'].toString());
+        roleText = AppLocalizations.of(
+          context,
+        )!.users_doc_role(user.uid, data['role'].toString());
       } else {
         roleText = AppLocalizations.of(context)!.users_doc_no_role(user.uid);
       }
     } catch (e) {
-      roleText = AppLocalizations.of(context)!.users_doc_read_error(e.toString());
+      roleText = AppLocalizations.of(
+        context,
+      )!.users_doc_read_error(e.toString());
     }
 
     await showDialog<void>(
@@ -146,13 +150,21 @@ class _AdminScreenState extends State<AdminScreen> {
             children: [
               Text(AppLocalizations.of(ctx)!.uid_label(uid)),
               const SizedBox(height: 8),
-              Text(AppLocalizations.of(ctx)!.idtoken_claims_label(claims?.toString() ?? '<none>')),
+              Text(
+                AppLocalizations.of(
+                  ctx,
+                )!.idtoken_claims_label(claims?.toString() ?? '<none>'),
+              ),
               if (idTokenErr.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(AppLocalizations.of(ctx)!.idtoken_error_label(idTokenErr)),
               ],
               const SizedBox(height: 8),
-              Text(AppLocalizations.of(ctx)!.users_doc_label(usersDoc?.toString() ?? '<not found>')),
+              Text(
+                AppLocalizations.of(
+                  ctx,
+                )!.users_doc_label(usersDoc?.toString() ?? '<not found>'),
+              ),
             ],
           ),
         ),
@@ -239,7 +251,9 @@ class _AdminScreenState extends State<AdminScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(AppLocalizations.of(ctx)!.fetch_error_title),
-          content: Text(AppLocalizations.of(ctx)!.fetch_error_message(e.toString())),
+          content: Text(
+            AppLocalizations.of(ctx)!.fetch_error_message(e.toString()),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
@@ -270,7 +284,9 @@ class _AdminScreenState extends State<AdminScreen> {
                   const Icon(Icons.lock_outline, size: 48, color: Colors.grey),
                   const SizedBox(height: 12),
                   Text(
-                    AppLocalizations.of(ctx)!.cannot_load_chats(snap.error?.toString() ?? ''),
+                    AppLocalizations.of(
+                      ctx,
+                    )!.cannot_load_chats(snap.error?.toString() ?? ''),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -450,41 +466,133 @@ class _AdminScreenState extends State<AdminScreen> {
             }
             final int adminSeenMs = _tsToMs(data['adminSeenAt']);
             final bool noAdminActivity =
-                answer.isEmpty && (adminReplies.isEmpty);
+              answer.isEmpty && (adminReplies.isEmpty);
+            // `adminRead` explicitly marks whether admin has read the chat.
+            // If missing, default to true (to preserve existing behavior).
+            final bool adminReadFlag = data['adminRead'] is bool
+              ? data['adminRead'] as bool
+              : true;
             final bool unreadForAdmin =
-                (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) ||
-                (lastUserMs > lastAdminMs);
+              (!adminReadFlag && lastUserMs > 0) || (lastUserMs > lastAdminMs);
 
             return Dismissible(
               key: ValueKey(d.id),
-              direction: DismissDirection.endToStart,
+              direction: DismissDirection.horizontal,
+              // swipe right (start->end) => mark unread (remove adminSeenAt)
               background: Container(
+                color: Colors.blueAccent,
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: const Icon(Icons.markunread, color: Colors.white),
+              ),
+              // swipe left (end->start) => delete
+              secondaryBackground: Container(
                 color: Colors.red,
                 alignment: Alignment.centerRight,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: const Icon(Icons.delete, color: Colors.white),
               ),
               confirmDismiss: (direction) async {
-                final confirm = await showDialog<bool>(
-                  context: ctx,
-                  builder: (confirmCtx) => AlertDialog(
-                    title: Text(AppLocalizations.of(confirmCtx)!.delete_chat_title),
-                    content: Text(AppLocalizations.of(confirmCtx)!.delete_chat_confirm),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.of(confirmCtx).pop(false), child: Text(AppLocalizations.of(confirmCtx)!.cancel)),
-                      ElevatedButton(onPressed: () => Navigator.of(confirmCtx).pop(true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: Text(AppLocalizations.of(confirmCtx)!.delete)),
-                    ],
-                  ),
-                );
-                return confirm == true;
+                final docRef = FirebaseFirestore.instance
+                    .collection('customerquestions')
+                    .doc(d.id);
+                if (direction == DismissDirection.startToEnd) {
+                  // mark as unread: remove adminSeenAt field
+                  try {
+                    await docRef.update({
+                      'adminRead': false,
+                    });
+                    if (mounted)
+                      /*ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.marked_unread,
+                          ),
+                        ),
+                      );*/
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "AppLocalizations.of(context)!.marked_unread",
+                          ),
+                        ),
+                      );
+                  } catch (e) {
+                    debugPrint('Failed to mark chat ${d.id} as unread: $e');
+                    if (mounted)
+                      /*ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.action_failed,
+                          ),
+                        ),
+                      );*/
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "AppLocalizations.of(context)!.action_failed",
+                          ),
+                        ),
+                      );
+                  }
+                  return false; // don't dismiss the item from the list
+                } else if (direction == DismissDirection.endToStart) {
+                  final confirm = await showDialog<bool>(
+                    context: ctx,
+                    builder: (confirmCtx) => AlertDialog(
+                      title: Text(
+                        AppLocalizations.of(confirmCtx)!.delete_chat_title,
+                      ),
+                      content: Text(
+                        AppLocalizations.of(confirmCtx)!.delete_chat_confirm,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(confirmCtx).pop(false),
+                          child: Text(AppLocalizations.of(confirmCtx)!.cancel),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(confirmCtx).pop(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                          child: Text(AppLocalizations.of(confirmCtx)!.delete),
+                        ),
+                      ],
+                    ),
+                  );
+                  return confirm == true;
+                }
+                return false;
               },
               onDismissed: (direction) async {
-                try {
-                  await FirebaseFirestore.instance.collection('customerquestions').doc(d.id).delete();
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.chat_deleted)));
-                } catch (e) {
-                  debugPrint('Failed to delete chat ${d.id}: $e');
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.delete_failed)));
+                if (direction == DismissDirection.endToStart) {
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('customerquestions')
+                        .doc(d.id)
+                        .delete();
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.chat_deleted,
+                          ),
+                        ),
+                      );
+                  } catch (e) {
+                    debugPrint('Failed to delete chat ${d.id}: $e');
+                    if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            AppLocalizations.of(context)!.delete_failed,
+                          ),
+                        ),
+                      );
+                  }
                 }
               },
               child: ListTile(
@@ -534,11 +642,18 @@ class _AdminScreenState extends State<AdminScreen> {
                     const SizedBox(height: 6),
                     Builder(
                       builder: (_) {
-                        final userName = (data['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
+                        final userName =
+                            (data['name'] ??
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.user_label_default)
+                                .toString();
                         final adminNames = (data['adminNames'] as List?) ?? [];
                         final adminText = adminNames.isNotEmpty
-                          ? AppLocalizations.of(context)!.admins_label(adminNames.map((e) => e.toString()).join(', '))
-                          : '';
+                            ? AppLocalizations.of(context)!.admins_label(
+                                adminNames.map((e) => e.toString()).join(', '),
+                              )
+                            : '';
                         return adminText.isNotEmpty
                             ? Text(
                                 adminText,
@@ -595,6 +710,7 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       await docRef.set({
         'adminSeenAt': FieldValue.serverTimestamp(),
+        'adminRead': true,
       }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Failed to set adminSeenAt: $e');
@@ -610,7 +726,9 @@ class _AdminScreenState extends State<AdminScreen> {
 
     // build message list (include sender names)
     final List<Map<String, dynamic>> messages = [];
-    final ownerName = (data['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
+    final ownerName =
+        (data['name'] ?? AppLocalizations.of(context)!.user_label_default)
+            .toString();
     messages.add({
       'text': questionText,
       'isAdmin': false,
@@ -622,14 +740,21 @@ class _AdminScreenState extends State<AdminScreen> {
         'text': answerText,
         'isAdmin': true,
         'ts': data['answerAt'] ?? data['updatedAt'],
-        'name': (data['answerAdminName'] ?? AppLocalizations.of(context)!.admin_title).toString(),
+        'name':
+            (data['answerAdminName'] ??
+                    AppLocalizations.of(context)!.admin_title)
+                .toString(),
       });
     for (final ar in adminReplies) {
       if (ar is Map) {
         final textVal =
             (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
             ar.toString();
-        final adminName = (ar['adminName'] ?? ar['name'] ?? AppLocalizations.of(context)!.admin_title).toString();
+        final adminName =
+            (ar['adminName'] ??
+                    ar['name'] ??
+                    AppLocalizations.of(context)!.admin_title)
+                .toString();
         messages.add({
           'text': textVal,
           'isAdmin': true,
@@ -696,7 +821,9 @@ class _AdminScreenState extends State<AdminScreen> {
           final aText = (d['answer'] ?? '').toString();
           final aReplies = (d['adminReplies'] as List?) ?? [];
           final uReplies = (d['userReplies'] as List?) ?? [];
-          final ownerName = (d['name'] ?? AppLocalizations.of(context)!.user_label_default).toString();
+          final ownerName =
+              (d['name'] ?? AppLocalizations.of(context)!.user_label_default)
+                  .toString();
 
           final List<Map<String, dynamic>> newMessages = [];
           newMessages.add({
@@ -710,15 +837,21 @@ class _AdminScreenState extends State<AdminScreen> {
               'text': aText,
               'isAdmin': true,
               'ts': d['answerAt'] ?? d['updatedAt'],
-              'name': (d['answerAdminName'] ?? AppLocalizations.of(context)!.admin_title).toString(),
+              'name':
+                  (d['answerAdminName'] ??
+                          AppLocalizations.of(context)!.admin_title)
+                      .toString(),
             });
           for (final ar in aReplies) {
             if (ar is Map) {
               final textVal =
                   (ar['text'] ?? ar['answer'] ?? ar['message'])?.toString() ??
                   ar.toString();
-              final adminName = (ar['adminName'] ?? ar['name'] ?? AppLocalizations.of(context)!.admin_title)
-                  .toString();
+              final adminName =
+                  (ar['adminName'] ??
+                          ar['name'] ??
+                          AppLocalizations.of(context)!.admin_title)
+                      .toString();
               newMessages.add({
                 'text': textVal,
                 'isAdmin': true,
@@ -793,7 +926,10 @@ class _AdminScreenState extends State<AdminScreen> {
             appBar: AppBar(
               title: Text(
                 AppLocalizations.of(context)!.chat_page_title_prefix(
-                  questionText.length > 40 ? questionText.substring(0, 40) + AppLocalizations.of(context)!.ellipsis : questionText,
+                  questionText.length > 40
+                      ? questionText.substring(0, 40) +
+                            AppLocalizations.of(context)!.ellipsis
+                      : questionText,
                 ),
               ),
             ),
@@ -813,10 +949,16 @@ class _AdminScreenState extends State<AdminScreen> {
                               final m = messages[i];
                               final isAdmin = m['isAdmin'] == true;
                               final txt = (m['text'] ?? '').toString();
-                                final senderName =
+                              final senderName =
                                   (m['name'] ??
-                                      (isAdmin ? AppLocalizations.of(context)!.admin_title : AppLocalizations.of(context)!.user_label_default))
-                                    .toString();
+                                          (isAdmin
+                                              ? AppLocalizations.of(
+                                                  context,
+                                                )!.admin_title
+                                              : AppLocalizations.of(
+                                                  context,
+                                                )!.user_label_default))
+                                      .toString();
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 6,
@@ -889,7 +1031,9 @@ class _AdminScreenState extends State<AdminScreen> {
                               child: TextField(
                                 controller: replyCtrl,
                                 decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(context)!.reply_hint,
+                                  hintText: AppLocalizations.of(
+                                    context,
+                                  )!.reply_hint,
                                 ),
                                 maxLines: 3,
                               ),
@@ -899,7 +1043,9 @@ class _AdminScreenState extends State<AdminScreen> {
                               onPressed: () async {
                                 final text = replyCtrl.text.trim();
                                 if (text.isEmpty) return;
-                                String adminName = AppLocalizations.of(context)!.admin_title;
+                                String adminName = AppLocalizations.of(
+                                  context,
+                                )!.admin_title;
                                 String? adminId =
                                     FirebaseAuth.instance.currentUser?.uid;
                                 try {
@@ -915,14 +1061,19 @@ class _AdminScreenState extends State<AdminScreen> {
                                     adminName =
                                         (udata != null && udata['name'] != null)
                                         ? udata['name'].toString()
-                                        : (currentUser?.displayName ?? AppLocalizations.of(context)!.admin_title);
+                                        : (currentUser?.displayName ??
+                                              AppLocalizations.of(
+                                                context,
+                                              )!.admin_title);
                                   } else {
                                     adminName =
                                         FirebaseAuth
                                             .instance
                                             .currentUser
                                             ?.displayName ??
-                                        AppLocalizations.of(context)!.admin_title;
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.admin_title;
                                   }
                                 } catch (_) {}
 
@@ -958,33 +1109,56 @@ class _AdminScreenState extends State<AdminScreen> {
                                   // Notify the user of this admin reply via backend
                                   try {
                                     final userId = data['userId']?.toString();
-                                    debugPrint('AdminScreen: Attempting to notify user. userId=$userId');
+                                    debugPrint(
+                                      'AdminScreen: Attempting to notify user. userId=$userId',
+                                    );
                                     if (userId != null && userId.isNotEmpty) {
-                                      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/notify');
+                                      final uri = Uri.parse(
+                                        'https://film-flix-olive.vercel.app/apiv2/notify',
+                                      );
                                       final payload = {
                                         'type': 'adminToUser',
                                         'userId': userId,
-                                        'title': AppLocalizations.of(context)!.notify_title,
+                                        'title': AppLocalizations.of(
+                                          context,
+                                        )!.notify_title,
                                         'body': text,
-                                        'data': {'conversationId': docId}
+                                        'data': {'conversationId': docId},
                                       };
-                                      debugPrint('AdminScreen: Sending payload: ${json.encode(payload)}');
-                                      final resp = await http.post(uri,
-                                        headers: {'Content-Type': 'application/json'},
+                                      debugPrint(
+                                        'AdminScreen: Sending payload: ${json.encode(payload)}',
+                                      );
+                                      final resp = await http.post(
+                                        uri,
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
                                         body: json.encode(payload),
                                       );
-                                      debugPrint('AdminScreen: Notify response status: ${resp.statusCode}');
-                                      debugPrint('AdminScreen: Notify response body: ${resp.body}');
+                                      debugPrint(
+                                        'AdminScreen: Notify response status: ${resp.statusCode}',
+                                      );
+                                      debugPrint(
+                                        'AdminScreen: Notify response body: ${resp.body}',
+                                      );
                                     } else {
-                                      debugPrint('AdminScreen: Cannot notify user, userId is null or empty in document data.');
+                                      debugPrint(
+                                        'AdminScreen: Cannot notify user, userId is null or empty in document data.',
+                                      );
                                     }
                                   } catch (e) {
-                                    debugPrint('AdminScreen: Failed to notify user: $e');
+                                    debugPrint(
+                                      'AdminScreen: Failed to notify user: $e',
+                                    );
                                   }
-                                  } catch (e) {
+                                } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(AppLocalizations.of(context)!.send_failed),
+                                      content: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.send_failed,
+                                      ),
                                     ),
                                   );
                                 }
@@ -1022,7 +1196,9 @@ class _AdminScreenState extends State<AdminScreen> {
                 return const Center(child: CircularProgressIndicator());
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty)
-                return Center(child: Text(AppLocalizations.of(context)!.no_faq_items));
+                return Center(
+                  child: Text(AppLocalizations.of(context)!.no_faq_items),
+                );
               return ListView.separated(
                 itemCount: docs.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
@@ -1084,12 +1260,16 @@ class _AdminScreenState extends State<AdminScreen> {
           children: [
             TextField(
               controller: qCtrl,
-              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.question_label),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(ctx)!.question_label,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: aCtrl,
-              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.answer_label),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(ctx)!.answer_label,
+              ),
               maxLines: 4,
             ),
           ],
@@ -1116,14 +1296,14 @@ class _AdminScreenState extends State<AdminScreen> {
         'answer': a,
         'createdAt': FieldValue.serverTimestamp(),
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_added)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.faq_added)),
+      );
     } catch (e) {
       debugPrint('Failed to add faq: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_add_failed)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.faq_add_failed)),
+      );
     }
   }
 
@@ -1139,12 +1319,16 @@ class _AdminScreenState extends State<AdminScreen> {
           children: [
             TextField(
               controller: qCtrl,
-              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.question_label),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(ctx)!.question_label,
+              ),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: aCtrl,
-              decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.answer_label),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(ctx)!.answer_label,
+              ),
               maxLines: 4,
             ),
           ],
@@ -1171,14 +1355,16 @@ class _AdminScreenState extends State<AdminScreen> {
         'answer': a,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_updated)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.faq_updated)),
+      );
     } catch (e) {
       debugPrint('Failed to update faq: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_update_failed)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.faq_update_failed),
+        ),
+      );
     }
   }
 
@@ -1203,14 +1389,16 @@ class _AdminScreenState extends State<AdminScreen> {
     if (ok != true) return;
     try {
       await FirebaseFirestore.instance.collection('faqs').doc(id).delete();
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_deleted)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context)!.faq_deleted)),
+      );
     } catch (e) {
       debugPrint('Failed to delete faq: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.faq_delete_failed)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.faq_delete_failed),
+        ),
+      );
     }
   }
 }

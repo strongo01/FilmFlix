@@ -71,6 +71,8 @@
   "delete": "Verwijderen",
   "chat_deleted": "Chat verwijderd",
   "delete_failed": "Verwijderen mislukt",
+  "marked_unread": "Als ongelezen gemarkeerd",
+  "action_failed": "Actie mislukt",
   "user_label_default": "Gebruiker",
   "reply_hint": "Typ een antwoord...",
   "send": "Versturen",
@@ -336,4 +338,10 @@
   "genre_thriller": "Thriller",
   "genre_war": "Oorlog",
   "genre_western": "Western"
+  ,
+  "disclaimerTitle": "Disclaimer",
+  "disclaimerHeading": "Derden & APIs",
+  "disclaimerText": "Deze app gebruikt gegevens van meerdere externe bronnen:\n\n* API door Brian Fritz (OMDb API)\n Gelicentieerd onder CC BY-NC 4.0\n Deze dienst is niet goedgekeurd door of verbonden met IMDb.com\n\n* Deze applicatie maakt gebruik van TMDB en de TMDB API’s maar is niet goedgekeurd, gecertificeerd of anderszins ondersteund door TMDB\n\n* Sommige gegevens zijn afkomstig van IMDb\n\n* Streaminginformatie en vertaaldiensten worden geleverd via RapidAPI\n\n* Trailers worden geleverd door YouTube\n\nKaartgegevens © OpenStreetMap contributors\n\nAlle handelsmerken, logo’s en auteursrechten behoren toe aan hun respectieve eigenaren",
+  "playbackDisabledByVideoOwner": "Afspelen uitgeschakeld door de eigenaar van de video.",
+  "disclaimerNote": "Gebruik en weergave van content is onderhevig aan de voorwaarden en licenties van bovengenoemde diensten."
 }

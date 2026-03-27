@@ -535,6 +535,18 @@ abstract class AppLocalizations {
   /// **'Delete failed'**
   String get delete_failed;
 
+  /// No description provided for @marked_unread.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as unread'**
+  String get marked_unread;
+
+  /// No description provided for @action_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Action failed'**
+  String get action_failed;
+
   /// No description provided for @user_label_default.
   ///
   /// In en, this message translates to:
@@ -2118,6 +2130,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Seen episodes: {count}'**
   String seen_episodes_label(Object count);
+
+  /// No description provided for @disclaimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disclaimer'**
+  String get disclaimerTitle;
+
+  /// No description provided for @disclaimerHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Third parties & APIs'**
+  String get disclaimerHeading;
+
+  /// No description provided for @disclaimerText.
+  ///
+  /// In en, this message translates to:
+  /// **'This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.'**
+  String get disclaimerText;
+
+  /// No description provided for @playbackDisabledByVideoOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback disabled by video owner.'**
+  String get playbackDisabledByVideoOwner;
+
+  /// No description provided for @disclaimerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Use and display of content is subject to the terms and licenses of the services listed above.'**
+  String get disclaimerNote;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

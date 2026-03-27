@@ -301,6 +301,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 _buildDivider(isDark),
                 _buildSimpleTile(
+                  Icons.description_outlined,
+                  L10n.of(context)?.disclaimerTitle ?? 'Disclaimer',
+                  '',
+                  textColor,
+                  () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const DisclaimerScreen(),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(isDark),
+                _buildSimpleTile(
                   Icons.lock_outline,
                   L10n.of(context)?.privacyPolicy ?? 'Privacybeleid',
                   '',
@@ -806,7 +821,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// About text is provided via localization (app_nl.arb / app_en.arb)
+class DisclaimerScreen extends StatelessWidget {
+  const DisclaimerScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
+    return Scaffold(
+      appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          L10n.of(context)?.disclaimerTitle ?? 'Disclaimer',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color.fromRGBO(43, 77, 91, 1),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                L10n.of(context)?.disclaimerHeading ?? 'Derden & APIs',
+                style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                L10n.of(context)!.disclaimerText,
+                style: TextStyle(color: textColor.withOpacity(0.9), fontSize: 14, height: 1.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                L10n.of(context)!.disclaimerNote,
+                style: TextStyle(color: textColor.withOpacity(0.8), fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class AboutCineTrackrScreen extends StatelessWidget {
   const AboutCineTrackrScreen({super.key});

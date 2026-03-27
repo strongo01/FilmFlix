@@ -249,6 +249,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete_failed => 'Delete failed';
 
   @override
+  String get marked_unread => 'Marked as unread';
+
+  @override
+  String get action_failed => 'Action failed';
+
+  @override
   String get user_label_default => 'User';
 
   @override
@@ -1089,4 +1095,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'Seen episodes: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Disclaimer';
+
+  @override
+  String get disclaimerHeading => 'Third parties & APIs';
+
+  @override
+  String get disclaimerText => 'This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Playback disabled by video owner.';
+
+  @override
+  String get disclaimerNote => 'Use and display of content is subject to the terms and licenses of the services listed above.';
 }

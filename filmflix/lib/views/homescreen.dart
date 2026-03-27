@@ -189,14 +189,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   } catch (_) {}
                 }
 
-                // If there is no admin activity yet (no answer, no adminReplies, and admin never opened),
-                // treat the initial question as unread for admins so they immediately see the badge on HomeScreen.
-                final int adminSeenMs = _tsToMs(data['adminSeenAt']);
-                final bool noAdminActivity =
-                    answer.isEmpty && (adminReplies.isEmpty);
+                // Use `adminRead` flag to explicitly mark admin read/unread state.
+                // If missing, default to true to preserve existing behavior.
+                final bool adminReadFlag = data['adminRead'] is bool
+                  ? data['adminRead'] as bool
+                  : true;
                 final bool unreadForAdmin =
-                    (adminSeenMs == 0 && noAdminActivity && lastUserMs > 0) ||
-                    (lastUserMs > lastAdminMs);
+                  (!adminReadFlag && lastUserMs > 0) || (lastUserMs > lastAdminMs);
                 if (unreadForAdmin) adminUnread += 1;
               }
               if (mounted)
@@ -545,27 +544,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                   Positioned(
                                     right: 6,
                                     top: 6,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: Colors.white, width: 1),
-                                      ),
-                                      constraints: const BoxConstraints(
-                                        minWidth: 16,
-                                        minHeight: 16,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          _cachedUnreadAdminChats > 99
-                                              ? '99+'
-                                              : '$_cachedUnreadAdminChats',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                                    child: IgnorePointer(
+                                      // allow taps to pass through the badge to the icon button
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                              color: Colors.white, width: 1),
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 16,
+                                          minHeight: 16,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            _cachedUnreadAdminChats > 99
+                                                ? '99+'
+                                                : '$_cachedUnreadAdminChats',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -590,26 +592,29 @@ class _HomeScreenState extends State<HomeScreen> {
                           Positioned(
                             right: 6,
                             top: 6,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 1),
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  _cachedUnreadCustomerReplies > 99
-                                      ? '99+'
-                                      : '$_cachedUnreadCustomerReplies',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                            child: IgnorePointer(
+                              // allow taps to pass through the badge to the icon button
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 1),
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    _cachedUnreadCustomerReplies > 99
+                                        ? '99+'
+                                        : '$_cachedUnreadCustomerReplies',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),

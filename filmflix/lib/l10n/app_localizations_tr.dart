@@ -249,6 +249,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get delete_failed => 'Silme işlemi başarısız';
 
   @override
+  String get marked_unread => 'Okunmadı olarak işaretlendi';
+
+  @override
+  String get action_failed => 'İşlem başarısız';
+
+  @override
   String get user_label_default => 'Kullanıcı';
 
   @override
@@ -1089,4 +1095,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'İzlenen bölümler: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Feragatname';
+
+  @override
+  String get disclaimerHeading => 'Üçüncü taraf hizmetleri ve veri kaynakları';
+
+  @override
+  String get disclaimerText => 'Bu uygulama birden fazla üçüncü taraf kaynaktan veri kullanır:\n\n* Brian Fritz tarafından sağlanan API (OMDb API)\n CC BY-NC 4.0 lisansı altında lisanslanmıştır\n Bu hizmet IMDb.com tarafından onaylanmamış veya onunla bağlantılı değildir\n\n* Bu uygulama TMDB ve TMDB API’lerini kullanır ancak TMDB tarafından onaylanmamış, sertifikalandırılmamış veya başka bir şekilde desteklenmemektedir\n\n* Bazı veriler IMDb’den alınmıştır\n\n* Yayın (streaming) bilgileri ve çeviri hizmetleri RapidAPI üzerinden sağlanmaktadır\n\n* Fragmanlar YouTube tarafından sağlanmaktadır\n\nHarita verileri © OpenStreetMap katkıda bulunanlar\n\nTüm ticari markalar, logolar ve telif hakları ilgili sahiplerine aittir.';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Oynatma, videonun sahibi tarafından devre dışı bırakıldı.';
+
+  @override
+  String get disclaimerNote => 'Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin.';
 }

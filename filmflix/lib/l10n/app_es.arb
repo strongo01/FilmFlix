@@ -71,6 +71,8 @@
   "delete": "Eliminar",
   "chat_deleted": "Chat eliminado",
   "delete_failed": "Error al eliminar",
+  "marked_unread": "Marcado como no leído",
+  "action_failed": "Acción fallida",
   "user_label_default": "Usuario",
   "reply_hint": "Escribe una respuesta...",
   "send": "Enviar",
@@ -335,5 +337,10 @@
   "genre_talk": "Talk Show",
   "genre_thriller": "Suspense",
   "genre_war": "Bélica",
-  "genre_western": "Western"
+  "genre_western": "Western",
+  "disclaimerTitle": "Aviso legal",
+  "disclaimerHeading": "Servicios de terceros y fuentes de datos",
+  "disclaimerText": "Esta aplicación utiliza datos de múltiples fuentes de terceros:\n\n* API por Brian Fritz (OMDb API)\n Licenciado bajo CC BY-NC 4.0\n Este servicio no está respaldado ni afiliado a IMDb.com\n\n* Esta aplicación utiliza TMDB y las API de TMDB, pero no está respaldada, certificada ni aprobada de ninguna manera por TMDB\n\n* Algunos datos provienen de IMDb\n\n* La disponibilidad de streaming y los servicios de traducción se proporcionan a través de RapidAPI\n\n* Los tráilers son proporcionados por YouTube\n\nDatos de mapas © colaboradores de OpenStreetMap\n\nTodas las marcas, logotipos y derechos de autor pertenecen a sus respectivos propietarios.",
+  "playbackDisabledByVideoOwner": "Reproducción deshabilitada por el propietario del vídeo.",
+  "disclaimerNote": "Todas las marcas, logotipos y datos de terceros siguen siendo propiedad de sus respectivos propietarios; consulte sus términos y políticas de privacidad para más detalles."
 }

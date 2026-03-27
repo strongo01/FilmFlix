@@ -81,6 +81,8 @@
   "delete": "Delete",
   "chat_deleted": "Chat deleted",
   "delete_failed": "Delete failed",
+  "marked_unread": "Marked as unread",
+  "action_failed": "Action failed",
 
   "user_label_default": "User",
   "reply_hint": "Type a reply...",
@@ -418,4 +420,10 @@
   "no_progress_for_films": "No progress for films yet",
   "episode": "Episode",
   "seen_episodes_label": "Seen episodes: {count}"
+  ,
+  "disclaimerTitle": "Disclaimer",
+  "disclaimerHeading": "Third parties & APIs",
+  "disclaimerText": "This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.",
+  "playbackDisabledByVideoOwner": "Playback disabled by video owner.",
+  "disclaimerNote": "Use and display of content is subject to the terms and licenses of the services listed above."
 }

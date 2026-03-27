@@ -40,6 +40,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _initFirebaseAndListen();
   }
 
+  // Show a dialog to edit the display name and save it to Firebase Auth and user doc
+  void _showEditNameDialog() {
+    final controller = TextEditingController(text: _displayName ?? '');
+    final parentContext = context;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(ctx)!.edit_profile),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(hintText: 'Voer je naam in'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(AppLocalizations.of(ctx)!.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newName = controller.text.trim();
+                if (newName.isEmpty) return;
+                final user = FirebaseAuth.instance.currentUser;
+                final uid = user?.uid;
+                try {
+                  if (user != null) {
+                    await user.updateDisplayName(newName);
+                  }
+                  if (uid != null) {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(uid)
+                        .set({'displayName': newName}, SetOptions(merge: true));
+                  }
+                  if (mounted) {
+                    setState(() {
+                      _displayName = newName;
+                    });
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(parentContext).showSnackBar(
+                    const SnackBar(content: Text('Opslaan mislukt')),
+                  );
+                }
+                if (mounted) Navigator.of(ctx).pop();
+              },
+              child: Text(AppLocalizations.of(ctx)!.save),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _initFirebaseAndListen() async {
     try {
       if (Firebase.apps.isEmpty) {
@@ -440,27 +495,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: accentColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.star,
-                            size: 20,
-                            color: Colors.black,
+                        GestureDetector(
+                          onTap: () {
+                            if (!_isLoggedIn) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppLocalizations.of(context)!.avatar_login_prompt,
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            _showAvatarEditor();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              size: 20,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      _displayName ?? AppLocalizations.of(context)!.profile_default_name,
-                      style: TextStyle(
-                        color: primaryText,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    GestureDetector(
+                      onTap: () {
+                        if (!_isLoggedIn) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(context)!.avatar_login_prompt,
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        _showEditNameDialog();
+                      },
+                      child: Text(
+                        _displayName ?? AppLocalizations.of(context)!.profile_default_name,
+                        style: TextStyle(
+                          color: primaryText,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -557,13 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildMenuTile(
-                    context,
-                    Icons.person_outline,
-                    AppLocalizations.of(context)!.edit_profile,
-                    cardColor,
-                    onTap: () {},
-                  ),
+                  // Edit profile tile removed; name is editable by tapping the display name.
                   _buildMenuTile(
                     context,
                     Icons.settings_outlined,

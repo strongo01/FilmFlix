@@ -24,7 +24,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get notifications_enabled => 'Meldingen ingeschakeld';
 
   @override
-  String get notifications_check_system => 'Controleer de Systeem Instellingen om meldingen toe te laten.';
+  String get notifications_check_system => 'Controleer de systeeminstellingen om meldingen toe te laten.';
 
   @override
   String get notifications_registration_failed => 'Aanmelden voor notificaties mislukt.';
@@ -33,7 +33,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get language => 'Taal';
 
   @override
-  String get english => 'English';
+  String get english => 'Engels';
 
   @override
   String get dutch => 'Nederlands';
@@ -60,7 +60,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get nameValidation => 'Vul je naam in';
 
   @override
-  String get cancel => 'Annuleer';
+  String get cancel => 'Annuleren';
 
   @override
   String get save => 'Opslaan';
@@ -75,13 +75,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get profile_default_email => 'kevinlegoat@example.com';
 
   @override
-  String get filmsDone => 'Films af';
+  String get filmsDone => 'Films afgekeken';
 
   @override
   String get watchlist_label => 'Watchlist';
 
   @override
-  String get support => 'Support';
+  String get support => 'Ondersteuning';
 
   @override
   String get customerService_title => 'Klantenservice';
@@ -108,36 +108,36 @@ class AppLocalizationsNl extends AppLocalizations {
   String get nameUpdateFailed => 'Bijwerken mislukt';
 
   @override
-  String get admin_title => 'Admin';
+  String get admin_title => 'Beheerder';
 
   @override
   String get tab_chats => 'Chats';
 
   @override
-  String get tab_faqs => 'FAQs';
+  String get tab_faqs => 'Veelgestelde vragen';
 
   @override
   String get not_logged_in_title => 'Niet ingelogd';
 
   @override
-  String get not_logged_in_message => 'Log eerst in als admin en probeer het opnieuw.';
+  String get not_logged_in_message => 'Log eerst in als beheerder en probeer het opnieuw.';
 
   @override
-  String get no_users_doc => 'Geen users-doc gevonden.';
+  String get no_users_doc => 'Geen gebruikersdocument gevonden.';
 
   @override
   String users_doc_role(Object role, Object uid) {
-    return 'users/$uid role = $role';
+    return 'gebruikers/$uid rol = $role';
   }
 
   @override
   String users_doc_no_role(Object uid) {
-    return 'users/$uid bestaat, maar heeft geen role-veld.';
+    return 'gebruikers/$uid bestaat, maar heeft geen rol-veld.';
   }
 
   @override
   String users_doc_read_error(Object error) {
-    return 'Fout bij lezen users-doc: $error';
+    return 'Fout bij lezen gebruikersdocument: $error';
   }
 
   @override
@@ -150,53 +150,53 @@ class AppLocalizationsNl extends AppLocalizations {
   String get possible_causes => 'Mogelijke oorzaken en oplossingen:';
 
   @override
-  String get firestore_rules => '- Firestore rules controleren: regels gebruiken custom claims (request.auth.token.role).';
+  String get firestore_rules => '- Firestore-regels controleren: regels gebruiken aangepaste claims (request.auth.token.role).';
 
   @override
-  String get custom_claims_hint => '- Als je custom claims gebruikt: zet role/admin via Admin SDK (service account) en laat admin opnieuw inloggen.';
+  String get custom_claims_hint => '- Als je aangepaste claims gebruikt: zet rol/admin via Admin SDK (service-account) en laat de beheerder opnieuw inloggen.';
 
   @override
   String rules_temp_change(Object uid) {
-    return '- Of wijzig tijdelijk de rules om de rol uit /users/$uid te lezen.';
+    return '- Of wijzig tijdelijk de regels om de rol uit /users/$uid te lezen.';
   }
 
   @override
-  String get current_users_doc => 'Huidige users-doc:';
+  String get current_users_doc => 'Huidig gebruikersdocument:';
 
   @override
-  String get debug_info_title => 'Debug info';
+  String get debug_info_title => 'Debug-informatie';
 
   @override
   String uid_label(Object uid) {
-    return 'uid: $uid';
+    return 'Gebruikers-ID: $uid';
   }
 
   @override
   String idtoken_claims_label(Object claims) {
-    return 'idToken claims: $claims';
+    return 'idToken-claims: $claims';
   }
 
   @override
   String idtoken_error_label(Object error) {
-    return 'idToken error: $error';
+    return 'idToken-fout: $error';
   }
 
   @override
   String users_doc_label(Object doc) {
-    return 'users doc: $doc';
+    return 'Gebruikersdocument: $doc';
   }
 
   @override
   String get ok => 'OK';
 
   @override
-  String get fetch_doc_title => 'Fetch document by ID';
+  String get fetch_doc_title => 'Document ophalen via ID';
 
   @override
-  String get paste_doc_id => 'Plak hier het document ID van customerquestions:';
+  String get paste_doc_id => 'Plak hier het document-ID van de klantvragen:';
 
   @override
-  String get fetch => 'Fetch';
+  String get fetch => 'Ophalen';
 
   @override
   String get not_found_title => 'Niet gevonden';
@@ -212,7 +212,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get empty => '<empty>';
+  String get empty => '<leeg>';
 
   @override
   String get fetch_error_title => 'Fout';
@@ -231,16 +231,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get no_questions_found => 'Geen vragen gevonden';
 
   @override
-  String get show_debug_info => 'Toon debug info';
+  String get show_debug_info => 'Toon debug-informatie';
 
   @override
-  String get delete_chat_title => 'Verwijder chat';
+  String get delete_chat_title => 'Chat verwijderen';
 
   @override
   String get delete_chat_confirm => 'Weet je zeker dat je deze chat wilt verwijderen? Dit kan niet ongedaan gemaakt worden.';
 
   @override
-  String get delete => 'Verwijder';
+  String get delete => 'Verwijderen';
 
   @override
   String get chat_deleted => 'Chat verwijderd';
@@ -249,16 +249,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get delete_failed => 'Verwijderen mislukt';
 
   @override
+  String get marked_unread => 'Als ongelezen gemarkeerd';
+
+  @override
+  String get action_failed => 'Actie mislukt';
+
+  @override
   String get user_label_default => 'Gebruiker';
 
   @override
   String get reply_hint => 'Typ een antwoord...';
 
   @override
-  String get send => 'Verstuur';
+  String get send => 'Versturen';
 
   @override
-  String get notify_title => 'Nieuw bericht van admin';
+  String get notify_title => 'Nieuw bericht van beheerder';
 
   @override
   String notify_body(Object text) {
@@ -266,59 +272,59 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get no_faq_items => 'Nog geen FAQ items';
+  String get no_faq_items => 'Nog geen veelgestelde vragen';
 
   @override
-  String get edit => 'Bewerk';
+  String get edit => 'Bewerken';
 
   @override
-  String get remove => 'Verwijder';
+  String get remove => 'Verwijderen';
 
   @override
-  String get add_new_faq => 'Nieuwe FAQ toevoegen';
+  String get add_new_faq => 'Nieuwe vraag toevoegen';
 
   @override
-  String get new_faq_title => 'Nieuwe FAQ';
+  String get new_faq_title => 'Nieuwe veelgestelde vraag';
 
   @override
-  String get question_label => 'Question';
+  String get question_label => 'Vraag';
 
   @override
-  String get answer_label => 'Answer';
+  String get answer_label => 'Antwoord';
 
   @override
-  String get add => 'Voeg toe';
+  String get add => 'Toevoegen';
 
   @override
-  String get faq_added => 'FAQ toegevoegd';
+  String get faq_added => 'Vraag toegevoegd';
 
   @override
   String get faq_add_failed => 'Toevoegen mislukt';
 
   @override
-  String get edit_faq_title => 'Bewerk FAQ';
+  String get edit_faq_title => 'Vraag bewerken';
 
   @override
-  String get faq_updated => 'FAQ bijgewerkt';
+  String get faq_updated => 'Vraag bijgewerkt';
 
   @override
   String get faq_update_failed => 'Opslaan mislukt';
 
   @override
-  String get delete_faq_title => 'Verwijder FAQ';
+  String get delete_faq_title => 'Vraag verwijderen';
 
   @override
-  String get delete_faq_confirm => 'Weet je zeker dat je deze FAQ wilt verwijderen?';
+  String get delete_faq_confirm => 'Weet je zeker dat je deze vraag wilt verwijderen?';
 
   @override
-  String get faq_deleted => 'FAQ verwijderd';
+  String get faq_deleted => 'Vraag verwijderd';
 
   @override
   String get faq_delete_failed => 'Verwijderen mislukt';
 
   @override
   String admins_label(Object names) {
-    return 'Admins: $names';
+    return 'Beheerders: $names';
   }
 
   @override
@@ -339,7 +345,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get navSearch => 'Zoeken';
 
   @override
-  String get navFood => 'Food';
+  String get navFood => 'Eten';
 
   @override
   String get navProfile => 'Profiel';
@@ -374,10 +380,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get map_location_service_disabled => 'Locatiedienst is uitgeschakeld';
 
   @override
-  String get map_location_permission_denied => 'Locatie toegang geweigerd';
+  String get map_location_permission_denied => 'Locatietoegang geweigerd';
 
   @override
-  String get map_location_permission_denied_forever => 'Locatiepermissies permanent geweigerd. Schakel in instellingen.';
+  String get map_location_permission_denied_forever => 'Locatiepermissies permanent geweigerd. Schakel dit in bij de instellingen.';
 
   @override
   String map_location_fetch_error(Object error) {
@@ -391,7 +397,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get unknown => 'Onbekend';
 
   @override
-  String get food_edit_favorite => 'Pas favoriet aan';
+  String get food_edit_favorite => 'Favoriet aanpassen';
 
   @override
   String get food_name_label => 'Naam';
@@ -403,7 +409,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get food_location => 'Locatie';
 
   @override
-  String get food_diet => 'Dieetwens';
+  String get food_diet => 'Dieetwensen';
 
   @override
   String get food_diet_info => 'Let op: Het aanbod van restaurants met specifieke dieetopties kan variëren per regio.';
@@ -433,7 +439,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get food_postcode_label => 'Postcode (4 cijfers)';
 
   @override
-  String get food_zip_required => 'Vul eerst 4 cijfers van je postcode in!';
+  String get food_zip_required => 'Vul eerst de 4 cijfers van je postcode in!';
 
   @override
   String get filter_vegetarian => 'Vegetarisch';
@@ -457,7 +463,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get ellipsis => '...';
 
   @override
-  String get open => 'Open';
+  String get open => 'Openen';
 
   @override
   String get changeNameTitle => 'Wijzig je naam';
@@ -472,7 +478,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get save_and_continue => 'Opslaan en doorgaan';
 
   @override
-  String get contact_admin_title => 'Contact admin';
+  String get contact_admin_title => 'Contact met beheerder';
 
   @override
   String get emailLabel => 'E-mail';
@@ -487,13 +493,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get question_validation => 'Vul je vraag in';
 
   @override
-  String get mustBeLoggedInToSend => 'Je moet ingelogd zijn om te versturen';
+  String get mustBeLoggedInToSend => 'Je moet ingelogd zijn om te kunnen versturen';
 
   @override
   String get question_sent => 'Vraag verstuurd';
 
   @override
-  String get ai_max_reached => 'Je hebt het maximale aantal AI-vragen voor vandaag gebruikt. Probeer morgen opnieuw.';
+  String get ai_max_reached => 'Je hebt het maximale aantal AI-vragen voor vandaag gebruikt. Probeer het morgen opnieuw.';
 
   @override
   String get ask_ai_title => 'Vraag AI';
@@ -502,33 +508,33 @@ class AppLocalizationsNl extends AppLocalizations {
   String get ai_wait => 'Even geduld, dit kan tot een minuut duren';
 
   @override
-  String get ai_answer_title => 'AI Antwoord';
+  String get ai_answer_title => 'AI-antwoord';
 
   @override
   String ai_answer_title_with_model(Object model) {
-    return 'AI Antwoord ($model)';
+    return 'AI-antwoord ($model)';
   }
 
   @override
-  String get ai_failed_all => 'AI aanvraag is mislukt voor alle modellen.';
+  String get ai_failed_all => 'AI-aanvraag is mislukt voor alle modellen.';
 
   @override
-  String get ai_failed => 'AI aanvraag is mislukt.';
+  String get ai_failed => 'AI-aanvraag is mislukt.';
 
   @override
   String get login_required_title => 'Inloggen vereist';
 
   @override
-  String get login_required_message => 'Je moet ingelogd zijn om dit te doen. Wil je naar het login-scherm?';
+  String get login_required_message => 'Je moet ingelogd zijn om dit te doen. Wil je naar het inlogscherm?';
 
   @override
-  String get goto_login => 'Naar login';
+  String get goto_login => 'Naar inloggen';
 
   @override
   String get search_faqs_hint => 'Zoek in veelgestelde vragen';
 
   @override
-  String get no_faq_matches => 'Geen FAQ matches';
+  String get no_faq_matches => 'Geen resultaten in veelgestelde vragen';
 
   @override
   String ai_questions_used(Object max, Object used) {
@@ -541,7 +547,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get contact_admin_button => 'Contact admin';
+  String get contact_admin_button => 'Contact beheerder';
 
   @override
   String get my_questions => 'Mijn vragen';
@@ -568,19 +574,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String get faq_default_watchlist_q => 'Hoe voeg ik een film toe aan mijn watchlist?';
 
   @override
-  String get faq_default_watchlist_a => 'Open de filmpagina en klik op de knop \"Opslaan\" (bookmark-icoon) om de film aan je watchlist toe te voegen.';
+  String get faq_default_watchlist_a => 'Open de filmpagina en klik op de knop \"Opslaan\" (bladwijzer-icoon) om de film aan je watchlist toe te voegen.';
 
   @override
   String get faq_missing_info_q => 'Waarom mist een aflevering of seizoen informatie?';
 
   @override
-  String get faq_missing_info_a => 'Onze data komt van externe providers; soms ontbreken metadata. Probeer later opnieuw of meld het via Contact admin.';
+  String get faq_missing_info_a => 'Onze gegevens komen van externe providers; soms ontbreken er metadata. Probeer het later opnieuw of meld het via \'Contact beheerder\'.';
 
   @override
   String get faq_report_bug_q => 'Hoe kan ik een fout in de app melden?';
 
   @override
-  String get faq_report_bug_a => 'Gebruik de knop \"Contact admin\" hieronder om een e-mail te sturen met een beschrijving en screenshots.';
+  String get faq_report_bug_a => 'Gebruik de knop \"Contact beheerder\" hieronder om een e-mail te sturen met een beschrijving en eventueel screenshots.';
 
   @override
   String get faq_ai_q => 'Kan ik vragen aan een AI stellen?';
@@ -589,7 +595,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get faq_ai_a => 'Ja — gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.';
 
   @override
-  String get admins_no_push => 'Admins ontvangen mogelijk geen pushmeldingen';
+  String get admins_no_push => 'Beheerders ontvangen mogelijk geen pushmeldingen';
 
   @override
   String ai_cooldown_wait(Object seconds) {
@@ -603,10 +609,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get user_new_message_title => 'Nieuw bericht van gebruiker';
 
   @override
-  String get nowPlayingTitle => 'Actuele films';
+  String get nowPlayingTitle => 'Nu in de bioscoop';
 
   @override
-  String get imdbIdUnavailable => 'IMDb ID niet beschikbaar voor deze film';
+  String get imdbIdUnavailable => 'IMDb-ID niet beschikbaar voor deze film';
 
   @override
   String get cannot_load_now_playing => 'Kon actuele films niet laden.';
@@ -621,7 +627,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get loginWelcome => 'Welkom bij CineTrackr';
 
   @override
-  String get loginCreateAccount => 'Maak een account';
+  String get loginCreateAccount => 'Account aanmaken';
 
   @override
   String get loginName => 'Naam';
@@ -645,22 +651,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get loginPasswordRequired => 'Vul je wachtwoord in';
 
   @override
-  String get loginPasswordTooShort => 'Wachtwoord moet minstens 6 tekens zijn';
+  String get loginPasswordTooShort => 'Wachtwoord moet minstens 6 tekens bevatten';
 
   @override
   String get loginRegister => 'Registreren';
 
   @override
-  String get loginNoAccountRegister => 'Nog geen account? Registreer';
+  String get loginNoAccountRegister => 'Nog geen account? Registreer hier';
 
   @override
-  String get loginHaveAccountLogin => 'Al een account? Log in';
+  String get loginHaveAccountLogin => 'Al een account? Log hier in';
 
   @override
   String get loginForgotPassword => 'Wachtwoord vergeten?';
 
   @override
-  String get loginContinueAsGuest => 'Verder gaan als gast';
+  String get loginContinueAsGuest => 'Doorgaan als gast';
 
   @override
   String get loginOrDivider => 'OF';
@@ -678,10 +684,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get loginEnterValidEmail => 'Vul een geldig e-mailadres in';
 
   @override
-  String get loginPasswordResetEmailSent => 'Wachtwoord-reset e-mail verzonden';
+  String get loginPasswordResetEmailSent => 'E-mail voor wachtwoordherstel verzonden';
 
   @override
-  String get loginPasswordResetFailed => 'Kon geen reset-e-mail sturen';
+  String get loginPasswordResetFailed => 'Kon geen herstel-e-mail sturen';
 
   @override
   String get loginSomethingWentWrong => 'Er is iets misgegaan';
@@ -690,7 +696,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get authenticationFailed => 'Authenticatie mislukt';
 
   @override
-  String get loginGithubFailed => 'GitHub login mislukt';
+  String get loginGithubFailed => 'GitHub-login mislukt';
 
   @override
   String get googleIdTokenError => 'Fout bij ophalen van Google ID-token';
@@ -743,10 +749,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get no_episodes_found => 'Geen afleveringen gevonden';
 
   @override
-  String get warning_title => '!!Waarschuwing!!';
+  String get warning_title => '!! Waarschuwing !!';
 
   @override
-  String get warning_bioscoop_content => 'Klik eerst eventuele reclames/popupvensters op de website weg voordat je de kan agenda bekijken.';
+  String get warning_bioscoop_content => 'Klik eerst eventuele reclames of pop-ups op de website weg voordat je de agenda bekijkt.';
 
   @override
   String get continue_label => 'Doorgaan';
@@ -771,7 +777,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get episode_status_update_failed => 'Kon afleveringstatus niet bijwerken.';
 
   @override
-  String get movie_seen_update_failed => 'Kon \"Gezien\" status niet bijwerken.';
+  String get movie_seen_update_failed => 'Kon \'Gezien\'-status niet bijwerken.';
 
   @override
   String get included_with_subscription => 'Inbegrepen';
@@ -801,7 +807,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get details_streaming_warning => 'Klik om streaminglink te openen';
+  String get details_streaming_warning => 'Klik om de streaminglink te openen';
 
   @override
   String get yes => 'Ja';
@@ -813,7 +819,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get stars => 'sterren';
 
   @override
-  String get appleSignInNoIdentityToken => 'Apple-aanmelding mislukt: geen identity token ontvangen';
+  String get appleSignInNoIdentityToken => 'Apple-aanmelding mislukt: geen identiteitstoken ontvangen';
 
   @override
   String get avatar_login_prompt => 'Log in om je profielfoto aan te passen';
@@ -822,7 +828,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get invalid_input => 'Ongeldige invoer';
 
   @override
-  String get only_emoji_error => 'Voer alleen emoji in';
+  String get only_emoji_error => 'Voer alleen emoji\'s in';
 
   @override
   String get use => 'Gebruik';
@@ -831,13 +837,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get emoji_input_hint => 'Plak of typ een emoji (optioneel)';
 
   @override
-  String get edit_avatar_title => 'Pas profielplaatje aan';
+  String get edit_avatar_title => 'Profielfoto aanpassen';
 
   @override
-  String get choose_color => 'Kies kleur';
+  String get choose_color => 'Kies een kleur';
 
   @override
-  String get choose_emoji_optional => 'Kies emoji (optioneel)';
+  String get choose_emoji_optional => 'Kies een emoji (optioneel)';
 
   @override
   String get your_badges => 'JOUW BADGES';
@@ -858,25 +864,25 @@ class AppLocalizationsNl extends AppLocalizations {
   String get badge_adventurer => 'Avonturier';
 
   @override
-  String get badge_horror_king => 'Horror King';
+  String get badge_horror_king => 'Horror-koning';
 
   @override
-  String get badge_binge_watcher => 'Binge Watcher';
+  String get badge_binge_watcher => 'Binge-watcher';
 
   @override
-  String get badge_early_bird => 'Early Bird';
+  String get badge_early_bird => 'Vroege vogel';
 
   @override
   String get appVersion => 'CineTrackr v1.0.4';
 
   @override
-  String get search_hint => 'Zoek serie/film...';
+  String get search_hint => 'Zoek serie of film...';
 
   @override
   String get clear_tooltip => 'Wissen';
 
   @override
-  String get filter_tooltip => 'Filter';
+  String get filter_tooltip => 'Filteren';
 
   @override
   String get filter_refine_title => 'Filters verfijnen';
@@ -903,22 +909,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get filter_genres_label => 'GENRES';
 
   @override
-  String get filter_year_from_label => 'JAAR (VAN)';
+  String get filter_year_from_label => 'JAAR (VANAF)';
 
   @override
   String get filter_year_to_label => 'JAAR (TOT)';
 
   @override
-  String get filter_min_rating_label => 'MINIMALE RATING (0-100)';
+  String get filter_min_rating_label => 'MINIMALE SCORE (0-100)';
 
   @override
-  String get apply_filters => 'Filters Toepassen';
+  String get apply_filters => 'Filters toepassen';
 
   @override
   String get tmdb_movie_fetch_failed => 'Kon filmdetails niet ophalen';
 
   @override
-  String get no_imdb_for_movie => 'Geen IMDb ID gevonden voor deze film';
+  String get no_imdb_for_movie => 'Geen IMDb-ID gevonden voor deze film';
 
   @override
   String get tmdb_movie_fetch_error => 'Fout bij ophalen filmdetails';
@@ -927,7 +933,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tmdb_series_fetch_failed => 'Kon seriedetails niet ophalen';
 
   @override
-  String get no_imdb_for_series => 'Geen IMDb ID gevonden voor deze serie';
+  String get no_imdb_for_series => 'Geen IMDb-ID gevonden voor deze serie';
 
   @override
   String get tmdb_series_fetch_error => 'Fout bij ophalen seriedetails';
@@ -1005,7 +1011,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get genre_western => 'Western';
 
   @override
-  String get login_progress_save_snack => 'Log in om voortgang te bewaren';
+  String get login_progress_save_snack => 'Log in om voortgang op te slaan';
 
   @override
   String get progress_update_failed => 'Kon voortgang niet bijwerken';
@@ -1025,7 +1031,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get remove_from_watchlist_tooltip => 'Verwijder uit watchlist';
 
   @override
-  String get login_manage_watchlist_snack => 'Log in om watchlist te beheren';
+  String get login_manage_watchlist_snack => 'Log in om je watchlist te beheren';
 
   @override
   String get item_removed_watchlist => 'Item verwijderd uit watchlist';
@@ -1057,7 +1063,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get no_items => 'Geen items';
+  String get no_items => 'Geen items gevonden';
 
   @override
   String season_label(Object number) {
@@ -1089,4 +1095,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'Gezien afleveringen: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Disclaimer';
+
+  @override
+  String get disclaimerHeading => 'Derden & APIs';
+
+  @override
+  String get disclaimerText => 'Deze app gebruikt gegevens van meerdere externe bronnen:\n\n* API door Brian Fritz (OMDb API)\n Gelicentieerd onder CC BY-NC 4.0\n Deze dienst is niet goedgekeurd door of verbonden met IMDb.com\n\n* Deze applicatie maakt gebruik van TMDB en de TMDB API’s maar is niet goedgekeurd, gecertificeerd of anderszins ondersteund door TMDB\n\n* Sommige gegevens zijn afkomstig van IMDb\n\n* Streaminginformatie en vertaaldiensten worden geleverd via RapidAPI\n\n* Trailers worden geleverd door YouTube\n\nKaartgegevens © OpenStreetMap contributors\n\nAlle handelsmerken, logo’s en auteursrechten behoren toe aan hun respectieve eigenaren';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Afspelen uitgeschakeld door de eigenaar van de video.';
+
+  @override
+  String get disclaimerNote => 'Gebruik en weergave van content is onderhevig aan de voorwaarden en licenties van bovengenoemde diensten.';
 }

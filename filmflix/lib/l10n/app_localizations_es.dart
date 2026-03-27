@@ -249,6 +249,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get delete_failed => 'Error al eliminar';
 
   @override
+  String get marked_unread => 'Marcado como no leído';
+
+  @override
+  String get action_failed => 'Acción fallida';
+
+  @override
   String get user_label_default => 'Usuario';
 
   @override
@@ -1089,4 +1095,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'Episodios vistos: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Aviso legal';
+
+  @override
+  String get disclaimerHeading => 'Servicios de terceros y fuentes de datos';
+
+  @override
+  String get disclaimerText => 'Esta aplicación utiliza datos de múltiples fuentes de terceros:\n\n* API por Brian Fritz (OMDb API)\n Licenciado bajo CC BY-NC 4.0\n Este servicio no está respaldado ni afiliado a IMDb.com\n\n* Esta aplicación utiliza TMDB y las API de TMDB, pero no está respaldada, certificada ni aprobada de ninguna manera por TMDB\n\n* Algunos datos provienen de IMDb\n\n* La disponibilidad de streaming y los servicios de traducción se proporcionan a través de RapidAPI\n\n* Los tráilers son proporcionados por YouTube\n\nDatos de mapas © colaboradores de OpenStreetMap\n\nTodas las marcas, logotipos y derechos de autor pertenecen a sus respectivos propietarios.';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Reproducción deshabilitada por el propietario del vídeo.';
+
+  @override
+  String get disclaimerNote => 'Todas las marcas, logotipos y datos de terceros siguen siendo propiedad de sus respectivos propietarios; consulte sus términos y políticas de privacidad para más detalles.';
 }

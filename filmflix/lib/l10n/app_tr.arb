@@ -71,6 +71,8 @@
   "delete": "Sil",
   "chat_deleted": "Sohbet silindi",
   "delete_failed": "Silme işlemi başarısız",
+  "marked_unread": "Okunmadı olarak işaretlendi",
+  "action_failed": "İşlem başarısız",
   "user_label_default": "Kullanıcı",
   "reply_hint": "Bir cevap yazın...",
   "send": "Gönder",
@@ -335,5 +337,10 @@
   "genre_talk": "Talk Show",
   "genre_thriller": "Gerilim",
   "genre_war": "Savaş",
-  "genre_western": "Vahşi Batı"
+  "genre_western": "Vahşi Batı",
+  "disclaimerTitle": "Feragatname",
+  "disclaimerHeading": "Üçüncü taraf hizmetleri ve veri kaynakları",
+  "disclaimerText": "Bu uygulama birden fazla üçüncü taraf kaynaktan veri kullanır:\n\n* Brian Fritz tarafından sağlanan API (OMDb API)\n CC BY-NC 4.0 lisansı altında lisanslanmıştır\n Bu hizmet IMDb.com tarafından onaylanmamış veya onunla bağlantılı değildir\n\n* Bu uygulama TMDB ve TMDB API’lerini kullanır ancak TMDB tarafından onaylanmamış, sertifikalandırılmamış veya başka bir şekilde desteklenmemektedir\n\n* Bazı veriler IMDb’den alınmıştır\n\n* Yayın (streaming) bilgileri ve çeviri hizmetleri RapidAPI üzerinden sağlanmaktadır\n\n* Fragmanlar YouTube tarafından sağlanmaktadır\n\nHarita verileri © OpenStreetMap katkıda bulunanlar\n\nTüm ticari markalar, logolar ve telif hakları ilgili sahiplerine aittir.",
+  "playbackDisabledByVideoOwner": "Oynatma, videonun sahibi tarafından devre dışı bırakıldı.",
+  "disclaimerNote": "Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin."
 }
