@@ -1,7 +1,6 @@
 import { put, list } from "@vercel/blob";
 const https = require('https');
 
-// In-process coalescing map to dedupe concurrent upstream requests per instance
 const _inFlight = new Map();
 function fetchWithCoalesce(key, fetcher) {
     if (_inFlight.has(key)) {
