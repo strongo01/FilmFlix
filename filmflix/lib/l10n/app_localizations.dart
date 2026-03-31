@@ -892,13 +892,13 @@ abstract class AppLocalizations {
   /// No description provided for @food_postcode_label.
   ///
   /// In en, this message translates to:
-  /// **'Postcode (4 digits)'**
+  /// **'ZIP code (4 digits)'**
   String get food_postcode_label;
 
   /// No description provided for @food_zip_required.
   ///
   /// In en, this message translates to:
-  /// **'Enter 4 digits of your postcode first!'**
+  /// **'Enter 4 digits of your ZIP code first!'**
   String get food_zip_required;
 
   /// No description provided for @filter_vegetarian.

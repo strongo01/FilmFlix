@@ -503,25 +503,25 @@ class _AdminScreenState extends State<AdminScreen> {
                       'adminRead': false,
                     });
                     if (mounted)
-                      /*ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             AppLocalizations.of(context)!.marked_unread,
                           ),
                         ),
-                      );*/
-                    if (mounted)
+                      );
+                    /*if (mounted)
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             "AppLocalizations.of(context)!.marked_unread",
                           ),
                         ),
-                      );
+                      );*/
                   } catch (e) {
                     debugPrint('Failed to mark chat ${d.id} as unread: $e');
-                    if (mounted)
-                      /*ScaffoldMessenger.of(context).showSnackBar(
+                    /*if (mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             AppLocalizations.of(context)!.action_failed,

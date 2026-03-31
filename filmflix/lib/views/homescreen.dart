@@ -501,58 +501,113 @@ class _HomeScreenState extends State<HomeScreen> {
               // --- BOVENBALK ---
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    IconButton(
-                      key: MainNavigation.kaartKey,
-                      icon: Icon(Icons.map_outlined, color: textColor),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CinemasMapView(),
+                child: SizedBox(
+                  height: 56,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          key: MainNavigation.kaartKey,
+                          icon: Icon(Icons.map_outlined, color: textColor),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CinemasMapView(),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)!.appTitle,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                      Align(
+                        alignment: Alignment.center,
+                        child: Text(
+                          AppLocalizations.of(context)!.appTitle,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                    FutureBuilder<bool>(
-                      future: _checkIfAdmin(),
-                      builder: (context, snap) => snap.data == true
-                          ? Stack(
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FutureBuilder<bool>(
+                              future: _checkIfAdmin(),
+                              builder: (context, snap) => snap.data == true
+                                  ? Stack(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.admin_panel_settings,
+                                            color: Colors.amber,
+                                          ),
+                                          onPressed: () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const AdminScreen(),
+                                            ),
+                                          ),
+                                        ),
+                                        if (_cachedUnreadAdminChats > 0)
+                                          Positioned(
+                                            right: 6,
+                                            top: 6,
+                                            child: IgnorePointer(
+                                              child: Container(
+                                                padding: const EdgeInsets.all(2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(color: Colors.white, width: 1),
+                                                ),
+                                                constraints: const BoxConstraints(
+                                                  minWidth: 16,
+                                                  minHeight: 16,
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    _cachedUnreadAdminChats > 99 ? '99+' : '$_cachedUnreadAdminChats',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    )
+                                  : const SizedBox(width: 48),
+                            ),
+                            const SizedBox(width: 8),
+                            Stack(
                               children: [
                                 IconButton(
-                                  icon: const Icon(
-                                    Icons.admin_panel_settings,
-                                    color: Colors.amber,
-                                  ),
+                                  icon: Icon(Icons.settings, color: textColor),
                                   onPressed: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const AdminScreen(),
+                                      builder: (_) => const SettingsScreen(),
                                     ),
                                   ),
                                 ),
-                                if (_cachedUnreadAdminChats > 0)
+                                if (_cachedUnreadCustomerReplies > 0)
                                   Positioned(
                                     right: 6,
                                     top: 6,
                                     child: IgnorePointer(
-                                      // allow taps to pass through the badge to the icon button
                                       child: Container(
                                         padding: const EdgeInsets.all(2),
                                         decoration: BoxDecoration(
                                           color: Colors.red,
                                           shape: BoxShape.circle,
-                                          border: Border.all(
-                                              color: Colors.white, width: 1),
+                                          border: Border.all(color: Colors.white, width: 1),
                                         ),
                                         constraints: const BoxConstraints(
                                           minWidth: 16,
@@ -560,9 +615,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                         child: Center(
                                           child: Text(
-                                            _cachedUnreadAdminChats > 99
+                                            _cachedUnreadCustomerReplies > 99
                                                 ? '99+'
-                                                : '$_cachedUnreadAdminChats',
+                                                : '$_cachedUnreadCustomerReplies',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 10,
@@ -574,55 +629,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                               ],
-                            )
-                          : const SizedBox(width: 48),
-                    ),
-                    Stack(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.settings, color: textColor),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SettingsScreen(),
                             ),
-                          ),
+                          ],
                         ),
-                        if (_cachedUnreadCustomerReplies > 0)
-                          Positioned(
-                            right: 6,
-                            top: 6,
-                            child: IgnorePointer(
-                              // allow taps to pass through the badge to the icon button
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 1),
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    _cachedUnreadCustomerReplies > 99
-                                        ? '99+'
-                                        : '$_cachedUnreadCustomerReplies',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -728,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // --- DOT INDICATOR ---
               Padding(
-                padding: const EdgeInsets.only(bottom: 30),
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + 30),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(

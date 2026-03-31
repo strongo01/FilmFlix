@@ -436,10 +436,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get food_search_button => 'SEARCH ON THUISBEZORGD';
 
   @override
-  String get food_postcode_label => 'Postcode (4 digits)';
+  String get food_postcode_label => 'ZIP code (4 digits)';
 
   @override
-  String get food_zip_required => 'Enter 4 digits of your postcode first!';
+  String get food_zip_required => 'Enter 4 digits of your ZIP code first!';
 
   @override
   String get filter_vegetarian => 'Vegetarian';

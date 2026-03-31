@@ -1,3 +1,5 @@
+import 'package:cinetrackr/widgets/app_top_bar.dart';
+import 'package:cinetrackr/widgets/app_background.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -1553,9 +1555,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     final poster = _poster;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(loc.details)),
-      body: SingleChildScrollView(
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: AppTopBar(
+            title: loc.details,
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1996,6 +2006,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

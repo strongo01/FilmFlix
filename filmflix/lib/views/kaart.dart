@@ -5,6 +5,8 @@ import 'package:cinetrackr/services/cinema_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cinetrackr/l10n/app_localizations.dart';
+import 'package:cinetrackr/widgets/app_top_bar.dart';
+import 'package:cinetrackr/widgets/app_background.dart';
 
 class CinemasMapView extends StatefulWidget {
   const CinemasMapView({super.key});
@@ -137,13 +139,17 @@ class _CinemasMapViewState extends State<CinemasMapView> {
       );
     }).toList();
 
-    return Scaffold(
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title:  Text(loc.map_all_cinemas_title, style: TextStyle(color: Colors.white)),
-        backgroundColor: movieBlue,
-      ),
-      body: _loading
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: AppTopBar(
+            title: loc.map_all_cinemas_title,
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+        body: _loading
           ? const Center(child: CircularProgressIndicator())
           : FlutterMap(
               mapController: _mapController,
@@ -165,6 +171,7 @@ class _CinemasMapViewState extends State<CinemasMapView> {
       floatingActionButton: FloatingActionButton(
         onPressed: _goToUserLocation,
         child: const Icon(Icons.my_location),
+      ),
       ),
     );
   }

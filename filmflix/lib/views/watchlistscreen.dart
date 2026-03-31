@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'movie_detail_screen.dart';
 import 'loginscreen.dart';
 import 'package:cinetrackr/l10n/app_localizations.dart';
+import 'package:cinetrackr/widgets/app_top_bar.dart';
+import 'package:cinetrackr/widgets/app_background.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -316,17 +318,31 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(AppLocalizations.of(context)!.watchlist_label),
-          bottom: TabBar(
-            tabs: [
-              Tab(text: AppLocalizations.of(context)!.tab_saved),
-              Tab(text: AppLocalizations.of(context)!.tab_watching),
-            ],
+      child: AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(kToolbarHeight + kTextTabBarHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppTopBar(
+                  title: AppLocalizations.of(context)!.watchlist_label,
+                  backgroundColor: Colors.transparent,
+                ),
+                Material(
+                  color: Colors.transparent,
+                  child: TabBar(
+                    tabs: [
+                      Tab(text: AppLocalizations.of(context)!.tab_saved),
+                      Tab(text: AppLocalizations.of(context)!.tab_watching),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        body: StreamBuilder<User?>(
+          body: StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, authSnap) {
             final user = authSnap.data;
@@ -916,6 +932,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           },
         ),
       ),
+      ),
+    
     );
   }
 }

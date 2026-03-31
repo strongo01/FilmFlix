@@ -7,6 +7,8 @@ import 'package:cinetrackr/views/movie_detail_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cinetrackr/l10n/app_localizations.dart';
+import 'package:cinetrackr/widgets/app_top_bar.dart';
+import 'package:cinetrackr/widgets/app_background.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:flutter/services.dart' show rootBundle;
@@ -164,20 +166,33 @@ class _SearchScreenState extends State<SearchScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Container(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-                left: 16,
-                right: 16,
-                top: 20,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+        // Use a DraggableScrollableSheet so the bottom sheet doesn't
+        // expand fully to the top. The inner SingleChildScrollView
+        // uses the provided scrollController so content scrolls
+        // correctly while keeping a limited initial/max height.
+        return DraggableScrollableSheet(
+          initialChildSize: 0.72,
+          minChildSize: 0.4,
+          // Limit the maximum expansion so the sheet doesn't reach the very top
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (sheetCtx, scrollController) {
+            return StatefulBuilder(
+              builder: (ctx, setModalState) {
+                return Container(
+                  padding: EdgeInsets.only(
+                    // include both keyboard insets and system bottom padding (navigation bar)
+                    bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).viewPadding.bottom + 20,
+                    left: 16,
+                    right: 16,
+                    top: 20,
+                  ),
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -214,6 +229,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: ChoiceChip(
                             label: Center(child: Text(AppLocalizations.of(ctx)!.filter_all)),
                             selected: showType == '',
+                            selectedColor: Colors.lightBlueAccent.withOpacity(0.2),
                             onSelected: (v) => setModalState(() => showType = ''),
                           ),
                         ),
@@ -222,6 +238,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: ChoiceChip(
                             label: Center(child: Text(AppLocalizations.of(ctx)!.filter_movies)),
                             selected: showType == 'movie',
+                            selectedColor: Colors.lightBlueAccent.withOpacity(0.2),
                             onSelected: (v) => setModalState(() => showType = 'movie'),
                           ),
                         ),
@@ -230,6 +247,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           child: ChoiceChip(
                             label: Center(child: Text(AppLocalizations.of(ctx)!.filter_series)),
                             selected: showType == 'series',
+                            selectedColor: Colors.lightBlueAccent.withOpacity(0.2),
                             onSelected: (v) => setModalState(() => showType = 'series'),
                           ),
                         ),
@@ -440,14 +458,16 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                    ],
+                    ),
+                  ),
+                );
+              },
             );
           },
         );
-        },
-      );
+      },
+    );
   }
 
   Future<void> _loadMore() async {
@@ -899,17 +919,18 @@ class _SearchScreenState extends State<SearchScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white,
-      appBar: AppBar(
-        backgroundColor: isDark ? Colors.black : Colors.white,
-        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
-        title: Text(
-          AppLocalizations.of(context)!.navSearch,
-          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: AppTopBar(
+          title: AppLocalizations.of(context)!.navSearch,
         ),
-        elevation: 0.5,
       ),
-      body: Column(
+      body: AppBackground(
+        child: SafeArea(
+          bottom: false,
+          child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
@@ -1164,6 +1185,8 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
         ],
+      ),
+        ),
       ),
     );
   }

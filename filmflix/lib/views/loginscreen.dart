@@ -584,17 +584,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ? null
                               : () => _signInWithGoogle(),
                         ),
-                        const SizedBox(height: 12),
-                        SignInButton(
-                          Buttons.GitHub,
-                          text: loc.loginSignInWithGitHub,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          onPressed: _isLoading
-                              ? null
-                              : () => _signInWithGitHub(),
-                        ),
                         if (!kIsWeb &&
                             (defaultTargetPlatform == TargetPlatform.iOS ||
                                 defaultTargetPlatform ==
@@ -611,6 +600,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : () => signInWithApple(),
                           ),
                         ],
+                        const SizedBox(height: 12),
+                        SignInButton(
+                          Buttons.GitHub,
+                          text: loc.loginSignInWithGitHub,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onPressed: _isLoading
+                              ? null
+                              : () => _signInWithGitHub(),
+                        ),
+                        
                       ],
                     ),
                   ),

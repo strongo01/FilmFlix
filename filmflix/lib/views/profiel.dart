@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,7 +8,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_options.dart';
 import 'loginscreen.dart';
 import 'settingscreen.dart';
-import 'package:cinetrackr/l10n/app_localizations.dart';
+import 'package:cinetrackr/widgets/app_background.dart';
+import 'package:cinetrackr/widgets/app_top_bar.dart';
 
 void main() => runApp(const MaterialApp(home: ProfileScreen()));
 
@@ -411,9 +413,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark
-        ? const Color(0xFF121B22)
-        : const Color(0xFFF5F7F8);
     final cardColor = isDark
         ? const Color(0xFF1D272F)
         : const Color(0xFFFFFFFF);
@@ -422,29 +421,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : const Color(0xFFD4AF37);
     final primaryText = isDark ? Colors.white : Colors.black87;
     final secondaryText = isDark ? Colors.white70 : Colors.black54;
-    final iconColor = isDark ? Colors.white70 : Colors.black45;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          // Header met Avatar en Level Progress
-          SliverAppBar(
-            expandedHeight: 280,
-            backgroundColor: backgroundColor,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [cardColor, backgroundColor],
-                  ),
-                ),
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: AppTopBar(
+            title: AppLocalizations.of(context)!.navProfile,
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+        body: CustomScrollView(
+          slivers: [
+            // Header met Avatar en Level Progress
+            SliverToBoxAdapter(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 50),
                     Stack(
                       alignment: Alignment.bottomRight,
                       children: [
@@ -552,14 +548,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-          ),
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   Row(
                     children: [
                       _buildQuickStat(
@@ -703,8 +698,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-          ),
-        ],
+                  ),          ],
+        ),
       ),
     );
   }
@@ -1046,7 +1041,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ? selectedEmoji
                                       : input;
                                 });
-                                Navigator.of(ctx).pop();
+                                if (mounted) Navigator.of(ctx).pop();
                               },
                               child: Text(AppLocalizations.of(ctx)!.save),
                             ),
