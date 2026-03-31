@@ -369,7 +369,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tutorialMap => '¡Aquí puedes ver el mapa para encontrar cines cercanos!';
 
   @override
-  String get map_all_cinemas_title => 'Todos los cines en los Países Bajos';
+  String get map_all_cinemas_title => 'Cines en los Países Bajos';
 
   @override
   String map_load_error(Object error) {
@@ -705,6 +705,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get googleSignInCancelled => 'Inicio de sesión con Google cancelado';
 
   @override
+  String get loginErrorCredentialMalformed => 'La credencial suministrada no es válida o ha caducado.';
+
+  @override
+  String get loginErrorUserDisabled => 'Esta cuenta de usuario ha sido inhabilitada.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Hemos bloqueado todas las solicitudes de este dispositivo debido a una actividad inusual. Inténtalo de nuevo más tarde.';
+
+  @override
+  String get loginErrorInvalidEmail => 'La dirección de correo electrónico no es válida.';
+
+  @override
+  String get loginErrorWrongPassword => 'Contraseña incorrecta.';
+
+  @override
+  String get loginErrorUserNotFound => 'No se encontró ningún usuario con este correo electrónico.';
+
+  @override
+  String get loginErrorAccountExists => 'Ya existe una cuenta con la misma dirección de correo electrónico pero con diferentes credenciales de inicio de sesión.';
+
+  @override
   String get details => 'Detalles';
 
   @override
@@ -820,6 +841,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Fallo al iniciar sesión con Apple: no se recibió token de identidad';
+
+  @override
+  String get googleSignInFailed => 'Error al iniciar sesión con Google';
+
+  @override
+  String get loginErrorWeakPassword => 'La contraseña es demasiado débil.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Error de red. Por favor verifica tu conexión.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Vuelve a iniciar sesión para continuar (se requiere autenticación reciente).';
 
   @override
   String get avatar_login_prompt => 'Inicia sesión para personalizar tu foto de perfil';

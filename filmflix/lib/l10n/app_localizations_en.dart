@@ -369,7 +369,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialMap => 'View the map to find nearby cinemas!';
 
   @override
-  String get map_all_cinemas_title => 'All cinemas in the Netherlands';
+  String get map_all_cinemas_title => 'Cinemas in the Netherlands';
 
   @override
   String map_load_error(Object error) {
@@ -705,6 +705,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get googleSignInCancelled => 'Google sign-in cancelled';
 
   @override
+  String get loginErrorCredentialMalformed => 'The supplied credential is malformed or has expired.';
+
+  @override
+  String get loginErrorUserDisabled => 'This user account has been disabled.';
+
+  @override
+  String get loginErrorTooManyRequests => 'We have blocked all requests from this device due to unusual activity. Try again later.';
+
+  @override
+  String get loginErrorInvalidEmail => 'The email address is badly formatted.';
+
+  @override
+  String get loginErrorWrongPassword => 'Wrong password.';
+
+  @override
+  String get loginErrorUserNotFound => 'No user found with this email.';
+
+  @override
+  String get loginErrorAccountExists => 'An account already exists with the same email address but different sign-in credentials.';
+
+  @override
   String get details => 'Details';
 
   @override
@@ -820,6 +841,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Apple Sign-In failed: no identity token returned';
+
+  @override
+  String get googleSignInFailed => 'Google sign-in failed';
+
+  @override
+  String get loginErrorWeakPassword => 'Password is too weak.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Network error. Please check your connection.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Please sign in again to continue (recent authentication required).';
 
   @override
   String get avatar_login_prompt => 'Log in to change your profile picture';

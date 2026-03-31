@@ -369,7 +369,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tutorialMap => 'Consultez la carte pour trouver les cinémas à proximité !';
 
   @override
-  String get map_all_cinemas_title => 'Tous les cinémas aux Pays-Bas';
+  String get map_all_cinemas_title => 'Cinémas aux Pays-Bas';
 
   @override
   String map_load_error(Object error) {
@@ -705,6 +705,27 @@ class AppLocalizationsFr extends AppLocalizations {
   String get googleSignInCancelled => 'Connexion Google annulée';
 
   @override
+  String get loginErrorCredentialMalformed => 'L\'identifiant fourni est malformé ou a expiré.';
+
+  @override
+  String get loginErrorUserDisabled => 'Ce compte utilisateur a été désactivé.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Nous avons bloqué toutes les demandes de cet appareil en raison d\'une activité inhabituelle. Réessayez plus tard.';
+
+  @override
+  String get loginErrorInvalidEmail => 'L\'adresse e-mail est mal formatée.';
+
+  @override
+  String get loginErrorWrongPassword => 'Mot de passe incorrect.';
+
+  @override
+  String get loginErrorUserNotFound => 'Aucun utilisateur trouvé avec cet e-mail.';
+
+  @override
+  String get loginErrorAccountExists => 'Un compte existe déjà avec la même adresse e-mail mais des identifiants de connexion différents.';
+
+  @override
   String get details => 'Détails';
 
   @override
@@ -820,6 +841,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Échec Apple : aucun token d\'identité reçu';
+
+  @override
+  String get googleSignInFailed => 'La connexion Google a échoué';
+
+  @override
+  String get loginErrorWeakPassword => 'Le mot de passe est trop faible.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Erreur réseau. Vérifiez votre connexion.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Veuillez vous reconnecter pour continuer (authentification récente requise).';
 
   @override
   String get avatar_login_prompt => 'Connectez-vous pour modifier votre photo';

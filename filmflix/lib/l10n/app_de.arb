@@ -152,7 +152,7 @@
   "@tutorialMap": {
     "description": "Tutorial text for map"
   },
-  "map_all_cinemas_title": "Alle Kinos in den Niederlanden",
+  "map_all_cinemas_title": "Kinos in den Niederlanden",
   "@map_all_cinemas_title": {
     "description": "AppBar title for the cinemas map"
   },
@@ -357,6 +357,17 @@
   "loginGithubFailed": "GitHub-Login fehlgeschlagen",
   "googleIdTokenError": "Fehler beim Abrufen des Google ID-Tokens",
   "googleSignInCancelled": "Google-Anmeldung abgebrochen",
+  "googleSignInFailed": "Google-Anmeldung fehlgeschlagen",
+  "loginErrorWeakPassword": "Das Passwort ist zu schwach.",
+  "loginErrorNetworkFailed": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+  "loginErrorRequiresRecentLogin": "Bitte melden Sie sich erneut an, um fortzufahren (kürzliche Authentifizierung erforderlich).",
+  "loginErrorCredentialMalformed": "Die angegebenen Anmeldedaten sind ungültig oder abgelaufen.",
+  "loginErrorUserDisabled": "Dieses Benutzerkonto wurde deaktiviert.",
+  "loginErrorTooManyRequests": "Wir haben alle Anfragen von diesem Gerät aufgrund ungewöhnlicher Aktivitäten blockiert. Versuchen Sie es später erneut.",
+  "loginErrorInvalidEmail": "Die E-Mail-Adresse ist falsch formatiert.",
+  "loginErrorWrongPassword": "Falsches Passwort.",
+  "loginErrorUserNotFound": "Kein Benutzer mit dieser E-Mail gefunden.",
+  "loginErrorAccountExists": "Es existiert bereits ein Konto mit derselben E-Mail-Adresse, aber anderen Anmeldedaten.",
   "details": "Details",
   "translate": "Übersetzen",
   "seen": "Gesehen",

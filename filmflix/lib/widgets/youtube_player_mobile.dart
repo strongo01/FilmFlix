@@ -54,28 +54,44 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
             debugPrint('YouTube player error (inline): code=$code for video ${widget.videoId}');
             if (code == 150 && !_error150Handled) {
               _error150Handled = true;
+              // Remove listener immediately so rapid controller updates
+              // cannot re-queue the snackbar or reset its dismiss timer.
+              _controller.removeListener(_controllerListener);
               debugPrint('Playback disabled by video owner (error 150) for video ${widget.videoId} — offering external fallback');
               if (mounted) {
-                final snack = SnackBar(
-                  content: Text(AppLocalizations.of(context)!.playbackDisabledByVideoOwner),
-                  action: SnackBarAction(
-                    label: AppLocalizations.of(context)!.open,
-                    onPressed: () async {
-                      final url = Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
-                      try {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
-                      } catch (e) {
-                        debugPrint('Failed to open external YouTube: $e');
-                      }
-                    },
-                  ),
-                );
-                try {
-                  ScaffoldMessenger.of(context).showSnackBar(snack);
-                } catch (e) {
-                  debugPrint('Failed to show snackbar: $e');
-                }
-              }
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.clearSnackBars();
+  final snack = SnackBar(
+    content: Text(AppLocalizations.of(context)!.playbackDisabledByVideoOwner),
+    duration: const Duration(seconds: 5),
+    behavior: SnackBarBehavior.floating,
+    action: SnackBarAction(
+      label: AppLocalizations.of(context)!.open,
+      onPressed: () async {
+        final url = Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
+        try {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          debugPrint('Failed to open external YouTube: $e');
+        }
+      },
+    ),
+  );
+  
+  try {
+    // Sla de controller van de snackbar op
+    final snackBarController = messenger.showSnackBar(snack);
+    
+    // Forceer het sluiten na 5 seconden, ongeacht accessibility instellingen
+    Future.delayed(const Duration(seconds: 5), () {
+      try {
+        snackBarController.close();
+      } catch (_) {} // Negeer fouten als hij al gesloten is
+    });
+  } catch (e) {
+    debugPrint('Failed to show snackbar: $e');
+  }
+}
             }
           }
         } catch (e) {
@@ -242,28 +258,44 @@ class _FullScreenPlayerState extends State<FullScreenPlayer>
             debugPrint('YouTube player error (fullscreen): code=$code for video ${widget.videoId}');
             if (code == 150 && !_error150Handled) {
               _error150Handled = true;
+              // Remove listener immediately so rapid controller updates
+              // cannot re-queue the snackbar or reset its dismiss timer.
+              _fsController.removeListener(_fsControllerListener);
               debugPrint('Playback disabled by video owner (error 150) in fullscreen for video ${widget.videoId} — offering external fallback');
               if (mounted) {
-                final snack = SnackBar(
-                  content: Text(AppLocalizations.of(context)!.playbackDisabledByVideoOwner),
-                  action: SnackBarAction(
-                    label: AppLocalizations.of(context)!.open,
-                    onPressed: () async {
-                      final url = Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
-                      try {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
-                      } catch (e) {
-                        debugPrint('Failed to open external YouTube from fullscreen: $e');
-                      }
-                    },
-                  ),
-                );
-                try {
-                  ScaffoldMessenger.of(context).showSnackBar(snack);
-                } catch (e) {
-                  debugPrint('Failed to show snackbar (fullscreen): $e');
-                }
-              }
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.clearSnackBars();
+  final snack = SnackBar(
+    content: Text(AppLocalizations.of(context)!.playbackDisabledByVideoOwner),
+    duration: const Duration(seconds: 5),
+    behavior: SnackBarBehavior.floating,
+    action: SnackBarAction(
+      label: AppLocalizations.of(context)!.open,
+      onPressed: () async {
+        final url = Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
+        try {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        } catch (e) {
+          debugPrint('Failed to open external YouTube: $e');
+        }
+      },
+    ),
+  );
+  
+  try {
+    // Sla de controller van de snackbar op
+    final snackBarController = messenger.showSnackBar(snack);
+    
+    // Forceer het sluiten na 5 seconden, ongeacht accessibility instellingen
+    Future.delayed(const Duration(seconds: 5), () {
+      try {
+        snackBarController.close();
+      } catch (_) {} // Negeer fouten als hij al gesloten is
+    });
+  } catch (e) {
+    debugPrint('Failed to show snackbar: $e');
+  }
+}
             }
           }
         } catch (e) {

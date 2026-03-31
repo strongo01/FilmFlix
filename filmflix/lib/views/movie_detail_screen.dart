@@ -1977,7 +1977,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 color: isDark ? Colors.grey.shade900 : Colors.white,
                 child: ExpansionTile(
                   title: Text(
-                    'Seizoenen & Afleveringen (${_seasons.length})',
+                    AppLocalizations.of(context)!.seasons_episodes_title(_seasons.length.toString()),
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black,
@@ -1995,7 +1995,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Center(
                   child: Text(
-                    'Geen seizoenen gevonden',
+                    AppLocalizations.of(context)!.no_seasons_found,
                     style: TextStyle(
                       color: isDark
                           ? Colors.grey.shade400

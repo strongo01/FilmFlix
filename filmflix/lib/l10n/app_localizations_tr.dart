@@ -369,7 +369,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tutorialMap => 'Yakındaki sinemaları bulmak için haritaya bakabilirsiniz!';
 
   @override
-  String get map_all_cinemas_title => 'Hollanda\'daki Tüm Sinemalar';
+  String get map_all_cinemas_title => 'Hollanda\'daki sinemalar';
 
   @override
   String map_load_error(Object error) {
@@ -705,6 +705,27 @@ class AppLocalizationsTr extends AppLocalizations {
   String get googleSignInCancelled => 'Google girişi iptal edildi';
 
   @override
+  String get loginErrorCredentialMalformed => 'Sağlanan kimlik bilgisi hatalı veya süresi dolmuş.';
+
+  @override
+  String get loginErrorUserDisabled => 'Bu kullanıcı hesabı devre dışı bırakıldı.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Sıra dışı etkinlik nedeniyle bu cihazdan gelen tüm istekleri engelledik. Daha sonra tekrar deneyin.';
+
+  @override
+  String get loginErrorInvalidEmail => 'E-posta adresi kötü biçimlendirilmiş.';
+
+  @override
+  String get loginErrorWrongPassword => 'Yanlış şifre.';
+
+  @override
+  String get loginErrorUserNotFound => 'Bu e-postaya sahip bir kullanıcı bulunamadı.';
+
+  @override
+  String get loginErrorAccountExists => 'Aynı e-posta adresiyle ancak farklı oturum açma bilgileriyle zaten bir hesap var.';
+
+  @override
   String get details => 'Detaylar';
 
   @override
@@ -820,6 +841,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Apple girişi başarısız: kimlik tokenı alınamadı';
+
+  @override
+  String get googleSignInFailed => 'Google ile giriş başarısız';
+
+  @override
+  String get loginErrorWeakPassword => 'Parola çok zayıf.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Ağ hatası. Lütfen bağlantınızı kontrol edin.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Devam etmek için lütfen tekrar giriş yapın (yakın zamanda kimlik doğrulaması gerekli).';
 
   @override
   String get avatar_login_prompt => 'Profil fotoğrafınızı değiştirmek için giriş yapın';

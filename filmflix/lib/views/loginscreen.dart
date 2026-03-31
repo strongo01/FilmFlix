@@ -107,7 +107,8 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? loc.authenticationFailed);
+      final message = _localizedFirebaseAuthMessage(e);
+      Fluttertoast.showToast(msg: message);
     } catch (e) {
       Fluttertoast.showToast(msg: loc.loginSomethingWentWrong);
     } finally {
@@ -121,16 +122,30 @@ class _LoginScreenState extends State<LoginScreen> {
       final googleProvider = GoogleAuthProvider();
       googleProvider.addScope('email');
       googleProvider.setCustomParameters({'prompt': 'select_account'});
-      final userCred = await FirebaseAuth.instance.signInWithPopup(
-        googleProvider,
-      );
-      await _saveUserDoc(userCred.user);
-      return userCred;
+      try {
+        final userCred = await FirebaseAuth.instance.signInWithPopup(
+          googleProvider,
+        );
+        await _saveUserDoc(userCred.user);
+        return userCred;
+      } on FirebaseAuthException catch (e) {
+          final message = _localizedFirebaseAuthMessage(e);
+          Fluttertoast.showToast(msg: message);
+          rethrow;
+      }
     }
 
     try {
       final googleSignIn = GoogleSignIn.instance;
+      // Note: serverClientId can be set in the plugin configuration or via GoogleSignIn.instance properties if needed,
+      // but if you are getting a constructor error, it means you should use the instance and authenticate().
       final googleUser = await googleSignIn.authenticate();
+      if (googleUser == null) {
+        throw FirebaseAuthException(
+          code: 'sign_in_cancelled',
+          message: loc.googleSignInCancelled,
+        );
+      }
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
       if (idToken == null) {
@@ -163,6 +178,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       await _saveUserDoc(userCred.user);
       return userCred;
+    } on FirebaseAuthException catch (e) {
+      _handleFirebaseAuthError(e);
+      rethrow;
     } on PlatformException catch (e) {
       if (e.code.toLowerCase().contains('cancel')) {
         throw FirebaseAuthException(
@@ -170,8 +188,76 @@ class _LoginScreenState extends State<LoginScreen> {
           message: loc.googleSignInCancelled,
         );
       }
+      Fluttertoast.showToast(msg: e.message ?? loc.googleSignInFailed);
       rethrow;
     }
+  }
+
+  void _handleFirebaseAuthError(FirebaseAuthException e) {
+    final loc = AppLocalizations.of(context)!;
+    String message = e.message ?? loc.authenticationFailed;
+    switch (e.code) {
+      case 'invalid-credential':
+      case 'malformed-jwt':
+        message = loc.loginErrorCredentialMalformed;
+        break;
+      case 'user-disabled':
+        message = loc.loginErrorUserDisabled;
+        break;
+      case 'too-many-requests':
+        message = loc.loginErrorTooManyRequests;
+        break;
+      case 'account-exists-with-different-credential':
+        message = loc.loginErrorAccountExists;
+        break;
+    }
+    Fluttertoast.showToast(msg: message);
+  }
+
+  String _localizedFirebaseAuthMessage(FirebaseAuthException e) {
+    final loc = AppLocalizations.of(context)!;
+    String message = e.message ?? loc.authenticationFailed;
+    switch (e.code) {
+      case 'invalid-email':
+        message = loc.loginErrorInvalidEmail;
+        break;
+      case 'user-disabled':
+        message = loc.loginErrorUserDisabled;
+        break;
+      case 'user-not-found':
+        message = loc.loginErrorUserNotFound;
+        break;
+      case 'wrong-password':
+        message = loc.loginErrorWrongPassword;
+        break;
+      case 'too-many-requests':
+        message = loc.loginErrorTooManyRequests;
+        break;
+      case 'invalid-credential':
+      case 'malformed-jwt':
+      case 'invalid-verification-code':
+      case 'invalid-verification-id':
+        message = loc.loginErrorCredentialMalformed;
+        break;
+      case 'account-exists-with-different-credential':
+      case 'email-already-in-use':
+        message = loc.loginErrorAccountExists;
+        break;
+      case 'weak-password':
+        message = loc.loginErrorWeakPassword;
+        break;
+      case 'network-request-failed':
+        message = loc.loginErrorNetworkFailed;
+        break;
+      case 'user-token-expired':
+      case 'requires-recent-login':
+        message = loc.loginErrorRequiresRecentLogin;
+        break;
+      default:
+        // Keep original provider message if available, otherwise a generic one
+        message = e.message ?? loc.authenticationFailed;
+    }
+    return message;
   }
 
   Future<void> _signInWithGitHub() async {
@@ -187,18 +273,29 @@ class _LoginScreenState extends State<LoginScreen> {
       if (kIsWeb) {
         userCred = await FirebaseAuth.instance.signInWithPopup(provider);
       } else {
+        // Use signInWithProvider which is more robust for GitHub on mobile
         userCred = await FirebaseAuth.instance.signInWithProvider(provider);
       }
 
-      await _saveUserDoc(userCred.user);
-      if (!mounted) return;
-      if (!widget.returnAfterLogin) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
-        );
+      if (userCred.user != null) {
+        await _saveUserDoc(userCred.user);
+        if (mounted) {
+          if (widget.returnAfterLogin) {
+            Navigator.of(context).pop(true);
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const MainNavigation()),
+            );
+          }
+        }
       }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? loc.loginGithubFailed);
+      debugPrint('GitHub Sign-In Error: ${e.code} - ${e.message}');
+      final message = _localizedFirebaseAuthMessage(e);
+      Fluttertoast.showToast(msg: message);
+    } catch (e) {
+      debugPrint('GitHub Sign-In Unexpected Error: $e');
+      Fluttertoast.showToast(msg: loc.loginSomethingWentWrong);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -224,70 +321,84 @@ class _LoginScreenState extends State<LoginScreen> {
     final loc = AppLocalizations.of(context)!;
     final rawNonce = generateNonce();
     final nonce = sha256ofString(rawNonce);
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: nonce,
-    );
-
-    if (appleCredential.identityToken == null) {
-      throw FirebaseAuthException(
-        code: 'null_identity_token',
-        message: loc.appleSignInNoIdentityToken,
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
       );
-    }
-    final oauthCredential = OAuthProvider("apple.com").credential(
-      idToken: appleCredential.identityToken!,
-      rawNonce: rawNonce,
-      accessToken: appleCredential.authorizationCode,
-    );
-    final userCredential = await FirebaseAuth.instance.signInWithCredential(
-      oauthCredential,
-    );
 
-    final userBefore = FirebaseAuth.instance.currentUser;
-    try {
-      final given = appleCredential.givenName;
-      if (userBefore != null &&
-          given != null &&
-          given.trim().isNotEmpty &&
-          (userBefore.displayName == null ||
-              userBefore.displayName!.trim().isEmpty)) {
-        await userBefore.updateDisplayName(given.trim());
-        await userBefore.reload();
+      if (appleCredential.identityToken == null) {
+        throw FirebaseAuthException(
+          code: 'null_identity_token',
+          message: loc.appleSignInNoIdentityToken,
+        );
       }
-    } catch (e) {
-      debugPrint('Apple sign-in: kon displayName niet updaten: $e');
-    }
-
-    final userAfter = FirebaseAuth.instance.currentUser;
-    try {
-      final uid = userAfter?.uid;
-      final given = appleCredential.givenName?.trim();
-      if (uid != null && given != null && given.isNotEmpty) {
-        final usersRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid);
-        final doc = await usersRef.get();
-        final shouldSet =
-            !doc.exists ||
-            (doc.data()?['displayName'] == null ||
-                (doc.data()?['displayName'] as String).trim().isEmpty);
-        if (shouldSet) {
-          await usersRef.set({
-            'displayName': given,
-            'email': appleCredential.email ?? userAfter?.email,
-            'createdAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken!,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        oauthCredential,
+      );
+      if (mounted) {
+        if (widget.returnAfterLogin) {
+          Navigator.of(context).pop(true);
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainNavigation()),
+          );
         }
       }
-    } catch (e) {
-      debugPrint('AppleSignIn: failed to write user doc: $e');
-    }
+      final userBefore = FirebaseAuth.instance.currentUser;
+      try {
+        final given = appleCredential.givenName;
+        if (userBefore != null &&
+            given != null &&
+            given.trim().isNotEmpty &&
+            (userBefore.displayName == null ||
+                userBefore.displayName!.trim().isEmpty)) {
+          await userBefore.updateDisplayName(given.trim());
+          await userBefore.reload();
+        }
+      } catch (e) {
+        debugPrint('Apple sign-in: kon displayName niet updaten: $e');
+      }
 
-    return userCredential;
+      final userAfter = FirebaseAuth.instance.currentUser;
+      try {
+        final uid = userAfter?.uid;
+        final given = appleCredential.givenName?.trim();
+        if (uid != null && given != null && given.isNotEmpty) {
+          final usersRef = FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid);
+          final doc = await usersRef.get();
+          final shouldSet =
+              !doc.exists ||
+              (doc.data()?['displayName'] == null ||
+                  (doc.data()?['displayName'] as String).trim().isEmpty);
+          if (shouldSet) {
+            await usersRef.set({
+              'displayName': given,
+              'email': appleCredential.email ?? userAfter?.email,
+              'createdAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        }
+      } catch (e) {
+        debugPrint('AppleSignIn: failed to write user doc: $e');
+      }
+
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      final message = _localizedFirebaseAuthMessage(e);
+      Fluttertoast.showToast(msg: message);
+      rethrow;
+    }
   }
 
   Future<void> _resetPassword() async {
@@ -305,8 +416,9 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(loc.loginPasswordResetEmailSent)));
     } on FirebaseAuthException catch (e) {
+      final message = _localizedFirebaseAuthMessage(e);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? loc.loginPasswordResetFailed)),
+        SnackBar(content: Text(message)),
       );
     }
   }

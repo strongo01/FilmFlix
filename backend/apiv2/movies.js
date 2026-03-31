@@ -94,7 +94,12 @@ export default async function handler(req, res) {
     const RAPIDAPI_KEYS = [
         process.env.RAPIDAPI_KEY,
         process.env.RAPIDAPI_KEY2,
-        process.env.RAPIDAPI_KEY3
+        process.env.RAPIDAPI_KEY3,
+        process.env.RAPIDAPI_KEY4,
+        process.env.RAPIDAPI_KEY5,
+        process.env.RAPIDAPI_KEY6,
+        process.env.RAPIDAPI_KEY7,
+        process.env.RAPIDAPI_KEY8,
     ].filter(Boolean);
 
     async function fetchWithKeys(url) {

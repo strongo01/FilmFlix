@@ -369,7 +369,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tutorialMap => 'Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!';
 
   @override
-  String get map_all_cinemas_title => 'Alle bioscopen in Nederland';
+  String get map_all_cinemas_title => 'Bioscopen in Nederland';
 
   @override
   String map_load_error(Object error) {
@@ -705,6 +705,27 @@ class AppLocalizationsNl extends AppLocalizations {
   String get googleSignInCancelled => 'Google-aanmelding geannuleerd';
 
   @override
+  String get loginErrorCredentialMalformed => 'De opgegeven inloggegevens zijn ongeldig of verlopen.';
+
+  @override
+  String get loginErrorUserDisabled => 'Dit account is uitgeschakeld.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Te veel mislukte pogingen. We hebben alle verzoeken van dit apparaat tijdelijk geblokkeerd.';
+
+  @override
+  String get loginErrorInvalidEmail => 'Het e-mailadres is ongeldig.';
+
+  @override
+  String get loginErrorWrongPassword => 'Onjuist wachtwoord.';
+
+  @override
+  String get loginErrorUserNotFound => 'Geen gebruiker gevonden met dit e-mailadres.';
+
+  @override
+  String get loginErrorAccountExists => 'Er bestaat al een account met dit e-mailadres via een andere inlogmethode.';
+
+  @override
   String get details => 'Details';
 
   @override
@@ -820,6 +841,18 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Apple-aanmelding mislukt: geen identiteitstoken ontvangen';
+
+  @override
+  String get googleSignInFailed => 'Google-aanmelding mislukt';
+
+  @override
+  String get loginErrorWeakPassword => 'Wachtwoord is te zwak.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Netwerkfout. Controleer je verbinding.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Log opnieuw in om door te gaan (recente aanmelding vereist).';
 
   @override
   String get avatar_login_prompt => 'Log in om je profielfoto aan te passen';

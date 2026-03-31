@@ -766,7 +766,7 @@ abstract class AppLocalizations {
   /// AppBar title for the cinemas map
   ///
   /// In en, this message translates to:
-  /// **'All cinemas in the Netherlands'**
+  /// **'Cinemas in the Netherlands'**
   String get map_all_cinemas_title;
 
   /// No description provided for @map_load_error.
@@ -1411,6 +1411,48 @@ abstract class AppLocalizations {
   /// **'Google sign-in cancelled'**
   String get googleSignInCancelled;
 
+  /// No description provided for @loginErrorCredentialMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'The supplied credential is malformed or has expired.'**
+  String get loginErrorCredentialMalformed;
+
+  /// No description provided for @loginErrorUserDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This user account has been disabled.'**
+  String get loginErrorUserDisabled;
+
+  /// No description provided for @loginErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'We have blocked all requests from this device due to unusual activity. Try again later.'**
+  String get loginErrorTooManyRequests;
+
+  /// No description provided for @loginErrorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'The email address is badly formatted.'**
+  String get loginErrorInvalidEmail;
+
+  /// No description provided for @loginErrorWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password.'**
+  String get loginErrorWrongPassword;
+
+  /// No description provided for @loginErrorUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user found with this email.'**
+  String get loginErrorUserNotFound;
+
+  /// No description provided for @loginErrorAccountExists.
+  ///
+  /// In en, this message translates to:
+  /// **'An account already exists with the same email address but different sign-in credentials.'**
+  String get loginErrorAccountExists;
+
   /// No description provided for @details.
   ///
   /// In en, this message translates to:
@@ -1608,6 +1650,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apple Sign-In failed: no identity token returned'**
   String get appleSignInNoIdentityToken;
+
+  /// No description provided for @googleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed'**
+  String get googleSignInFailed;
+
+  /// No description provided for @loginErrorWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak.'**
+  String get loginErrorWeakPassword;
+
+  /// No description provided for @loginErrorNetworkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection.'**
+  String get loginErrorNetworkFailed;
+
+  /// No description provided for @loginErrorRequiresRecentLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again to continue (recent authentication required).'**
+  String get loginErrorRequiresRecentLogin;
 
   /// No description provided for @avatar_login_prompt.
   ///

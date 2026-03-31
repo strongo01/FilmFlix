@@ -369,7 +369,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tutorialMap => 'Hier können Sie die Karte ansehen, um Kinos in Ihrer Nähe zu finden!';
 
   @override
-  String get map_all_cinemas_title => 'Alle Kinos in den Niederlanden';
+  String get map_all_cinemas_title => 'Kinos in den Niederlanden';
 
   @override
   String map_load_error(Object error) {
@@ -705,6 +705,27 @@ class AppLocalizationsDe extends AppLocalizations {
   String get googleSignInCancelled => 'Google-Anmeldung abgebrochen';
 
   @override
+  String get loginErrorCredentialMalformed => 'Die angegebenen Anmeldedaten sind ungültig oder abgelaufen.';
+
+  @override
+  String get loginErrorUserDisabled => 'Dieses Benutzerkonto wurde deaktiviert.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Wir haben alle Anfragen von diesem Gerät aufgrund ungewöhnlicher Aktivitäten blockiert. Versuchen Sie es später erneut.';
+
+  @override
+  String get loginErrorInvalidEmail => 'Die E-Mail-Adresse ist falsch formatiert.';
+
+  @override
+  String get loginErrorWrongPassword => 'Falsches Passwort.';
+
+  @override
+  String get loginErrorUserNotFound => 'Kein Benutzer mit dieser E-Mail gefunden.';
+
+  @override
+  String get loginErrorAccountExists => 'Es existiert bereits ein Konto mit derselben E-Mail-Adresse, aber anderen Anmeldedaten.';
+
+  @override
   String get details => 'Details';
 
   @override
@@ -820,6 +841,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Apple-Anmeldung fehlgeschlagen: Kein Identity-Token empfangen';
+
+  @override
+  String get googleSignInFailed => 'Google-Anmeldung fehlgeschlagen';
+
+  @override
+  String get loginErrorWeakPassword => 'Das Passwort ist zu schwach.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Bitte melden Sie sich erneut an, um fortzufahren (kürzliche Authentifizierung erforderlich).';
 
   @override
   String get avatar_login_prompt => 'Loggen Sie sich ein, um Ihr Profilbild anzupassen';
