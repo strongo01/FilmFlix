@@ -1,95 +1,93 @@
-import 'dart:async';
+import 'dart:async'; // Importeert async-functionaliteit voor streams
 
-import 'package:cinetrackr/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../firebase_options.dart';
-import 'loginscreen.dart';
-import 'settingscreen.dart';
-import 'package:cinetrackr/widgets/app_background.dart';
-import 'package:cinetrackr/widgets/app_top_bar.dart';
+import 'package:cinetrackr/l10n/app_localizations.dart'; // Importeert multi-language ondersteuning
+import 'package:flutter/material.dart'; // Importeert Flutter UI-framework
+import 'package:firebase_core/firebase_core.dart'; // Importeert Firebase initialisatie
+import 'package:firebase_auth/firebase_auth.dart'; // Importeert Firebase authenticatie
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importeert Firestore database
+import '../firebase_options.dart'; // Importeert Firebase configuratie
+import 'loginscreen.dart'; // Importeert login scherm
+import 'settingscreen.dart'; // Importeert instellingen scherm
+import 'package:cinetrackr/widgets/app_background.dart'; // Importeert achtergrond widget
+import 'package:cinetrackr/widgets/app_top_bar.dart'; // Importeert top navigatie bar
 
-void main() => runApp(const MaterialApp(home: ProfileScreen()));
+void main() => runApp(const MaterialApp(home: ProfileScreen())); // Start app met ProfileScreen als thuisscherm
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends StatefulWidget { // Definieert ProfileScreen widget die state ondersteunt
+  const ProfileScreen({super.key}); // Constructor met optionele key parameter
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState(); // Maakt state object aan
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  StreamSubscription<User?>? _authSub;
-  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userDocSub;
-  int _watchlistCount = 0;
-  int _filmsCount = 0;
-  int _adventureCount = 0;
-  int _horrorCount = 0;
-  int _earlyBirdCount = 0;
-  int _bingeCount = 0;
-  bool _hasAdventurerBadge = false;
-  String? _displayName;
-  bool _isLoggedIn = false;
-  // Avatar customization (emoji + background color stored as hex string in Firestore)
-  Color? _avatarColor;
-  String? _avatarEmoji;
+class _ProfileScreenState extends State<ProfileScreen> { // Implementatie van ProfileScreen state
+  StreamSubscription<User?>? _authSub; // Subscription op Firebase authentication wijzigingen
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userDocSub; // Subscription op gebruiker document updates
+  int _watchlistCount = 0; // Aantal items in watchlist
+  int _filmsCount = 0; // Aantal films in watchlist
+  int _adventureCount = 0; // Aantal avontuur films
+  int _horrorCount = 0; // Aantal horror/thriller films
+  int _earlyBirdCount = 0; // Aantal items opgeslagen in vroege ochtend
+  int _bingeCount = 0; // Aantal bingewatchings
+  bool _hasAdventurerBadge = false; // Of gebruiker adventurer badge heeft
+  String? _displayName; // Weergave naam van gebruiker
+  bool _isLoggedIn = false; // Of gebruiker ingelogd is
+  Color? _avatarColor; // Achtergrond kleur van avatar
+  String? _avatarEmoji; // Emoji in avatar
 
   @override
-  void initState() {
-    super.initState();
-    _initFirebaseAndListen();
+  void initState() { // Initialisatie lifecycle method
+    super.initState(); // Roept parent initState aan
+    _initFirebaseAndListen(); // Start Firebase listeners
   }
 
-  // Show a dialog to edit the display name and save it to Firebase Auth and user doc
-  void _showEditNameDialog() {
-    final controller = TextEditingController(text: _displayName ?? '');
-    final parentContext = context;
+  void _showEditNameDialog() { // Toont dialoog voor naamswijziging
+    final controller = TextEditingController(text: _displayName ?? ''); // Maakt text controller met huidige naam
+    final parentContext = context; // Slaat context op voor latere referentie
 
-    showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(AppLocalizations.of(ctx)!.edit_profile),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(hintText: 'Voer je naam in'),
+    showDialog<void>( // Toont dialoog
+      context: context, // Dialogcontext
+      builder: (ctx) { // Builder function voor dialoog inhoud
+        return AlertDialog( // Maakt alertaindialog
+          title: Text(AppLocalizations.of(ctx)!.edit_profile), // Dialoog titel
+          content: TextField( // Tekstinvoer veld
+            controller: controller, // Koppelt controller
+            decoration: const InputDecoration(hintText: 'Voer je naam in'), // Hint tekst
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(AppLocalizations.of(ctx)!.cancel),
+          actions: [ // Dialogknoppen
+            TextButton( // Annuleer knop
+              onPressed: () => Navigator.of(ctx).pop(), // Sluit dialoog
+              child: Text(AppLocalizations.of(ctx)!.cancel), // Knoptekst
             ),
-            ElevatedButton(
-              onPressed: () async {
-                final newName = controller.text.trim();
-                if (newName.isEmpty) return;
-                final user = FirebaseAuth.instance.currentUser;
-                final uid = user?.uid;
-                try {
-                  if (user != null) {
-                    await user.updateDisplayName(newName);
+            ElevatedButton( // Opslaan knop
+              onPressed: () async { // Async functie voor opslaan
+                final newName = controller.text.trim(); // Haalt ingevulde naam op
+                if (newName.isEmpty) return; // Controleert of naam niet leeg is
+                final user = FirebaseAuth.instance.currentUser; // Haalt huige gebruiker op
+                final uid = user?.uid; // Haalt gebruiker ID op
+                try { // Try-catch voor error handling
+                  if (user != null) { // Controleert of gebruiker bestaat
+                    await user.updateDisplayName(newName); // Werkt displaynaam bij in Auth
                   }
-                  if (uid != null) {
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(uid)
-                        .set({'displayName': newName}, SetOptions(merge: true));
+                  if (uid != null) { // Controleert of UID beschikbaar is
+                    await FirebaseFirestore.instance // Firestore instance
+                        .collection('users') // Users collectie
+                        .doc(uid) // Gebruiker document
+                        .set({'displayName': newName}, SetOptions(merge: true)); // Slaat naam op met merge
                   }
-                  if (mounted) {
-                    setState(() {
-                      _displayName = newName;
+                  if (mounted) { // Controleert of widget nog actief is
+                    setState(() { // Werkt lokale state bij
+                      _displayName = newName; // Werkt weergave naam bij
                     });
                   }
-                } catch (e) {
-                  ScaffoldMessenger.of(parentContext).showSnackBar(
-                    const SnackBar(content: Text('Opslaan mislukt')),
+                } catch (e) { // Error handler
+                  ScaffoldMessenger.of(parentContext).showSnackBar( // Toont foutmelding
+                    const SnackBar(content: Text('Opslaan mislukt')), // Foutbericht
                   );
                 }
-                if (mounted) Navigator.of(ctx).pop();
+                if (mounted) Navigator.of(ctx).pop(); // Sluit dialoog
               },
-              child: Text(AppLocalizations.of(ctx)!.save),
+              child: Text(AppLocalizations.of(ctx)!.save), // Knoptekst
             ),
           ],
         );
@@ -97,450 +95,438 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _initFirebaseAndListen() async {
-    try {
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
+  Future<void> _initFirebaseAndListen() async { // Initialiseert Firebase en start listeners
+    try { // Try-catch voor init errors
+      if (Firebase.apps.isEmpty) { // Controleert of Firebase nog niet is geinitialiseerd
+        await Firebase.initializeApp( // Initialiseert Firebase
+          options: DefaultFirebaseOptions.currentPlatform, // Platform-specifieke instellingen
         );
       }
-    } catch (e) {
+    } catch (e) { // Error handling
       // ignore init errors here; app may already be initialized elsewhere
     }
 
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
-      _userDocSub?.cancel();
-      if (user != null) {
-        _isLoggedIn = true;
-        _displayName = user.displayName;
-        _userDocSub = FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .snapshots()
-            .listen((snap) {
-              final data = snap.data() ?? {};
-              final watchlist = (data['watchlist'] is List)
-                  ? List.from(data['watchlist'])
-                  : <dynamic>[];
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) { // Luistert naar auth wijzigingen
+      _userDocSub?.cancel(); // Canceld vorige document listener
+      if (user != null) { // Controleert of gebruiker ingelogd is
+        _isLoggedIn = true; // Zet login status
+        _displayName = user.displayName; // Haalt naam uit auth op
+        _userDocSub = FirebaseFirestore.instance // Maakt document listener
+            .collection('users') // Users collectie
+            .doc(user.uid) // Gebruiker document
+            .snapshots() // Luistert naar wijzigingen
+            .listen((snap) { // Callback bij wijzigingen
+              final data = snap.data() ?? {}; // Haalt document data op
+              final watchlist = (data['watchlist'] is List) // Controleert watchlist type
+                  ? List.from(data['watchlist']) // Converteert naar List
+                  : <dynamic>[]; // Fallback lege list
 
-              // Count films from watchlist_meta and detect adventure-genre items.
-              // Handle two shapes: 1) data['watchlist_meta'] is a Map with keys -> objects
-              // 2) document fields named like 'watchlist_meta.<id>' (flattened)
-              int films = 0;
-              int adventures = 0;
-              int horrors = 0;
-              int earlyBirds = 0;
-              final List<DateTime> allSaved = [];
-              bool _metaHasAdventure(Map m) {
-                try {
-                  final genres = m['genres'] ?? m['genre'] ?? m['genre_names'];
-                  if (genres is List) {
-                    for (final g in genres) {
-                      if (g is String) {
-                        if (g.toLowerCase().contains('advent')) return true;
-                      } else if (g is Map) {
-                        final name = g['name'] ?? g['genre'];
-                        if (name is String &&
-                            name.toLowerCase().contains('advent'))
-                          return true;
+              int films = 0; // Teller voor films
+              int adventures = 0; // Teller voor avonturen
+              int horrors = 0; // Teller voor horror/thriller
+              int earlyBirds = 0; // Teller voor vroeg spaarders
+              final List<DateTime> allSaved = []; // Lijst van alle save timestamps
+              bool _metaHasAdventure(Map m) { // Helper functie voor avontuur genre check
+                try { // Try-catch voor genre parsing
+                  final genres = m['genres'] ?? m['genre'] ?? m['genre_names']; // Haalt genre field op
+                  if (genres is List) { // Controleert of genres een list is
+                    for (final g in genres) { // Loopt door genres
+                      if (g is String) { // Controleert of genre een string is
+                        if (g.toLowerCase().contains('advent')) return true; // Zoekt 'advent' in lopende tekst
+                      } else if (g is Map) { // Controleert of genre een map is
+                        final name = g['name'] ?? g['genre']; // Haalt genre naam op
+                        if (name is String && // Controleert string type
+                            name.toLowerCase().contains('advent')) // Zoekt 'advent'
+                          return true; // Retourneert true als gevonden
                       }
                     }
                   }
-                } catch (_) {}
-                return false;
+                } catch (_) {} // Negeer genre parse errors
+                return false; // Retourneert false als niet gevonden
               }
 
-              bool _metaHasHorrorThriller(Map m) {
-                try {
-                  final genres = m['genres'] ?? m['genre'] ?? m['genre_names'];
-                  if (genres is List) {
-                    for (final g in genres) {
-                      if (g is String) {
-                        final lower = g.toLowerCase();
-                        if (lower.contains('horror') ||
-                            lower.contains('thriller'))
-                          return true;
-                      } else if (g is Map) {
-                        final name = g['name'] ?? g['genre'];
-                        if (name is String) {
-                          final lower = name.toLowerCase();
-                          if (lower.contains('horror') ||
-                              lower.contains('thriller'))
-                            return true;
+              bool _metaHasHorrorThriller(Map m) { // Helper functie voor horror/thriller check
+                try { // Try-catch voor genre parsing
+                  final genres = m['genres'] ?? m['genre'] ?? m['genre_names']; // Haalt genre field op
+                  if (genres is List) { // Controleert of genres een list is
+                    for (final g in genres) { // Loopt door genres
+                      if (g is String) { // Controleert of genre een string is
+                        final lower = g.toLowerCase(); // Zet naar lowercase
+                        if (lower.contains('horror') || // Zoekt 'horror'
+                            lower.contains('thriller')) // Of 'thriller'
+                          return true; // Retourneert true als gevonden
+                      } else if (g is Map) { // Controleert of genre een map is
+                        final name = g['name'] ?? g['genre']; // Haalt genre naam op
+                        if (name is String) { // Controleert string type
+                          final lower = name.toLowerCase(); // Zet naar lowercase
+                          if (lower.contains('horror') || // Zoekt 'horror'
+                              lower.contains('thriller')) // Of 'thriller'
+                            return true; // Retourneert true als gevonden
                         }
                       }
                     }
                   }
-                } catch (_) {}
-                return false;
+                } catch (_) {} // Negeer genre parse errors
+                return false; // Retourneert false als niet gevonden
               }
 
-              try {
-                final wm = data['watchlist_meta'];
-                if (wm is Map) {
-                  for (final v in wm.values) {
-                    if (v is Map) {
-                      final mt = v['mediaType'];
-                      if (mt != null && mt.toString().toLowerCase() == 'movie')
-                        films += 1;
-                      if (_metaHasAdventure(v)) adventures += 1;
-                      if (_metaHasHorrorThriller(v)) horrors += 1;
-                      // early bird check
-                      try {
-                        final saved = v['savedAt'];
-                        DateTime? dt;
-                        if (saved is Timestamp)
-                          dt = saved.toDate();
-                        else if (saved is DateTime)
-                          dt = saved;
-                        else if (saved is String)
-                          dt = DateTime.tryParse(saved);
-                        if (dt != null) {
-                          final h = dt.toLocal().hour;
-                          if (h >= 0 && h < 6) earlyBirds += 1;
+              try { // Try-catch voor watchlist verwerking
+                final wm = data['watchlist_meta']; // Haalt watchlist metadata op
+                if (wm is Map) { // Controleert of metadata een map is
+                  for (final v in wm.values) { // Loopt door alle values
+                    if (v is Map) { // Controleert of value een map is
+                      final mt = v['mediaType']; // Haalt media type op
+                      if (mt != null && mt.toString().toLowerCase() == 'movie') // Controleert of het een film is
+                        films += 1; // Telt film
+                      if (_metaHasAdventure(v)) adventures += 1; // Telt avontuur
+                      if (_metaHasHorrorThriller(v)) horrors += 1; // Telt horror
+                      try { // Try-catch voor timestamp parsing
+                        final saved = v['savedAt']; // Haalt save timestamp op
+                        DateTime? dt; // Variabele voor parsed datetime
+                        if (saved is Timestamp) // Controleert of Firestore timestamp
+                          dt = saved.toDate(); // Converteert naar datetime
+                        else if (saved is DateTime) // Controleert of al datetime
+                          dt = saved; // Gebruikt direct
+                        else if (saved is String) // Controleert of string
+                          dt = DateTime.tryParse(saved); // Parsed string naar datetime
+                        if (dt != null) { // Controleert of datetime geldig is
+                          final h = dt.toLocal().hour; // Haalt uur op in lokale tijd
+                          if (h >= 0 && h < 6) earlyBirds += 1; // Telt als nachtuil
                         }
-                      } catch (_) {}
-                      // collect saved timestamp for any media (movie or series)
-                      try {
-                        final saved = v['savedAt'];
-                        DateTime? dt;
-                        if (saved is Timestamp)
-                          dt = saved.toDate();
-                        else if (saved is DateTime)
-                          dt = saved;
-                        else if (saved is String)
-                          dt = DateTime.tryParse(saved);
-                        if (dt != null) allSaved.add(dt.toUtc());
-                      } catch (_) {}
-                    } else if (v is List) {
-                      final hasMovie = v.any(
-                        (e) =>
-                            e is Map &&
-                            e['mediaType'] != null &&
-                            e['mediaType'].toString().toLowerCase() == 'movie',
+                      } catch (_) {} // Negeer timestamp errors
+                      try { // Try-catch voor allSaved verzameling
+                        final saved = v['savedAt']; // Haalt save timestamp op
+                        DateTime? dt; // Variabele voor parsed datetime
+                        if (saved is Timestamp) // Controleert of Firestore timestamp
+                          dt = saved.toDate(); // Converteert naar datetime
+                        else if (saved is DateTime) // Controleert of al datetime
+                          dt = saved; // Gebruikt direct
+                        else if (saved is String) // Controleert of string
+                          dt = DateTime.tryParse(saved); // Parsed string naar datetime
+                        if (dt != null) allSaved.add(dt.toUtc()); // Voegt UTC timestamp toe
+                      } catch (_) {} // Negeer timestamp errors
+                    } else if (v is List) { // Controleert of value een list is
+                      final hasMovie = v.any( // Controleert of list film bevat
+                        (e) => // Voor elk element
+                            e is Map && // Controleert of map
+                            e['mediaType'] != null && // Controleert media type bestaat
+                            e['mediaType'].toString().toLowerCase() == 'movie', // Controleert of film
                       );
-                      if (hasMovie) films += 1;
-                      final hasAdv = v.any(
-                        (e) => e is Map && _metaHasAdventure(e),
+                      if (hasMovie) films += 1; // Telt film
+                      final hasAdv = v.any( // Controleert of list avontuur bevat
+                        (e) => e is Map && _metaHasAdventure(e), // Controleert avontuur helper
                       );
-                      if (hasAdv) adventures += 1;
-                      final hasH = v.any(
-                        (e) => e is Map && _metaHasHorrorThriller(e),
+                      if (hasAdv) adventures += 1; // Telt avontuur
+                      final hasH = v.any( // Controleert of list horror bevat
+                        (e) => e is Map && _metaHasHorrorThriller(e), // Controleert horror helper
                       );
-                      if (hasH) horrors += 1;
-                      try {
-                        for (final e in v) {
-                          if (e is Map) {
-                            final saved = e['savedAt'];
-                            DateTime? dt;
-                            if (saved is Timestamp)
-                              dt = saved.toDate();
-                            else if (saved is DateTime)
-                              dt = saved;
-                            else if (saved is String)
-                              dt = DateTime.tryParse(saved);
-                            if (dt != null) {
-                              final h = dt.toLocal().hour;
-                              if (h >= 0 && h < 6) {
-                                earlyBirds += 1;
-                                break;
+                      if (hasH) horrors += 1; // Telt horror
+                      try { // Try-catch voor list element parsing
+                        for (final e in v) { // Loopt door list elementen
+                          if (e is Map) { // Controleert of element een map is
+                            final saved = e['savedAt']; // Haalt save timestamp op
+                            DateTime? dt; // Variabele voor parsed datetime
+                            if (saved is Timestamp) // Controleert of Firestore timestamp
+                              dt = saved.toDate(); // Converteert naar datetime
+                            else if (saved is DateTime) // Controleert of al datetime
+                              dt = saved; // Gebruikt direct
+                            else if (saved is String) // Controleert of string
+                              dt = DateTime.tryParse(saved); // Parsed string naar datetime
+                            if (dt != null) { // Controleert of datetime geldig is
+                              final h = dt.toLocal().hour; // Haalt uur op in lokale tijd
+                              if (h >= 0 && h < 6) { // Controleert of vroeg in morgen
+                                earlyBirds += 1; // Telt nachtuil
+                                break; // Stopt looping na eerste match
                               }
                             }
-                            final mt2 = e['mediaType'];
-                            final mtStr2 = mt2?.toString().toLowerCase() ?? '';
-                            // collect saved timestamp for any media type
-                            if (dt != null) allSaved.add(dt.toUtc());
+                            final mt2 = e['mediaType']; // Haalt media type op
+                            final mtStr2 = mt2?.toString().toLowerCase() ?? ''; // Converteert naar lowercase string
+                            if (dt != null) allSaved.add(dt.toUtc()); // Voegt UTC timestamp toe
                           }
                         }
-                      } catch (_) {}
+                      } catch (_) {} // Negeer list parsing errors
                     }
                   }
-                } else {
-                  // fallback: look for keys that start with 'watchlist_meta'
-                  for (final entry in data.entries) {
-                    final k = entry.key as String;
-                    final v = entry.value;
-                    if (k.startsWith('watchlist_meta')) {
-                      if (v is Map) {
-                        final mt = v['mediaType'];
-                        if (mt != null &&
-                            mt.toString().toLowerCase() == 'movie')
-                          films += 1;
-                        if (_metaHasAdventure(v)) adventures += 1;
-                        if (_metaHasHorrorThriller(v)) horrors += 1;
-                        try {
-                          final saved = v['savedAt'];
-                          DateTime? dt;
-                          if (saved is Timestamp)
-                            dt = saved.toDate();
-                          else if (saved is DateTime)
-                            dt = saved;
-                          else if (saved is String)
-                            dt = DateTime.tryParse(saved);
-                          if (dt != null) {
-                            final h = dt.toLocal().hour;
-                            if (h >= 0 && h < 6) earlyBirds += 1;
+                } else { // Fallback als metadata geen map is
+                  for (final entry in data.entries) { // Loopt door alle velden
+                    final k = entry.key as String; // Haalt veld naam op
+                    final v = entry.value; // Haalt veld waarde op
+                    if (k.startsWith('watchlist_meta')) { // Controleert of veld watchlist_meta is
+                      if (v is Map) { // Controleert of value een map is
+                        final mt = v['mediaType']; // Haalt media type op
+                        if (mt != null && // Controleert of media type bestaat
+                            mt.toString().toLowerCase() == 'movie') // Controleert of film
+                          films += 1; // Telt film
+                        if (_metaHasAdventure(v)) adventures += 1; // Telt avontuur
+                        if (_metaHasHorrorThriller(v)) horrors += 1; // Telt horror
+                        try { // Try-catch voor timestamp parsing
+                          final saved = v['savedAt']; // Haalt save timestamp op
+                          DateTime? dt; // Variabele voor parsed datetime
+                          if (saved is Timestamp) // Controleert of Firestore timestamp
+                            dt = saved.toDate(); // Converteert naar datetime
+                          else if (saved is DateTime) // Controleert of al datetime
+                            dt = saved; // Gebruikt direct
+                          else if (saved is String) // Controleert of string
+                            dt = DateTime.tryParse(saved); // Parsed string naar datetime
+                          if (dt != null) { // Controleert of datetime geldig is
+                            final h = dt.toLocal().hour; // Haalt uur op in lokale tijd
+                            if (h >= 0 && h < 6) earlyBirds += 1; // Telt nachtuil
                           }
-                        } catch (_) {}
-                        // collect saved timestamp for any media (movie or series)
-                        try {
-                          final saved = v['savedAt'];
-                          DateTime? dt;
-                          if (saved is Timestamp)
-                            dt = saved.toDate();
-                          else if (saved is DateTime)
-                            dt = saved;
-                          else if (saved is String)
-                            dt = DateTime.tryParse(saved);
-                          if (dt != null) allSaved.add(dt.toUtc());
-                        } catch (_) {}
-                      } else if (v is List) {
-                        final hasMovie = v.any(
-                          (e) =>
-                              e is Map &&
-                              e['mediaType'] != null &&
-                              e['mediaType'].toString().toLowerCase() ==
-                                  'movie',
+                        } catch (_) {} // Negeer timestamp errors
+                        try { // Try-catch voor allSaved verzameling
+                          final saved = v['savedAt']; // Haalt save timestamp op
+                          DateTime? dt; // Variabele voor parsed datetime
+                          if (saved is Timestamp) // Controleert of Firestore timestamp
+                            dt = saved.toDate(); // Converteert naar datetime
+                          else if (saved is DateTime) // Controleert of al datetime
+                            dt = saved; // Gebruikt direct
+                          else if (saved is String) // Controleert of string
+                            dt = DateTime.tryParse(saved); // Parsed string naar datetime
+                          if (dt != null) allSaved.add(dt.toUtc()); // Voegt UTC timestamp toe
+                        } catch (_) {} // Negeer timestamp errors
+                      } else if (v is List) { // Controleert of value een list is
+                        final hasMovie = v.any( // Controleert of list film bevat
+                          (e) => // Voor elk element
+                              e is Map && // Controleert of map
+                              e['mediaType'] != null && // Controleert media type bestaat
+                              e['mediaType'].toString().toLowerCase() == // Converteert naar lowercase
+                                  'movie', // Controleert of film
                         );
-                        if (hasMovie) films += 1;
-                        final hasAdv = v.any(
-                          (e) => e is Map && _metaHasAdventure(e),
+                        if (hasMovie) films += 1; // Telt film
+                        final hasAdv = v.any( // Controleert of list avontuur bevat
+                          (e) => e is Map && _metaHasAdventure(e), // Controleert avontuur helper
                         );
-                        if (hasAdv) adventures += 1;
-                        final hasH = v.any(
-                          (e) => e is Map && _metaHasHorrorThriller(e),
+                        if (hasAdv) adventures += 1; // Telt avontuur
+                        final hasH = v.any( // Controleert of list horror bevat
+                          (e) => e is Map && _metaHasHorrorThriller(e), // Controleert horror helper
                         );
-                        if (hasH) horrors += 1;
-                        try {
-                          for (final e in v) {
-                            if (e is Map) {
-                              final saved = e['savedAt'];
-                              DateTime? dt;
-                              if (saved is Timestamp)
-                                dt = saved.toDate();
-                              else if (saved is DateTime)
-                                dt = saved;
-                              else if (saved is String)
-                                dt = DateTime.tryParse(saved);
-                              if (dt != null) {
-                                final h = dt.toLocal().hour;
-                                if (h >= 0 && h < 6) {
-                                  earlyBirds += 1;
-                                  break;
+                        if (hasH) horrors += 1; // Telt horror
+                        try { // Try-catch voor list element parsing
+                          for (final e in v) { // Loopt door list elementen
+                            if (e is Map) { // Controleert of element een map is
+                              final saved = e['savedAt']; // Haalt save timestamp op
+                              DateTime? dt; // Variabele voor parsed datetime
+                              if (saved is Timestamp) // Controleert of Firestore timestamp
+                                dt = saved.toDate(); // Converteert naar datetime
+                              else if (saved is DateTime) // Controleert of al datetime
+                                dt = saved; // Gebruikt direct
+                              else if (saved is String) // Controleert of string
+                                dt = DateTime.tryParse(saved); // Parsed string naar datetime
+                              if (dt != null) { // Controleert of datetime geldig is
+                                final h = dt.toLocal().hour; // Haalt uur op in lokale tijd
+                                if (h >= 0 && h < 6) { // Controleert of vroeg in morgen
+                                  earlyBirds += 1; // Telt nachtuil
+                                  break; // Stopt looping na eerste match
                                 }
                               }
-                              final mt2 = e['mediaType'];
-                              final mtStr2 =
-                                  mt2?.toString().toLowerCase() ?? '';
-                              // collect saved timestamp for any media type
-                              if (dt != null) allSaved.add(dt.toUtc());
+                              final mt2 = e['mediaType']; // Haalt media type op
+                              final mtStr2 = // Converteert naar string
+                                  mt2?.toString().toLowerCase() ?? ''; // Of defaultt naar lege string
+                              if (dt != null) allSaved.add(dt.toUtc()); // Voegt UTC timestamp toe
                             }
                           }
-                        } catch (_) {}
+                        } catch (_) {} // Negeer list parsing errors
                       }
                     }
                   }
                 }
-              } catch (_) {}
+              } catch (_) {} // Negeer watchlist parsing errors
 
-              // compute binge events from collected saved timestamps (any media)
-              int bingeEvents = 0;
-              try {
-                if (allSaved.isNotEmpty) {
-                  allSaved.sort();
-                  int i = 0;
-                  final n = allSaved.length;
-                  while (i < n) {
-                    int j = i;
-                    while (j + 1 < n &&
-                        allSaved[j + 1].difference(allSaved[i]).inMinutes <=
-                            10) {
-                      j++;
+              int bingeEvents = 0; // Teller voor binge events
+              try { // Try-catch voor binge detection
+                if (allSaved.isNotEmpty) { // Controleert of timestamps verzameld zijn
+                  allSaved.sort(); // Sorteert timestamps chronologisch
+                  int i = 0; // Loop index
+                  final n = allSaved.length; // Aantal timestamps
+                  while (i < n) { // Loopt door alle timestamps
+                    int j = i; // Start van huidge groep
+                    while (j + 1 < n && // Controleert of meer elementen zijn
+                        allSaved[j + 1].difference(allSaved[i]).inMinutes <= // Controleert tijds verschil
+                            10) { // Maximaal 10 minuten
+                      j++; // Gaat naar volgende element
                     }
-                    if (j - i + 1 >= 2) {
-                      bingeEvents += 1;
-                      i = j + 1;
-                    } else {
-                      i += 1;
+                    if (j - i + 1 >= 2) { // Controleert of minimum 2 items in groep
+                      bingeEvents += 1; // Telt binge event
+                      i = j + 1; // Set index na groep
+                    } else { // Als groep kleiner dan 2
+                      i += 1; // Gaat naar volgende element
                     }
                   }
                 }
-              } catch (_) {}
+              } catch (_) {} // Negeer binge detection errors
 
-              setState(() {
-                _watchlistCount = watchlist.length;
-                _filmsCount = films;
-                _adventureCount = adventures;
-                _horrorCount = horrors;
-                _earlyBirdCount = earlyBirds;
-                _bingeCount = bingeEvents;
-                _hasAdventurerBadge = adventures > 10;
-                _displayName = (data['displayName'] as String?) ?? _displayName;
-                // load avatar customization if present
-                try {
-                  final avatar = data['profileAvatar'] ?? data['avatar'];
-                  if (avatar is Map) {
-                    final emoji = avatar['emoji'] as String?;
-                    final colorStr = avatar['color'] as String?;
-                    _avatarEmoji = emoji;
-                    if (colorStr is String && colorStr.isNotEmpty) {
-                      final cleaned = colorStr.replaceAll('#', '');
-                      final val = int.tryParse(cleaned, radix: 16);
-                      if (val != null) _avatarColor = Color(0xFF000000 | val);
+              setState(() { // Werkt UI state bij
+                _watchlistCount = watchlist.length; // Zet watchlist teller
+                _filmsCount = films; // Zet film teller
+                _adventureCount = adventures; // Zet avontuur teller
+                _horrorCount = horrors; // Zet horror teller
+                _earlyBirdCount = earlyBirds; // Zet nachtuil teller
+                _bingeCount = bingeEvents; // Zet binge teller
+                _hasAdventurerBadge = adventures > 10; // Controleert avontuur badge
+                _displayName = (data['displayName'] as String?) ?? _displayName; // Werkt display naam bij
+                try { // Try-catch voor avatar parsing
+                  final avatar = data['profileAvatar'] ?? data['avatar']; // Haalt avatar data op
+                  if (avatar is Map) { // Controleert of avatar een map is
+                    final emoji = avatar['emoji'] as String?; // Haalt emoji op
+                    final colorStr = avatar['color'] as String?; // Haalt kleur string op
+                    _avatarEmoji = emoji; // Zet avatar emoji
+                    if (colorStr is String && colorStr.isNotEmpty) { // Controleert kleur string
+                      final cleaned = colorStr.replaceAll('#', ''); // Verwijdert # symbool
+                      final val = int.tryParse(cleaned, radix: 16); // Parsed hex naar int
+                      if (val != null) _avatarColor = Color(0xFF000000 | val); // Zet avatar kleur
                     }
                   }
-                } catch (_) {}
+                } catch (_) {} // Negeer avatar parsing errors
               });
             });
-      } else {
-        setState(() {
-          _isLoggedIn = false;
-          _watchlistCount = 0;
-          _filmsCount = 0;
-          _displayName = null;
+      } else { // Gebruiker niet ingelogd
+        setState(() { // Werkt UI state bij
+          _isLoggedIn = false; // Zet login status
+          _watchlistCount = 0; // Reset watchlist teller
+          _filmsCount = 0; // Reset film teller
+          _displayName = null; // Reset display naam
         });
       }
     });
   }
 
   @override
-  void dispose() {
-    _authSub?.cancel();
-    _userDocSub?.cancel();
-    super.dispose();
+  void dispose() { // Cleanup lifecycle method
+    _authSub?.cancel(); // Canceld auth subscription
+    _userDocSub?.cancel(); // Canceld user document subscription
+    super.dispose(); // Roept parent dispose aan
   }
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark
+  Widget build(BuildContext context) { // Bouwt de UI
+    final isDark = Theme.of(context).brightness == Brightness.dark; // Controleert dark mode
+    final cardColor = isDark // Zet kaart kleur op basis van theme
         ? const Color(0xFF1D272F)
         : const Color(0xFFFFFFFF);
-    final accentColor = isDark
+    final accentColor = isDark // Zet accent kleur op basis van theme
         ? const Color(0xFFEBB143)
         : const Color(0xFFD4AF37);
-    final primaryText = isDark ? Colors.white : Colors.black87;
-    final secondaryText = isDark ? Colors.white70 : Colors.black54;
+    final primaryText = isDark ? Colors.white : Colors.black87; // Zet primaire tekst kleur
+    final secondaryText = isDark ? Colors.white70 : Colors.black54; // Zet secundaire tekst kleur
 
-    return AppBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: AppTopBar(
-            title: AppLocalizations.of(context)!.navProfile,
-            backgroundColor: Colors.transparent,
+    return AppBackground( // Wrapper widget met achtergrond
+      child: Scaffold( // Materiaalontwerp scaffold
+        backgroundColor: Colors.transparent, // Transparante achtergrond
+        appBar: PreferredSize( // Aangepaste appbar hoogte
+          preferredSize: const Size.fromHeight(56), // Hoogte 56
+          child: AppTopBar( // Aangepaste top bar
+            title: AppLocalizations.of(context)!.navProfile, // Titel
+            backgroundColor: Colors.transparent, // Transparante achtergrond
           ),
         ),
-        body: CustomScrollView(
-          slivers: [
-            // Header met Avatar en Level Progress
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            if (!_isLoggedIn) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    AppLocalizations.of(context)!.avatar_login_prompt,
+        body: CustomScrollView( // Scrollable widget met slivers
+          slivers: [ // Lijst van sliver widgets
+            SliverToBoxAdapter( // Sliver wrapper voor reguliere widget
+              child: Container( // Container voor header
+                padding: const EdgeInsets.symmetric(vertical: 32), // Verticale padding
+                child: Column( // Kolom layout
+                  mainAxisAlignment: MainAxisAlignment.center, // Center alignment
+                  children: [ // Kinder widgets
+                    Stack( // Layering widget
+                      alignment: Alignment.bottomRight, // Align edit knop rechts onder
+                      children: [ // Kinder widgets
+                        GestureDetector( // Click detector voor avatar
+                          onTap: () { // Callback on tap
+                            if (!_isLoggedIn) { // Controleert login status
+                              ScaffoldMessenger.of(context).showSnackBar( // Toont snackbar
+                                SnackBar( // Snackbar widget
+                                  content: Text( // Bericht
+                                    AppLocalizations.of(context)!.avatar_login_prompt, // Localized text
                                   ),
                                 ),
                               );
-                              return;
+                              return; // Stop functie
                             }
-                            _showAvatarEditor();
+                            _showAvatarEditor(); // Toont avatar editor
                           },
-                          child: CircleAvatar(
-                            radius: 54,
-                            backgroundColor: accentColor.withOpacity(0.3),
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor:
-                                  _avatarColor ?? Colors.grey.shade200,
-                              child:
-                                  _avatarEmoji != null &&
-                                      _avatarEmoji!.isNotEmpty
-                                  ? Text(
-                                      _avatarEmoji!,
-                                      style: const TextStyle(fontSize: 32),
+                          child: CircleAvatar( // Outer circle
+                            radius: 54, // Straal 54
+                            backgroundColor: accentColor.withOpacity(0.3), // Halftransparante achterglond
+                            child: CircleAvatar( // Inner circle
+                              radius: 50, // Straal 50
+                              backgroundColor: // Zet achtergrond kleur
+                                  _avatarColor ?? Colors.grey.shade200, // Gebruiker kleur of default
+                              child: // Zet child content
+                                  _avatarEmoji != null && // Controleert emoji bestaat
+                                      _avatarEmoji!.isNotEmpty // En niet leeg is
+                                  ? Text( // Toont emoji als text
+                                      _avatarEmoji!, // Emoji string
+                                      style: const TextStyle(fontSize: 32), // Grote font
                                     )
-                                  : (_displayName != null &&
-                                        _displayName!.isNotEmpty)
-                                  ? Text(
-                                      _displayName!
-                                          .substring(0, 1)
-                                          .toUpperCase(),
+                                  : (_displayName != null && // Controleert naam bestaat
+                                        _displayName!.isNotEmpty) // En niet leeg is
+                                  ? Text( // Toont naamletter
+                                      _displayName! // Displaynaam
+                                          .substring(0, 1) // Eerste letter
+                                          .toUpperCase(), // Omzetten naar hoofdletter
                                       style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 28, // Font grootte
+                                        fontWeight: FontWeight.bold, // Bold
                                       ),
                                     )
-                                  : const Icon(
-                                      Icons.person,
-                                      size: 40,
-                                      color: Colors.white54,
+                                  : const Icon( // Toont persoon icon
+                                      Icons.person, // Icon type
+                                      size: 40, // Grootte
+                                      color: Colors.white54, // Kleur
                                   ),
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            if (!_isLoggedIn) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    AppLocalizations.of(context)!.avatar_login_prompt,
+                        GestureDetector( // Click detector voor edit knop
+                          onTap: () { // Callback on tap
+                            if (!_isLoggedIn) { // Controleert login status
+                              ScaffoldMessenger.of(context).showSnackBar( // Toont snackbar
+                                SnackBar( // Snackbar widget
+                                  content: Text( // Bericht
+                                    AppLocalizations.of(context)!.avatar_login_prompt, // Localized text
                                   ),
                                 ),
                               );
-                              return;
+                              return; // Stop functie
                             }
-                            _showAvatarEditor();
+                            _showAvatarEditor(); // Toont avatar editor
                           },
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: accentColor,
-                              shape: BoxShape.circle,
+                          child: Container( // Container voor knop
+                            padding: const EdgeInsets.all(4), // Padding
+                            decoration: BoxDecoration( // Styling
+                              color: accentColor, // Achtergrond kleur
+                              shape: BoxShape.circle, // Circulair
                             ),
-                            child: const Icon(
-                              Icons.edit,
-                              size: 20,
-                              color: Colors.black,
+                            child: const Icon( // Icon
+                              Icons.edit, // Edit icon
+                              size: 20, // Grootte
+                              color: Colors.black, // Kleur
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onTap: () {
-                        if (!_isLoggedIn) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                AppLocalizations.of(context)!.avatar_login_prompt,
+                    const SizedBox(height: 12), // Verticale spacer
+                    GestureDetector( // Click detector voor naam
+                      onTap: () { // Callback on tap
+                        if (!_isLoggedIn) { // Controleert login status
+                          ScaffoldMessenger.of(context).showSnackBar( // Toont snackbar
+                            SnackBar( // Snackbar widget
+                              content: Text( // Bericht
+                                AppLocalizations.of(context)!.avatar_login_prompt, // Localized text
                               ),
                             ),
                           );
-                          return;
+                          return; // Stop functie
                         }
-                        _showEditNameDialog();
+                        _showEditNameDialog(); // Toont naam edit dialoog
                       },
-                      child: Text(
-                        _displayName ?? AppLocalizations.of(context)!.profile_default_name,
-                        style: TextStyle(
-                          color: primaryText,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      child: Text( // Tekst widget
+                        _displayName ?? AppLocalizations.of(context)!.profile_default_name, // Displaynaam of default
+                        style: TextStyle( // Styling
+                          color: primaryText, // Primaire kleur
+                          fontSize: 24, // Grootte
+                          fontWeight: FontWeight.bold, // Bold
                         ),
                       ),
                     ),
@@ -549,152 +535,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  Row(
-                    children: [
-                      _buildQuickStat(
-                        context,
-                        _isLoggedIn ? _filmsCount.toString() : '-',
-                        AppLocalizations.of(context)!.films,
-                        accentColor,
+            SliverToBoxAdapter( // Sliver wrapper voor reguliere widget
+              child: Padding( // Padding wrapper
+                padding: const EdgeInsets.symmetric(horizontal: 16.0), // Horizontale padding
+                child: Column( // Kolom layout
+                  crossAxisAlignment: CrossAxisAlignment.start, // Align links
+                  children: [ // Kinder widgets
+                  Row( // Rij layout
+                    children: [ // Kinder widgets
+                      _buildQuickStat( // Roept quick stat builder aan
+                        context, // Context
+                        _isLoggedIn ? _filmsCount.toString() : '-', // Film teller of dash
+                        AppLocalizations.of(context)!.films, // Label
+                        accentColor, // Kleur
                       ),
-                      _buildQuickStat(
-                        context,
-                        _isLoggedIn ? _watchlistCount.toString() : '-',
-                        AppLocalizations.of(context)!.watchlist_label,
-                        Colors.blueAccent,
+                      _buildQuickStat( // Roept quick stat builder aan
+                        context, // Context
+                        _isLoggedIn ? _watchlistCount.toString() : '-', // Watchlist teller of dash
+                        AppLocalizations.of(context)!.watchlist_label, // Label
+                        Colors.blueAccent, // Kleur
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 32), // Verticale spacer
 
-                  // BADGES SECTIE (Vervangt Favorieten tekst)
-                  Text(
-                    AppLocalizations.of(context)!.your_badges,
-                    style: TextStyle(
-                      color: secondaryText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+                  Text( // Badges sectie label
+                    AppLocalizations.of(context)!.your_badges, // Localized text
+                    style: TextStyle( // Styling
+                      color: secondaryText, // Secundaire kleur
+                      fontSize: 12, // Grootte
+                      fontWeight: FontWeight.bold, // Bold
+                      letterSpacing: 1.2, // Spatiering
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 120,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        // Avonturier always zichtbaar; show numeric progress and level
-                        _buildBadge(
-                          context,
-                          AppLocalizations.of(context)!.badge_adventurer,
-                          Icons.explore,
-                          Colors.greenAccent,
-                          count: _adventureCount,
-                          levelBase: 10,
+                  const SizedBox(height: 12), // Verticale spacer
+                  SizedBox( // Sized container
+                    height: 120, // Hoogte 120
+                    child: ListView( // Horizontale list view
+                      scrollDirection: Axis.horizontal, // Horizontaal scrollen
+                      children: [ // Kinder widgets
+                        _buildBadge( // Roept badge builder aan
+                          context, // Context
+                          AppLocalizations.of(context)!.badge_adventurer, // Label
+                          Icons.explore, // Icon
+                          Colors.greenAccent, // Kleur
+                          count: _adventureCount, // Adventure teller
+                          levelBase: 10, // Level basis
                         ),
-                        _buildBadge(
-                          context,
-                          AppLocalizations.of(context)!.badge_horror_king,
-                          Icons.auto_awesome,
-                          Colors.purpleAccent,
-                          count: _horrorCount,
-                          levelBase: 10,
+                        _buildBadge( // Roept badge builder aan
+                          context, // Context
+                          AppLocalizations.of(context)!.badge_horror_king, // Label
+                          Icons.auto_awesome, // Icon
+                          Colors.purpleAccent, // Kleur
+                          count: _horrorCount, // Horror teller
+                          levelBase: 10, // Level basis
                         ),
-                        _buildBadge(
-                          context,
-                          AppLocalizations.of(context)!.badge_binge_watcher,
-                          Icons.bolt,
-                          Colors.orangeAccent,
-                          count: _bingeCount,
-                          levelBase: 10,
+                        _buildBadge( // Roept badge builder aan
+                          context, // Context
+                          AppLocalizations.of(context)!.badge_binge_watcher, // Label
+                          Icons.bolt, // Icon
+                          Colors.orangeAccent, // Kleur
+                          count: _bingeCount, // Binge teller
+                          levelBase: 10, // Level basis
                         ),
-                        _buildBadge(
-                          context,
-                          AppLocalizations.of(context)!.badge_early_bird,
-                          Icons.wb_sunny,
-                          Colors.yellowAccent,
-                          count: _earlyBirdCount,
-                          levelBase: 10,
+                        _buildBadge( // Roept badge builder aan
+                          context, // Context
+                          AppLocalizations.of(context)!.badge_early_bird, // Label
+                          Icons.wb_sunny, // Icon
+                          Colors.yellowAccent, // Kleur
+                          count: _earlyBirdCount, // Early bird teller
+                          levelBase: 10, // Level basis
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 32),
-                  Text(
-                    AppLocalizations.of(context)!.account_section,
-                    style: TextStyle(
-                      color: secondaryText,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+                  const SizedBox(height: 32), // Verticale spacer
+                  Text( // Account sectie label
+                    AppLocalizations.of(context)!.account_section, // Localized text
+                    style: TextStyle( // Styling
+                      color: secondaryText, // Secundaire kleur
+                      fontSize: 12, // Grootte
+                      fontWeight: FontWeight.bold, // Bold
+                      letterSpacing: 1.2, // Spatiering
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  // Edit profile tile removed; name is editable by tapping the display name.
-                  _buildMenuTile(
-                    context,
-                    Icons.settings_outlined,
-                    AppLocalizations.of(context)!.settingsTitle,
-                    cardColor,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
+                  const SizedBox(height: 12), // Verticale spacer
+                  _buildMenuTile( // Roept menu builder aan
+                    context, // Context
+                    Icons.settings_outlined, // Settings icon
+                    AppLocalizations.of(context)!.settingsTitle, // Label
+                    cardColor, // Achtergrond kleur
+                    onTap: () { // Callback on tap
+                      Navigator.of(context).push( // Push route
+                        MaterialPageRoute( // Materiaal route
+                          builder: (_) => const SettingsScreen(), // Settings screen
                         ),
                       );
                     },
                   ),
-                  // Show 'Uitloggen' when logged in, otherwise show 'Inloggen'
-                  if (_isLoggedIn)
-                    _buildMenuTile(
-                      context,
-                      Icons.logout,
-                      AppLocalizations.of(context)!.logout,
-                      cardColor,
-                      isDestructive: true,
-                      onTap: () async {
-                        await FirebaseAuth.instance.signOut();
-                        if (!mounted) return;
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
+                  if (_isLoggedIn) // Controleert login status
+                    _buildMenuTile( // Roept menu builder aan
+                      context, // Context
+                      Icons.logout, // Logout icon
+                      AppLocalizations.of(context)!.logout, // Label
+                      cardColor, // Achtergrond kleur
+                      isDestructive: true, // Destructief label
+                      onTap: () async { // Async callback
+                        await FirebaseAuth.instance.signOut(); // Logout
+                        if (!mounted) return; // Controleert widget mount status
+                        Navigator.of(context).pushReplacement( // Push replacement route
+                          MaterialPageRoute( // Materiaal route
+                            builder: (_) => const LoginScreen(), // Login screen
                           ),
                         );
                       },
                     )
-                  else
-                    _buildMenuTile(
-                      context,
-                      Icons.login,
-                      AppLocalizations.of(context)!.loginIn,
-                      cardColor,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
+                  else // User is niet ingelogd
+                    _buildMenuTile( // Roept menu builder aan
+                      context, // Context
+                      Icons.login, // Login icon
+                      AppLocalizations.of(context)!.loginIn, // Label
+                      cardColor, // Achtergrond kleur
+                      onTap: () { // Callback on tap
+                        Navigator.of(context).push( // Push route
+                          MaterialPageRoute( // Materiaal route
+                            builder: (_) => const LoginScreen(), // Login screen
                           ),
                         );
                       },
                     ),
 
-                  const SizedBox(height: 30),
-                  Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.appVersion,
-                      style: TextStyle(
-                        color: primaryText.withOpacity(0.1),
-                        fontSize: 12,
+                  const SizedBox(height: 30), // Verticale spacer
+                  Center( // Centered widget
+                    child: Text( // Versie tekst
+                      AppLocalizations.of(context)!.appVersion, // Localized text
+                      style: TextStyle( // Styling
+                        color: primaryText.withOpacity(0.1), // Menu kleur
+                        fontSize: 12, // Grootte
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 30), // Verticale spacer
                 ],
               ),
             ),
@@ -704,188 +686,188 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Show bottom sheet for avatar customization (emoji + color). Saves choice to Firestore.
-  void _showAvatarEditor() {
-    bool _isOnlyEmoji(String s) {
-      if (s.isEmpty) return false;
-      final re = RegExp(
+  // Toont een bottom sheet voor avatar-aanpassing en slaat keuze op in Firestore.
+  void _showAvatarEditor() { // Definieert de methode om de avatar-editor te openen.
+    bool _isOnlyEmoji(String s) { // Controleert of een string uitsluitend emoji bevat.
+      if (s.isEmpty) return false; // Retourneer false wanneer de invoer leeg is.
+      final re = RegExp( // Maakt een reguliere expressie die emoji-range matcht.
         r'^[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{FE0F}\u{200D}]+$',
-        unicode: true,
+        unicode: true, // Geeft aan dat de regex Unicode-escapes gebruikt.
       );
       try {
-        return re.hasMatch(s);
+        return re.hasMatch(s); // Test of de string alleen uit emoji bestaat.
       } catch (_) {
-        return false;
+        return false; // Bij fout in regex of matching: false teruggeven.
       }
     }
 
-    final presetColors = [
-      Colors.redAccent,
-      Colors.orangeAccent,
-      Colors.yellowAccent,
-      Colors.greenAccent,
-      Colors.blueAccent,
-      Colors.purpleAccent,
-      Colors.brown,
-      Colors.grey,
+    final presetColors = [ // Lijst met vooraf gekozen kleuren voor de avatar.
+      Colors.redAccent, // Rode accentkleur toevoegen.
+      Colors.orangeAccent, // Oranje accentkleur toevoegen.
+      Colors.yellowAccent, // Gele accentkleur toevoegen.
+      Colors.greenAccent, // Groene accentkleur toevoegen.
+      Colors.blueAccent, // Blauwe accentkleur toevoegen.
+      Colors.purpleAccent, // Paarse accentkleur toevoegen.
+      Colors.brown, // Bruine kleur toevoegen.
+      Colors.grey, // Grijze kleur toevoegen.
     ];
-    final emojis = [
-      '😀',
-      '😎',
-      '🤓',
-      '🥳',
-      '🤠',
-      '😇',
-      '🧐',
-      '🙂',
+    final emojis = [ // Lijst met beschikbare emoji's voor de avatar.
+      '😀', // Emoji optie 1: glimlachend gezicht.
+      '😎', // Emoji optie 2: cool gezicht.
+      '🤓', // Emoji optie 3: nerd gezicht.
+      '🥳', // Emoji optie 4: feestend gezicht.
+      '🤠', // Emoji optie 5: cowboy gezicht.
+      '😇', // Emoji optie 6: engelachtig gezicht.
+      '🧐', // Emoji optie 7: onderzoekend gezicht.
+      '🙂', // Emoji optie 8: neutraal glimlach.
 
-      '🎬',
-      '🍿',
-      '🎥',
-      '📽️',
-      '🎞️',
-      '⭐️',
-      '🎭',
-      '🎟️',
+      '🎬', // Emoji optie film 1.
+      '🍿', // Emoji optie film 2.
+      '🎥', // Emoji optie film 3.
+      '📽️', // Emoji optie film 4.
+      '🎞️', // Emoji optie film 5.
+      '⭐️', // Emoji optie ster.
+      '🎭', // Emoji optie theatermasker.
+      '🎟️', // Emoji optie ticket.
 
-      '😂',
-      '😍',
-      '😅',
-      '😭',
-      '🤩',
-      '🤯',
-      '😴',
-      '🤢',
-      '🤕',
-      '🤡',
+      '😂', // Emoji optie lachend met tranen.
+      '😍', // Emoji optie verliefd gezicht.
+      '😅', // Emoji optie opgeluchte lach.
+      '😭', // Emoji optie huilend gezicht.
+      '🤩', // Emoji optie sterogen.
+      '🤯', // Emoji optie mind-blown.
+      '😴', // Emoji optie slaperig.
+      '🤢', // Emoji optie misselijk.
+      '🤕', // Emoji optie gewond/met verband.
+      '🤡', // Emoji optie clown.
 
-      '✨',
-      '💫',
-      '🔥',
-      '🌟',
-      '🎉',
-      '🎊',
-      '🎵',
-      '🎶',
+      '✨', // Emoji optie fonkeling.
+      '💫', // Emoji optie duizeligheid.
+      '🔥', // Emoji optie vuur.
+      '🌟', // Emoji optie sterretje.
+      '🎉', // Emoji optie confetti.
+      '🎊', // Emoji optie feest.
+      '🎵', // Emoji optie muzieknoot.
+      '🎶', // Emoji optie meerdere noten.
     ];
-    Color selectedColor = _avatarColor ?? Colors.grey.shade300;
-    String? selectedEmoji = _avatarEmoji;
+    Color selectedColor = _avatarColor ?? Colors.grey.shade300; // Initieer geselecteerde kleur of fallback.
+    String? selectedEmoji = _avatarEmoji; // Initieer geselecteerde emoji van state.
     final TextEditingController emojiController = TextEditingController(
-      text: selectedEmoji,
+      text: selectedEmoji, // Zet controller-tekst naar huidige geselecteerde emoji.
     );
 
-    final parentContext = context;
-    final rootMessenger = ScaffoldMessenger.of(parentContext);
+    final parentContext = context; // Bewaar parent context voor dialooggebruik.
+    final rootMessenger = ScaffoldMessenger.of(parentContext); // Haal ScaffoldMessenger op voor notificaties.
 
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
+    showModalBottomSheet<void>( // Open een modal bottom sheet.
+      context: context, // Gebruik de huidige BuildContext.
+      isScrollControlled: true, // Laat de sheet scroll-gevoelig gedrag toe.
       builder: (ctx) {
-        return StatefulBuilder(
+        return StatefulBuilder( // Gebruik StatefulBuilder om lokale state te kunnen bijwerken.
           builder: (BuildContext context, StateSetter setModalState) {
-            final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+            final bottomInset = MediaQuery.of(ctx).viewInsets.bottom; // Bepaal toetsenbord-inset onderaan.
             return Padding(
-              padding: EdgeInsets.only(bottom: bottomInset),
-              child: SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bottomInset), // Voeg padding toe voor het toetsenbord.
+              child: SingleChildScrollView( // Zorg dat inhoud scrollbaar is indien nodig.
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(ctx).size.height * 0.9,
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.9, // Beperk maximale hoogte tot 90% van scherm.
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0), // Globale padding binnen de sheet.
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min, // Kolom neemt minimale hoogte in.
+                      crossAxisAlignment: CrossAxisAlignment.start, // Align links binnen kolom.
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.edit_avatar_title,
+                          AppLocalizations.of(context)!.edit_avatar_title, // Toont de titel uit lokalisatie.
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16, // Zet lettergrootte op 16.
+                            fontWeight: FontWeight.bold, // Maak tekst vetgedrukt.
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 12), // Plaats verticale ruimte van 12.
                         Text(
-                          AppLocalizations.of(context)!.choose_color,
-                          style: const TextStyle(fontSize: 13),
+                          AppLocalizations.of(context)!.choose_color, // Toont tekst voor kleurkeuze uit lokalisatie.
+                          style: const TextStyle(fontSize: 13), // Zet fontgrootte op 13.
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 8), // Plaats verticale ruimte van 8.
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: 8, // Horizontale ruimte tussen items in wrap.
+                          runSpacing: 8, // Verticale ruimte tussen rijen in wrap.
                           children: [
                             GestureDetector(
                               onTap: () {
                                 setModalState(() {
-                                  selectedColor = Colors.grey.shade200;
+                                  selectedColor = Colors.grey.shade200; // Reset kleur naar lichtgrijs bij tap.
                                 });
                               },
                               child: Container(
-                                width: 44,
-                                height: 44,
+                                width: 44, // Zet breedte van de reset-knop.
+                                height: 44, // Zet hoogte van de reset-knop.
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
+                                  color: Colors.white, // Achtergrondkleur wit.
+                                  shape: BoxShape.circle, // Maak container rond.
                                   border:
                                       selectedColor.value ==
                                           Colors.grey.shade200.value
                                       ? Border.all(
-                                          color: Colors.black,
-                                          width: 2,
+                                          color: Colors.black, // Zwarte rand wanneer geselecteerd.
+                                          width: 2, // Randdikte 2.
                                         )
-                                      : Border.all(color: Colors.grey.shade300),
+                                      : Border.all(color: Colors.grey.shade300), // Anders subtiele grijze rand.
                                 ),
                                 child: const Icon(
-                                  Icons.refresh,
-                                  size: 20,
-                                  color: Colors.grey,
+                                  Icons.refresh, // Toon refresh-icoon in de container.
+                                  size: 20, // Icoongrootte 20.
+                                  color: Colors.grey, // Icoon kleur grijs.
                                 ),
                               ),
                             ),
                             ...presetColors.map((c) {
-                              final isSelected = c.value == selectedColor.value;
+                              final isSelected = c.value == selectedColor.value; // Check of deze kleur geselecteerd is.
                               return GestureDetector(
                                 onTap: () {
                                   setModalState(() {
-                                    selectedColor = c;
+                                    selectedColor = c; // Stel geselecteerde kleur in bij tap.
                                   });
                                 },
                                 child: Container(
-                                  width: 44,
-                                  height: 44,
+                                  width: 44, // Breedte van kleurselectiecirkel.
+                                  height: 44, // Hoogte van kleurselectiecirkel.
                                   decoration: BoxDecoration(
-                                    color: c,
-                                    shape: BoxShape.circle,
+                                    color: c, // Vul de cirkel met deze kleur.
+                                    shape: BoxShape.circle, // Maak de vorm rond.
                                     border: isSelected
                                         ? Border.all(
-                                            color: Colors.white,
-                                            width: 3,
+                                            color: Colors.white, // Border wanneer geselecteerd.
+                                            width: 3, // Borderdikte 3.
                                           )
-                                        : null,
+                                        : null, // Geen border wanneer niet geselecteerd.
                                   ),
                                 ),
                               );
                             }),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 12), // Plaats verticale ruimte van 12.
                         Text(
-                          AppLocalizations.of(context)!.choose_emoji_optional,
-                          style: const TextStyle(fontSize: 13),
+                          AppLocalizations.of(context)!.choose_emoji_optional, // Toont lokalisatietekst voor emoji-keuze.
+                          style: const TextStyle(fontSize: 13), // Stel fontgrootte 13 in.
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 8), // Plaats verticale ruimte van 8.
                         // custom emoji input
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
-                                controller: emojiController,
+                                controller: emojiController, // Koppelt controller aan het tekstveld.
                                 decoration: InputDecoration(
-                                  hintText: AppLocalizations.of(context)!.emoji_input_hint,
-                                  isDense: true,
+                                  hintText: AppLocalizations.of(context)!.emoji_input_hint, // Hinttekst voor emoji-invoer.
+                                  isDense: true, // Compacte weergave van het veld.
                                   contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 10,
+                                    horizontal: 12, // Horizontale padding in veld 12.
+                                    vertical: 10, // Verticale padding in veld 10.
                                   ),
                                 ),
                                 onChanged: (v) {
@@ -893,161 +875,161 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   setModalState(() {
                                     selectedEmoji = v.trim().isEmpty
                                         ? null
-                                        : v.trim();
+                                        : v.trim(); // Werk geselecteerde emoji bij op invoer zonder validatie.
                                   });
                                 },
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 8), // Plaats horizontale ruimte van 8.
                             ElevatedButton(
                               onPressed: () {
-                                final input = emojiController.text.trim();
+                                final input = emojiController.text.trim(); // Lees en trim invoer van controller.
                                 if (input.isEmpty) {
                                   setModalState(() {
-                                    selectedEmoji = null;
-                                    emojiController.text = '';
+                                    selectedEmoji = null; // Maak geselecteerde emoji leeg bij lege invoer.
+                                    emojiController.text = ''; // Reset controller-tekst.
                                   });
-                                  return;
+                                  return; // Verlaat de knophandeling.
                                 }
                                 if (!_isOnlyEmoji(input)) {
                                   showDialog<void>(
-                                    context: parentContext,
+                                    context: parentContext, // Gebruik parent context voor dialoog.
                                     builder: (dctx) => AlertDialog(
-                                      title: Text(AppLocalizations.of(parentContext)!.invalid_input),
-                                      content: Text(AppLocalizations.of(parentContext)!.only_emoji_error),
+                                      title: Text(AppLocalizations.of(parentContext)!.invalid_input), // Titel bij ongeldige invoer.
+                                      content: Text(AppLocalizations.of(parentContext)!.only_emoji_error), // Inhoudtekst met foutmelding.
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(dctx).pop(),
-                                          child: Text(AppLocalizations.of(parentContext)!.ok),
+                                          onPressed: () => Navigator.of(dctx).pop(), // Sluit de dialoog bij knopdruk.
+                                          child: Text(AppLocalizations.of(parentContext)!.ok), // Tekst van bevestigingsknop.
                                         ),
                                       ],
                                     ),
                                   );
-                                  return;
+                                  return; // Stop verdere verwerking bij fout.
                                 }
                                 setModalState(() {
-                                  selectedEmoji = input;
+                                  selectedEmoji = input; // Stel geselecteerde emoji in op gevalideerde invoer.
                                 });
                               },
-                              child: Text(AppLocalizations.of(context)!.use),
+                              child: Text(AppLocalizations.of(context)!.use), // Label knop met lokalisatietekst 'use'.
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 12), // Plaats verticale ruimte van 12.
                         Wrap(
-                          spacing: 8,
+                          spacing: 8, // Horizontale afstand tussen emoji-knoppen.
                           children: [
                             GestureDetector(
                               onTap: () {
                                 setModalState(() {
-                                  selectedEmoji = null;
+                                  selectedEmoji = null; // Zet emoji selectie op null bij tap op close.
                                 });
                               },
                               child: Container(
-                                width: 48,
-                                height: 48,
-                                alignment: Alignment.center,
+                                width: 48, // Breedte van de 'verwijder emoji' knop.
+                                height: 48, // Hoogte van de 'verwijder emoji' knop.
+                                alignment: Alignment.center, // Centreer inhoud binnen container.
                                 decoration: BoxDecoration(
                                   color: selectedEmoji == null
                                       ? Colors.black12
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(8),
+                                      : Colors.transparent, // Achtergrond wanneer geen emoji geselecteerd.
+                                  borderRadius: BorderRadius.circular(8), // Afronding hoeken 8.
                                   border: Border.all(
-                                    color: Colors.grey.withOpacity(0.2),
+                                    color: Colors.grey.withOpacity(0.2), // Subtiele randkleur.
                                   ),
                                 ),
                                 child: const Icon(
-                                  Icons.close,
-                                  size: 20,
-                                  color: Colors.grey,
+                                  Icons.close, // Toon close-icoon.
+                                  size: 20, // Icoongrootte 20.
+                                  color: Colors.grey, // Icoon kleur grijs.
                                 ),
                               ),
                             ),
                             ...emojis.map((e) {
-                              final isSelected = e == selectedEmoji;
+                              final isSelected = e == selectedEmoji; // Check of deze emoji geselecteerd is.
                               return GestureDetector(
                                 onTap: () {
                                   setModalState(() {
-                                    selectedEmoji = e;
-                                    emojiController.text = e;
+                                    selectedEmoji = e; // Stel geselecteerde emoji in op deze waarde.
+                                    emojiController.text = e; // Update controller-tekst met gekozen emoji.
                                   });
                                 },
                                 child: Container(
-                                  width: 48,
-                                  height: 48,
-                                  alignment: Alignment.center,
+                                  width: 48, // Breedte van emoji-knop.
+                                  height: 48, // Hoogte van emoji-knop.
+                                  alignment: Alignment.center, // Centreer emoji in knop.
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? Colors.black12
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
+                                        : Colors.transparent, // Achtergrondkleur bij selectie.
+                                    borderRadius: BorderRadius.circular(8), // Afrond hoeken.
                                   ),
                                   child: Text(
-                                    e,
-                                    style: const TextStyle(fontSize: 24),
+                                    e, // Toon de emoji-tekst zelf.
+                                    style: const TextStyle(fontSize: 24), // Grote emoji-weergave.
                                   ),
                                 ),
                               );
                             }),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 16), // Plaats verticale ruimte van 16.
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.end, // Plaats knoppen aan de rechterkant.
                           children: [
                             TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(),
-                              child: Text(AppLocalizations.of(ctx)!.cancel),
+                              onPressed: () => Navigator.of(ctx).pop(), // Sluit de sheet bij annuleren.
+                              child: Text(AppLocalizations.of(ctx)!.cancel), // Label knop 'cancel' uit lokalisatie.
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 8), // Plaats ruimte tussen knoppen.
                             ElevatedButton(
                               onPressed: () async {
                                 final uid =
-                                    FirebaseAuth.instance.currentUser?.uid;
-                                if (uid == null) return;
-                                final input = emojiController.text.trim();
+                                    FirebaseAuth.instance.currentUser?.uid; // Haal huidige gebruikers-UID op.
+                                if (uid == null) return; // Stop wanneer niet ingelogd.
+                                final input = emojiController.text.trim(); // Lees en trim invoer opnieuw.
                                 if (input.isNotEmpty && !_isOnlyEmoji(input)) {
                                   showDialog<void>(
-                                    context: parentContext,
+                                    context: parentContext, // Toon fout-dialoog bij ongeldige invoer.
                                     builder: (dctx) => AlertDialog(
-                                      title: Text(AppLocalizations.of(parentContext)!.invalid_input),
-                                      content: Text(AppLocalizations.of(parentContext)!.only_emoji_error),
+                                      title: Text(AppLocalizations.of(parentContext)!.invalid_input), // Dialoog titel.
+                                      content: Text(AppLocalizations.of(parentContext)!.only_emoji_error), // Dialoog inhoud.
                                       actions: [
                                         TextButton(
-                                          onPressed: () => Navigator.of(dctx).pop(),
-                                          child: Text(AppLocalizations.of(parentContext)!.ok),
+                                          onPressed: () => Navigator.of(dctx).pop(), // Sluit fout-dialoog.
+                                          child: Text(AppLocalizations.of(parentContext)!.ok), // Bevestigingsknop tekst.
                                         ),
                                       ],
                                     ),
                                   );
-                                  return;
+                                  return; // Stop uitvoering bij fout.
                                 }
                                 final colorHex =
-                                    '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+                                    '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}'; // Converteer kleur naar hex-string zonder alpha.
                                 final docRef = FirebaseFirestore.instance
                                     .collection('users')
-                                    .doc(uid);
+                                    .doc(uid); // Verwijzing naar gebruikersdocument in Firestore.
                                 await docRef.set({
                                   'profileAvatar': {
                                     'emoji': input.isEmpty
                                         ? (selectedEmoji ?? '')
-                                        : input,
-                                    'color': colorHex,
+                                        : input, // Sla emoji in: ingevoerde of geselecteerde waarde.
+                                    'color': colorHex, // Sla hex-kleur op.
                                   },
-                                }, SetOptions(merge: true));
+                                }, SetOptions(merge: true)); // Merge met bestaand document in Firestore.
                                 setState(() {
-                                  _avatarColor = selectedColor;
+                                  _avatarColor = selectedColor; // Werk lokale state voor avatar-kleur bij.
                                   _avatarEmoji = input.isEmpty
                                       ? selectedEmoji
-                                      : input;
+                                      : input; // Werk lokale state voor avatar-emoji bij.
                                 });
-                                if (mounted) Navigator.of(ctx).pop();
+                                if (mounted) Navigator.of(ctx).pop(); // Sluit sheet wanneer widget nog gemount is.
                               },
-                              child: Text(AppLocalizations.of(ctx)!.save),
+                              child: Text(AppLocalizations.of(ctx)!.save), // Label knop 'save' uit lokalisatie.
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 8), // Plaats onderaan nog wat ruimte van 8.
                       ],
                     ),
                   ),
@@ -1060,173 +1042,173 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Kleine stat-indicator bovenaan
-  Widget _buildQuickStat(
-    BuildContext context,
-    String value,
-    String label,
-    Color color,
+  // Kleine stat-indicator bovenaan: toont korte statistiek in header.
+  Widget _buildQuickStat( // Definieert een widget voor een compacte statistiek.
+    BuildContext context, // BuildContext van de widget.
+    String value, // De weergegeven waarde als string.
+    String label, // Het bijbehorende label onder de waarde.
+    Color color, // Kleur voor de indicator balkjes.
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText = isDark ? Colors.white : Colors.black87;
-    final secondary = isDark ? Colors.white38 : Colors.black45;
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: primaryText,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+    final isDark = Theme.of(context).brightness == Brightness.dark; // Bepaalt of theme donker is.
+    final primaryText = isDark ? Colors.white : Colors.black87; // Hoofdtekstkleur afhankelijk van theme.
+    final secondary = isDark ? Colors.white38 : Colors.black45; // Secundaire tekstkleur afhankelijk van theme.
+    return Expanded( // Maakt widget uitrekbaar binnen een rij.
+      child: Column( // Rangschikt onderdelen verticaal.
+        children: [ // Begin lijst met child-widgets.
+          Text( // Toont de waarde bovenaan.
+            value, // De dynamische value-tekst.
+            style: TextStyle( // Stijl voor de waarde-tekst.
+              color: primaryText, // Gebruik de berekende primaire tekstkleur.
+              fontSize: 20, // Lettergrootte 20 instellen.
+              fontWeight: FontWeight.bold, // Vetgedrukte weergave.
             ),
           ),
-          const SizedBox(height: 4),
-          Container(
-            height: 3,
-            width: 20,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
+          const SizedBox(height: 4), // Kleine verticale ruimte van 4 pixels.
+          Container( // Smalle gekleurde indicator onder de waarde.
+            height: 3, // Hoogte van de indicator 3.
+            width: 20, // Breedte van de indicator 20.
+            decoration: BoxDecoration( // Styling voor de indicator.
+              color: color, // Kleur van de indicator gebaseerd op parameter.
+              borderRadius: BorderRadius.circular(2), // Afgeronde hoeken radius 2.
             ),
           ),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: secondary, fontSize: 12)),
+          const SizedBox(height: 4), // Extra verticale ruimte van 4.
+          Text(label, style: TextStyle(color: secondary, fontSize: 12)), // Toont het label met secundaire kleur.
         ],
       ),
     );
   }
 
-  // Badge Widget
-  Widget _buildBadge(
-    BuildContext context,
-    String label,
-    IconData icon,
-    Color color, {
-    double? progress,
-    int? count,
-    int levelBase = 10,
-    bool simpleCount = false,
+  // Badge Widget: maakt een badge met icon, progress en label.
+  Widget _buildBadge( // Definieert een widget voor een badge met optionele progress.
+    BuildContext context, // BuildContext voor lokalisatie en thema.
+    String label, // Badge-tekst onderaan.
+    IconData icon, // Icoon voor de badge.
+    Color color, { // Kleuraccent voor de badge.
+    double? progress, // Optionele voortgangswaarde 0..1.
+    int? count, // Optionele teller voor badge-waarden.
+    int levelBase = 10, // Basiswaarde per level.
+    bool simpleCount = false, // Wanneer true toont alleen het aantal.
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF1D272F) : const Color(0xFFF2F4F6);
-    final primaryText = isDark ? Colors.white : Colors.black87;
+    final isDark = Theme.of(context).brightness == Brightness.dark; // Check of theme donker is.
+    final bg = isDark ? const Color(0xFF1D272F) : const Color(0xFFF2F4F6); // Achtergrondkleur van card.
+    final primaryText = isDark ? Colors.white : Colors.black87; // Primaire tekstkleur.
     // If count is provided, compute level and progress fraction based on levelBase
-    int displayLevel = 1;
-    int displayTotal = levelBase;
-    double fraction = progress ?? 0.0;
-    String counterText = '';
-    if (count != null) {
-      if (simpleCount) {
-        counterText = '$count';
+    int displayLevel = 1; // Initiele weergegeven level.
+    int displayTotal = levelBase; // Initieel totaal voor huidige level.
+    double fraction = progress ?? 0.0; // Gebruikte fractie voor progressbar.
+    String counterText = ''; // Tekstweergave van de teller.
+    if (count != null) { // Wanneer een count is meegegeven
+      if (simpleCount) { // En simpleCount is true
+        counterText = '$count'; // Simpele weergave van het aantal.
       } else {
-        displayLevel = (count ~/ levelBase) + 1;
-        displayTotal = displayLevel * levelBase;
-        final currentLevelProgress = count - (displayLevel - 1) * levelBase;
-        fraction = (currentLevelProgress / levelBase).clamp(0.0, 1.0);
-        counterText = '$count/$displayTotal';
+        displayLevel = (count ~/ levelBase) + 1; // Bereken huidig level uit count.
+        displayTotal = displayLevel * levelBase; // Bereken totaal voor huidige level.
+        final currentLevelProgress = count - (displayLevel - 1) * levelBase; // Progress binnen huidig level.
+        fraction = (currentLevelProgress / levelBase).clamp(0.0, 1.0); // Normaliseer progress naar 0..1.
+        counterText = '$count/$displayTotal'; // Formatteer teller als 'x/total'.
       }
     }
 
-    return Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+    return Container( // Hoofdcontainer voor de badge.
+      width: 120, // Vaste breedte 120.
+      margin: const EdgeInsets.only(right: 12), // Margin rechts 12.
+      padding: const EdgeInsets.symmetric(horizontal: 8), // Horizontale padding 8.
+      decoration: BoxDecoration( // Styling van de container.
+        color: bg, // Achtergrondkleur toepassen.
+        borderRadius: BorderRadius.circular(16), // Randradius 16.
+        border: Border.all(color: color.withOpacity(0.2)), // Subtiele border in accentkleur.
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Column( // Plaatst badge-onderdelen verticaal.
+        mainAxisAlignment: MainAxisAlignment.center, // Centreer verticaal.
         children: [
-          Icon(icon, color: color, size: 30),
-          const SizedBox(height: 8),
-          if (count != null) ...[
-            if (simpleCount) ...[
+          Icon(icon, color: color, size: 30), // Toont het icon met kleur en grootte.
+          const SizedBox(height: 8), // Verticale ruimte 8.
+          if (count != null) ...[ // Wanneer count aanwezig is, toon teller/progress.
+            if (simpleCount) ...[ // Simpele tellerweergave
               Text(
-                counterText,
+                counterText, // Toont de tellertekst.
                 style: TextStyle(
-                  color: primaryText,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  color: primaryText, // Tekstkleur instellen.
+                  fontSize: 12, // Font grootte 12.
+                  fontWeight: FontWeight.w800, // Dikke tekst.
                 ),
               ),
-              const SizedBox(height: 6),
-            ] else ...[
+              const SizedBox(height: 6), // Ruimte na simpele teller.
+            ] else ...[ // Geavanceerde weergave met progressbar
               SizedBox(
-                height: 8,
-                width: 88,
+                height: 8, // Hoogte progressbar 8.
+                width: 88, // Breedte progressbar 88.
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8), // Afronding progressbar.
                   child: LinearProgressIndicator(
-                    value: fraction,
-                    backgroundColor: color.withOpacity(0.12),
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                    minHeight: 8,
+                    value: fraction, // Zet de progresswaarde.
+                    backgroundColor: color.withOpacity(0.12), // Achtergrondkleur van bar.
+                    valueColor: AlwaysStoppedAnimation<Color>(color), // Kleur van voortgang.
+                    minHeight: 8, // Minimale hoogte.
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 6), // Ruimte na progressbar.
+              Row( // Rij voor teller en optioneel level-badge.
+                mainAxisAlignment: MainAxisAlignment.center, // Centreer horizontaal.
                 children: [
                   Text(
-                    counterText,
+                    counterText, // Toont teller 'x/total'.
                     style: TextStyle(
-                      color: primaryText,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                      color: primaryText, // Tekstkleur.
+                      fontSize: 11, // Fontgrootte 11.
+                      fontWeight: FontWeight.w700, // Semi-gestructureerd gewicht.
                     ),
                   ),
-                  if (displayLevel > 1) ...[
-                    const SizedBox(width: 6),
+                  if (displayLevel > 1) ...[ // Indien level >1, toon level-indicator.
+                    const SizedBox(width: 6), // Kleine ruimte tussen elementen.
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
+                        horizontal: 6, // Horizontale padding in level-badge.
+                        vertical: 2, // Verticale padding in level-badge.
                       ),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: color.withOpacity(0.12), // Achtergrondkleur voor badge.
+                        borderRadius: BorderRadius.circular(12), // Afronding badge.
                       ),
                       child: Text(
-                        '${AppLocalizations.of(context)!.badge_level_prefix}$displayLevel',
+                        '${AppLocalizations.of(context)!.badge_level_prefix}$displayLevel', // Toont 'Level X' met lokalisatie.
                         style: TextStyle(
-                          color: color,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
+                          color: color, // Kleur van de level-tekst.
+                          fontSize: 10, // Kleine tekstgrootte.
+                          fontWeight: FontWeight.w700, // Vetgedrukte level-tekst.
                         ),
                       ),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 6), // Ruimte onder de rij.
             ],
-          ] else if (progress != null) ...[
+          ] else if (progress != null) ...[ // Als geen count maar progress is gegeven
             SizedBox(
-              height: 8,
-              width: 80,
+              height: 8, // Hoogte van progress-indicator.
+              width: 80, // Breedte 80.
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(8), // Afronding progress.
                 child: LinearProgressIndicator(
-                  value: (progress.clamp(0.0, 1.0)),
-                  backgroundColor: color.withOpacity(0.12),
-                  valueColor: AlwaysStoppedAnimation<Color>(color),
-                  minHeight: 8,
+                  value: (progress.clamp(0.0, 1.0)), // Gebruik gegeven progress binnen 0..1.
+                  backgroundColor: color.withOpacity(0.12), // Achtergrondkleur.
+                  valueColor: AlwaysStoppedAnimation<Color>(color), // Voorgrondkleur van progress.
+                  minHeight: 8, // Minimale hoogte.
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 8), // Ruimte onder progress.
           ],
-          Text(
-            label,
-            textAlign: TextAlign.center,
+          Text( // Toont het label onderaan de badge.
+            label, // De labeltekst.
+            textAlign: TextAlign.center, // Centreer tekst.
             style: TextStyle(
-              color: primaryText,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+              color: primaryText, // Gebruik primaire tekstkleur.
+              fontSize: 10, // Kleine tekstgrootte 10.
+              fontWeight: FontWeight.w600, // Lichte vetting.
             ),
           ),
         ],
@@ -1234,40 +1216,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Menu Items
-  Widget _buildMenuTile(
-    BuildContext context,
-    IconData icon,
-    String title,
-    Color color, {
-    bool isDestructive = false,
-    VoidCallback? onTap,
+  // Menu Items: bouwt een tappable menu-rij met icon en titel.
+  Widget _buildMenuTile( // Definieert een menu-item met stijl en callback.
+    BuildContext context, // Context voor thema en navigatie.
+    IconData icon, // Het linkse icoon van de tile.
+    String title, // Titeltekst van de tile.
+    Color color, { // Achtergrondkleur van de tile.
+    bool isDestructive = false, // Flag voor destructieve actie styling.
+    VoidCallback? onTap, // Callback bij tikken op de tile.
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText = isDark ? Colors.white : Colors.black87;
+    final isDark = Theme.of(context).brightness == Brightness.dark; // Controleer dark mode.
+    final primaryText = isDark ? Colors.white : Colors.black87; // Kies primaire tekstkleur.
     final iconColor = isDestructive
         ? Colors.redAccent
-        : (isDark ? Colors.white70 : Colors.black45);
+        : (isDark ? Colors.white70 : Colors.black45); // Bepaal kleur van het icoon.
     final trailingColor = isDestructive
         ? Colors.redAccent.withOpacity(0.3)
-        : (isDark ? Colors.white10 : Colors.black12);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
+        : (isDark ? Colors.white10 : Colors.black12); // Kleur van trailing icoon.
+    return Container( // Container rondom de ListTile voor styling.
+      margin: const EdgeInsets.only(bottom: 8), // Onderste marge 8.
+      decoration: BoxDecoration( // Styling achtergrond en radius.
+        color: color, // Gebruik meegegeven kleur als achtergrond.
+        borderRadius: BorderRadius.circular(16), // Afronding 16.
       ),
-      child: ListTile(
-        leading: Icon(icon, color: iconColor),
+      child: ListTile( // Gebruik ListTile voor consistente layout.
+        leading: Icon(icon, color: iconColor), // Linkericoon met kleur.
         title: Text(
-          title,
+          title, // Toon de titeltekst.
           style: TextStyle(
-            color: isDestructive ? Colors.redAccent : primaryText,
-            fontSize: 15,
+            color: isDestructive ? Colors.redAccent : primaryText, // Rood als destructief anders primair.
+            fontSize: 15, // Fontgrootte 15.
           ),
         ),
-        trailing: Icon(Icons.chevron_right, color: trailingColor),
-        onTap: onTap,
+        trailing: Icon(Icons.chevron_right, color: trailingColor), // Rechterpijl als indicatie.
+        onTap: onTap, // Verbindt de tap-callback.
       ),
     );
   }

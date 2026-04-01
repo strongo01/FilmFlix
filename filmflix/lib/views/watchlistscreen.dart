@@ -22,6 +22,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     String epKey,
     bool seen,
   ) async {
+    // togglet een episode/film 'Gezien' status voor de ingelogde gebruiker
     final u = FirebaseAuth.instance.currentUser;
     if (u == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -34,21 +35,25 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       return;
     }
     final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    // verwijzing naar gebruikersdocument in Firestore
     try {
       if (seen) {
         await docRef.set({
           'seenEpisodes.$imdbId': FieldValue.arrayUnion([epKey]),
         }, SetOptions(merge: true));
+        // voeg epKey toe aan array van geziene episodes voor dit id
       } else {
         if (epKey == 'movie') {
           // remove whole field when unchecking a movie 'Gezien' marker
           await docRef.set({
             'seenEpisodes.$imdbId': FieldValue.delete(),
           }, SetOptions(merge: true));
+          // verwijder heel veld bij unchecken van een film
         } else {
           await docRef.set({
             'seenEpisodes.$imdbId': FieldValue.arrayRemove([epKey]),
           }, SetOptions(merge: true));
+          // verwijder enkel het episode-key uit de array
         }
       }
     } catch (e) {
@@ -63,6 +68,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
   Future<void> _openLink(String? url) async {
     if (url == null) return;
+    // open externe link via browser als valide
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     if (await canLaunchUrl(uri)) {
@@ -87,6 +93,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     'SkyShowtime': 'skyshowtime',
     'Zee5': 'zee5',
   };
+  // map van streamingdienst-namen naar asset-bestandsnamen
 
   Widget _buildServiceIconAsset(
     String? serviceName, {
@@ -94,6 +101,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     required BuildContext context,
   }) {
     if (serviceName == null) return const Icon(Icons.tv);
+    // toon default icon als servicenaam ontbreekt
     final key = _serviceAssetMap.entries
         .firstWhere(
           (entry) => entry.key.toLowerCase() == serviceName.toLowerCase(),
@@ -125,6 +133,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         return type ?? '';
     }
   }
+  // formatteert streaming type (subscription/buy/rent) met prijs indien beschikbaar
 
   // Build a ListTile quickly from stored metadata to avoid extra API calls.
   String _truncate(String? s, [int max = 120]) {
@@ -133,6 +142,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     if (clean.length <= max) return clean;
     return '${clean.substring(0, max).trim()}…';
   }
+  // verkort tekst en verwijdert nieuwe regels
 
   String _getEpisodeTitle(dynamic ep, BuildContext ctx) {
     try {
@@ -159,6 +169,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     } catch (_) {}
     return AppLocalizations.of(ctx)!.episode;
   }
+  // bepaalt een representatieve titel voor een episode, valt terug naar 'episode'
 
   Widget _metaTile(
     String id,
@@ -183,6 +194,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         radius: 26,
         child: Icon(isSeries ? Icons.tv : Icons.movie, size: 22),
       ),
+      // toont type icon: tv voor series, film voor films
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: overview.isNotEmpty
           ? Text(overview, maxLines: 2, overflow: TextOverflow.ellipsis)
@@ -223,6 +235,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       ).push(MaterialPageRoute(builder: (_) => MovieDetailScreen(imdbId: id))),
     );
   }
+  // meta-listtile voor opgeslagen items met actieknoppen en navigatie
 
   // Build a ListTile using MovieRepository when metadata is not available.
   Widget _futureTile(
@@ -299,6 +312,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   label: Text(AppLocalizations.of(ctx)!.seen_count(seenCount)),
                   visualDensity: VisualDensity.compact,
                 ),
+                  // toon voortgangsaanduiding indien gewenst
               IconButton(
                 icon: const Icon(Icons.bookmark_remove_outlined),
                 tooltip: AppLocalizations.of(
@@ -336,6 +350,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         // also remove any seenEpisodes entries for this id so it disappears from 'watching'
         'seenEpisodes.$imdbId': FieldValue.delete(),
       }, SetOptions(merge: true));
+      // verwijder item uit watchlist en bijbehorende metadata uit Firestore
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.item_removed_watchlist),
@@ -375,6 +390,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     }
   }
 
+  // bevestigingsdialoog voor verwijderen uit watchlist
+
   Future<void> _showAddSeriesDialog() async {
     final titleCtl = TextEditingController();
     final seasonsCtl = TextEditingController();
@@ -402,6 +419,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
               episodeCtrls.removeLast();
             }
 
+
+        // gebruiker heeft bevestigd; verzamel input en maak custom series aan
             return SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -633,6 +652,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         'watchlist': FieldValue.arrayUnion([id]),
         'watchlist_meta.$id': meta,
       }, SetOptions(merge: true));
+      // voeg custom series toe aan watchlist en sla metadata op
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.series_added)),
@@ -735,6 +755,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     ),
                   ),
                 );
+
+              // gebruiker is ingelogd; luister naar Firestore gebruikersdocument
               }
 
               return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -764,6 +786,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                           ?.map((e) => e.toString())
                           .toList() ??
                       <String>[];
+                  // lees watchlist uit Firestore-data en converteer naar stringlijst
                   // seenEpisodes may be stored either as a map under 'seenEpisodes'
                   // or as individual fields named 'seenEpisodes.<imdbId>' (Firestore flattened keys).
                   final Map<String, dynamic> seenMap = {};
@@ -779,6 +802,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     }
                   }
 
+                  // merge eventuele flattened seenEpisodes velden in dezelfde map
+
                   // watchlist_meta may be stored as a map under 'watchlist_meta'
                   // or as flattened keys like 'watchlist_meta.<imdbId>'
                   final Map<String, dynamic> metaMap = {};
@@ -792,6 +817,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       metaMap[imdb] = data[k];
                     }
                   }
+
+                  // normaliseer watchlist metadata en merge flattened keys
 
                   bool seenIndicatesMovie(dynamic val) {
                     if (val is List) {
@@ -826,6 +853,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     (a, b) => a.toLowerCase().compareTo(b.toLowerCase()),
                   );
 
+                  // sorteer series op imdb id voor consistente weergave
+
                   final savedFilms = watchlist.where((id) {
                     // Prefer explicit mediaType stored in watchlist_meta when available
                     final meta = metaMap[id];
@@ -856,6 +885,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                         : b;
                     return ta.toLowerCase().compareTo(tb.toLowerCase());
                   });
+
+                  // sorteer films alfabetisch op opgeslagen titel (fallback naar id)
 
                   final watchingSeries = <String>[];
                   final watchingFilms = <String>[];
@@ -929,6 +960,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       },
                     );
                   }
+                  // bouw een lijst (saved/watching) die metadata gebruikt wanneer beschikbaar
 
                   Widget buildWatchingSeries(List<String> ids) {
                     if (ids.isEmpty)
@@ -1081,6 +1113,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                           leading: Checkbox(
                                             value: localIsSeen,
                                             onChanged: (val) async {
+                                              // togglet gezien-status en vraagt optioneel bevestiging
                                               final newVal = val ?? false;
                                               if (newVal) {
                                                 // collect previous unseen episodes in this season

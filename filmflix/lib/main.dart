@@ -352,7 +352,7 @@ class _MainNavigationState extends State<MainNavigation> {
           'Main: registerFcmTokenForUser result=$ok for uid=${user.uid}',
         );
       } else {
-        // user signed out: fall back to the stored anonymous id
+        // Als de gebruiker uitlogt, stel dan een anonieme ID in voor analytics zodat we nog steeds gebruikersgedrag kunnen volgen zonder persoonlijke informatie te verzamelen.
         final prefs = await SharedPreferences.getInstance();
         var anon = prefs.getString('analytics_anon_id');
         if (anon == null) {
@@ -366,7 +366,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   int _tutorialRetryCount = 0;
-  void _checkAndStartTutorial() async {
+  void _checkAndStartTutorial() async { 
     final prefs = await SharedPreferences.getInstance();
     final bool isDone = prefs.getBool('tutorial_done') ?? false;
 
@@ -374,12 +374,12 @@ class _MainNavigationState extends State<MainNavigation> {
     //TUTORIAL UIT/AAN
     if (isDone) return;
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 500), () { //dit stukje doet een check na een korte vertraging om te zien of de home key beschikbar is
       if (!mounted) return;
 
       if (_homeKey.currentContext != null) {
         debugPrint("Tutorial: Home key valid, starting...");
-        _showTutorial();
+        _showTutorial(); // Als de home key beschikbaar is, start dan de tutorial zodat we gebruikers kunnen laten zien hoe ze de app kunnen gebruiken.
       } else if (_tutorialRetryCount < 5) {
         _tutorialRetryCount++;
         debugPrint(
@@ -393,7 +393,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   @override
-  void dispose() {
+  void dispose() { //dispose betekent dat we resources opruimen wanneer deze widget uit de widget tree wordt verwijderd, in dit geval annuleren we de subscription naar auth state changes om geheugenlekken te voorkomen.
     _authSub?.cancel();
     super.dispose();
   }
