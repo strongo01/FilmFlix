@@ -437,4 +437,16 @@
   "disclaimerText": "This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.",
   "playbackDisabledByVideoOwner": "Playback disabled by video owner.",
   "disclaimerNote": "Use and display of content is subject to the terms and licenses of the services listed above."
+  ,
+  "add_series_button": "Add series",
+  "add_series_title": "Add series",
+  "imdb_id_label": "ID (e.g. tt1234567)",
+  "title_label": "Title",
+  "number_of_seasons": "Number of seasons",
+  "number_of_episodes": "Number of episodes",
+  "episodes_in_season": "Episodes in season {season}",
+  "episodes_per_season_hint": "Episodes per season (comma separated, e.g. 10,8,12)",
+  "invalid_series_input": "Invalid input",
+  "series_added": "Series added",
+  "add_series_failed": "Failed to add series"
 }

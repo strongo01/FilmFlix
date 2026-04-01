@@ -354,4 +354,16 @@
   "disclaimerText": "Bu uygulama birden fazla üçüncü taraf kaynaktan veri kullanır:\n\n* Brian Fritz tarafından sağlanan API (OMDb API)\n CC BY-NC 4.0 lisansı altında lisanslanmıştır\n Bu hizmet IMDb.com tarafından onaylanmamış veya onunla bağlantılı değildir\n\n* Bu uygulama TMDB ve TMDB API’lerini kullanır ancak TMDB tarafından onaylanmamış, sertifikalandırılmamış veya başka bir şekilde desteklenmemektedir\n\n* Bazı veriler IMDb’den alınmıştır\n\n* Yayın (streaming) bilgileri ve çeviri hizmetleri RapidAPI üzerinden sağlanmaktadır\n\n* Fragmanlar YouTube tarafından sağlanmaktadır\n\nHarita verileri © OpenStreetMap katkıda bulunanlar\n\nTüm ticari markalar, logolar ve telif hakları ilgili sahiplerine aittir.",
   "playbackDisabledByVideoOwner": "Oynatma, videonun sahibi tarafından devre dışı bırakıldı.",
   "disclaimerNote": "Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin."
+  ,
+  "add_series_button": "Dizi ekle",
+  "add_series_title": "Dizi ekle",
+  "imdb_id_label": "ID (örn. tt1234567)",
+  "title_label": "Başlık",
+  "number_of_seasons": "Sezon sayısı",
+  "number_of_episodes": "Bölüm sayısı",
+  "episodes_in_season": "Sezon {season} içindeki bölümler",
+  "episodes_per_season_hint": "Sezon başına bölüm sayısı (virgülle ayrılmış, örn. 10,8,12)",
+  "invalid_series_input": "Geçersiz giriş",
+  "series_added": "Dizi eklendi",
+  "add_series_failed": "Dizi eklenemedi"
 }

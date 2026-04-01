@@ -1143,4 +1143,39 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get disclaimerNote => 'Todas las marcas, logotipos y datos de terceros siguen siendo propiedad de sus respectivos propietarios; consulte sus términos y políticas de privacidad para más detalles.';
+
+  @override
+  String get add_series_button => 'Agregar serie';
+
+  @override
+  String get add_series_title => 'Agregar serie';
+
+  @override
+  String get imdb_id_label => 'ID (p.ej. tt1234567)';
+
+  @override
+  String get title_label => 'Título';
+
+  @override
+  String get number_of_seasons => 'Número de temporadas';
+
+  @override
+  String get number_of_episodes => 'Número de episodios';
+
+  @override
+  String episodes_in_season(Object season) {
+    return 'Episodios en la temporada $season';
+  }
+
+  @override
+  String get episodes_per_season_hint => 'Episodios por temporada (separados por comas, p.ej. 10,8,12)';
+
+  @override
+  String get invalid_series_input => 'Entrada no válida';
+
+  @override
+  String get series_added => 'Serie agregada';
+
+  @override
+  String get add_series_failed => 'No se pudo agregar la serie';
 }

@@ -2226,6 +2226,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use and display of content is subject to the terms and licenses of the services listed above.'**
   String get disclaimerNote;
+
+  /// No description provided for @add_series_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Add series'**
+  String get add_series_button;
+
+  /// No description provided for @add_series_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add series'**
+  String get add_series_title;
+
+  /// No description provided for @imdb_id_label.
+  ///
+  /// In en, this message translates to:
+  /// **'ID (e.g. tt1234567)'**
+  String get imdb_id_label;
+
+  /// No description provided for @title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get title_label;
+
+  /// No description provided for @number_of_seasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of seasons'**
+  String get number_of_seasons;
+
+  /// No description provided for @number_of_episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of episodes'**
+  String get number_of_episodes;
+
+  /// No description provided for @episodes_in_season.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes in season {season}'**
+  String episodes_in_season(Object season);
+
+  /// No description provided for @episodes_per_season_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes per season (comma separated, e.g. 10,8,12)'**
+  String get episodes_per_season_hint;
+
+  /// No description provided for @invalid_series_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid input'**
+  String get invalid_series_input;
+
+  /// No description provided for @series_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Series added'**
+  String get series_added;
+
+  /// No description provided for @add_series_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add series'**
+  String get add_series_failed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

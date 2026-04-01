@@ -1143,4 +1143,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get disclaimerNote => 'Use and display of content is subject to the terms and licenses of the services listed above.';
+
+  @override
+  String get add_series_button => 'Add series';
+
+  @override
+  String get add_series_title => 'Add series';
+
+  @override
+  String get imdb_id_label => 'ID (e.g. tt1234567)';
+
+  @override
+  String get title_label => 'Title';
+
+  @override
+  String get number_of_seasons => 'Number of seasons';
+
+  @override
+  String get number_of_episodes => 'Number of episodes';
+
+  @override
+  String episodes_in_season(Object season) {
+    return 'Episodes in season $season';
+  }
+
+  @override
+  String get episodes_per_season_hint => 'Episodes per season (comma separated, e.g. 10,8,12)';
+
+  @override
+  String get invalid_series_input => 'Invalid input';
+
+  @override
+  String get series_added => 'Series added';
+
+  @override
+  String get add_series_failed => 'Failed to add series';
 }

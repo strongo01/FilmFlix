@@ -1143,4 +1143,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get disclaimerNote => 'Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin.';
+
+  @override
+  String get add_series_button => 'Dizi ekle';
+
+  @override
+  String get add_series_title => 'Dizi ekle';
+
+  @override
+  String get imdb_id_label => 'ID (örn. tt1234567)';
+
+  @override
+  String get title_label => 'Başlık';
+
+  @override
+  String get number_of_seasons => 'Sezon sayısı';
+
+  @override
+  String get number_of_episodes => 'Bölüm sayısı';
+
+  @override
+  String episodes_in_season(Object season) {
+    return 'Sezon $season içindeki bölümler';
+  }
+
+  @override
+  String get episodes_per_season_hint => 'Sezon başına bölüm sayısı (virgülle ayrılmış, örn. 10,8,12)';
+
+  @override
+  String get invalid_series_input => 'Geçersiz giriş';
+
+  @override
+  String get series_added => 'Dizi eklendi';
+
+  @override
+  String get add_series_failed => 'Dizi eklenemedi';
 }
