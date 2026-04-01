@@ -1151,6 +1151,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get add_series_title => 'Serie hinzufügen';
 
   @override
+  String get add_series_use_dates => 'Wiederkehrende Tage verwenden';
+
+  @override
+  String get add_series_until_date => 'Bis Datum';
+
+  @override
+  String get until_label => 'Bis';
+
+  @override
+  String get select => 'Auswählen';
+
+  @override
   String get imdb_id_label => 'ID (z. B. tt1234567)';
 
   @override

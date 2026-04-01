@@ -2239,6 +2239,30 @@ abstract class AppLocalizations {
   /// **'Add series'**
   String get add_series_title;
 
+  /// No description provided for @add_series_use_dates.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recurring days'**
+  String get add_series_use_dates;
+
+  /// No description provided for @add_series_until_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Until date'**
+  String get add_series_until_date;
+
+  /// No description provided for @until_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get until_label;
+
+  /// No description provided for @select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get select;
+
   /// No description provided for @imdb_id_label.
   ///
   /// In en, this message translates to:

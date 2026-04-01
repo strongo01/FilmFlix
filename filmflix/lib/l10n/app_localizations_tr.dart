@@ -1151,6 +1151,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get add_series_title => 'Dizi ekle';
 
   @override
+  String get add_series_use_dates => 'Yinelenen günleri kullan';
+
+  @override
+  String get add_series_until_date => 'Tarihine kadar';
+
+  @override
+  String get until_label => 'Kadar';
+
+  @override
+  String get select => 'Seç';
+
+  @override
   String get imdb_id_label => 'ID (örn. tt1234567)';
 
   @override

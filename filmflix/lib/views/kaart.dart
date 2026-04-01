@@ -20,10 +20,19 @@ class _CinemasMapViewState extends State<CinemasMapView> {
   List<Map<String, dynamic>> _cinemas = [];
   final MapController _mapController = MapController();
   final Color movieBlue = const Color.fromRGBO(43, 77, 91, 1);
+  bool _initialized = false;
   @override
   void initState() {
     super.initState();
-    _loadCinemas();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _loadCinemas();
+    }
   }
 
   Future<void> _loadCinemas() async {

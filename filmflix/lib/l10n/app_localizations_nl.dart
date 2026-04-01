@@ -1151,6 +1151,18 @@ class AppLocalizationsNl extends AppLocalizations {
   String get add_series_title => 'Serie toevoegen';
 
   @override
+  String get add_series_use_dates => 'Gebruik terugkerende dagen';
+
+  @override
+  String get add_series_until_date => 'Tot en met datum';
+
+  @override
+  String get until_label => 'Tot en met';
+
+  @override
+  String get select => 'Kies';
+
+  @override
   String get imdb_id_label => 'ID (bijv. tt1234567)';
 
   @override

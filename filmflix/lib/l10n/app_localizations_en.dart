@@ -1151,6 +1151,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add_series_title => 'Add series';
 
   @override
+  String get add_series_use_dates => 'Use recurring days';
+
+  @override
+  String get add_series_until_date => 'Until date';
+
+  @override
+  String get until_label => 'Until';
+
+  @override
+  String get select => 'Select';
+
+  @override
   String get imdb_id_label => 'ID (e.g. tt1234567)';
 
   @override

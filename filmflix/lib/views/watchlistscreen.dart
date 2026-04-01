@@ -379,6 +379,10 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final titleCtl = TextEditingController();
     final seasonsCtl = TextEditingController();
     final List<TextEditingController> episodeCtrls = [];
+    // schedule UI state (weekday selection + until-date)
+    final Set<int> _selectedDays = <int>{};
+    DateTime? _untilDate;
+    bool _useDates = false;
 
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -420,14 +424,82 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                           decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.title_label),
                         ),
                         const SizedBox(height: 8),
-                        TextField(
-                          controller: seasonsCtl,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.number_of_seasons),
-                          onChanged: (_) => setState(() {}),
+                        // Show seasons/episodes inputs only when not using recurring date schedule
+                        if (!_useDates) ...[
+                          TextField(
+                            controller: seasonsCtl,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.number_of_seasons),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: 8),
+                        // Option to use weekday schedule with an end date
+                        ],
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(AppLocalizations.of(ctx)!.add_series_use_dates ?? 'Use recurring days'),
+                          value: _useDates,
+                          onChanged: (v) => setState(() => _useDates = v),
                         ),
-                        const SizedBox(height: 8),
-                        if (seasonsCount > 0)
+                        if (_useDates) ...[
+                          const SizedBox(height: 8),
+                          // Weekday circles
+                          Wrap(
+                            spacing: 8,
+                            children: List<Widget>.generate(7, (i) {
+                              // Dutch short names: Ma, Di, Wo, Do, Vr, Za, Zo
+                              const labels = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+                              final selected = _selectedDays.contains(i);
+                              return GestureDetector(
+                                onTap: () => setState(() {
+                                  if (selected)
+                                    _selectedDays.remove(i);
+                                  else
+                                    _selectedDays.add(i);
+                                }),
+                                child: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor: selected
+                                      ? Theme.of(ctx).colorScheme.primary
+                                      : Colors.grey.shade300,
+                                  child: Text(
+                                    labels[i],
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: selected ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _untilDate == null
+                                      ? AppLocalizations.of(ctx)!.add_series_until_date ?? 'Until date'
+                                      : '${AppLocalizations.of(ctx)!.until_label ?? 'Until'} ${_untilDate!.toLocal().toString().split(' ')[0]}',
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  final now = DateTime.now();
+                                  final picked = await showDatePicker(
+                                    context: dctx,
+                                    initialDate: _untilDate ?? now,
+                                    firstDate: now,
+                                    lastDate: DateTime(now.year + 10),
+                                  );
+                                  if (picked != null) setState(() => _untilDate = picked);
+                                },
+                                child: Text(AppLocalizations.of(ctx)!.select ?? 'Select'),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (!_useDates && seasonsCount > 0)
                           ...List<Widget>.generate(seasonsCount, (si) {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8.0),
@@ -467,33 +539,80 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final title = titleCtl.text.trim();
     final seasonsCount = int.tryParse(seasonsCtl.text.trim()) ?? 0;
 
-    if (title.isEmpty || seasonsCount <= 0) {
+    if (title.isEmpty || (!_useDates && seasonsCount <= 0)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.invalid_series_input)));
       return;
     }
 
     final epCounts = <int>[];
-    for (var i = 0; i < seasonsCount; i++) {
-      final v = (i < episodeCtrls.length) ? episodeCtrls[i].text.trim() : '';
-      final n = int.tryParse(v);
-      epCounts.add(n ?? 1);
+    List<Map<String, dynamic>> seasons;
+
+    if (_useDates) {
+      // When using recurring days, generate dated episodes for the selected weekdays
+      seasons = <Map<String, dynamic>>[];
+      if (_selectedDays.isNotEmpty && _untilDate != null) {
+        final start = DateTime.now();
+        final end = DateTime(_untilDate!.year, _untilDate!.month, _untilDate!.day);
+        final Set<int> weekdays = _selectedDays.map((i) => i + 1).toSet(); // DateTime.weekday: 1=Mon..7=Sun
+        final episodes = <Map<String, dynamic>>[];
+        DateTime cur = DateTime(start.year, start.month, start.day);
+        while (!cur.isAfter(end)) {
+          if (weekdays.contains(cur.weekday)) {
+            final dd = cur.day.toString().padLeft(2, '0');
+            final mm = cur.month.toString().padLeft(2, '0');
+            final yy = cur.year.toString().substring(2);
+            final formatted = '$dd-$mm-$yy';
+            episodes.add({
+              'title': '${AppLocalizations.of(context)!.episode} $formatted',
+              'date': cur.toIso8601String(),
+            });
+          }
+          cur = cur.add(const Duration(days: 1));
+        }
+        if (episodes.isNotEmpty) {
+          seasons = [
+            {
+              'title': AppLocalizations.of(context)!.season_label(1),
+              'episodes': episodes,
+            }
+          ];
+        }
+      }
+    } else {
+      for (var i = 0; i < seasonsCount; i++) {
+        final v = (i < episodeCtrls.length) ? episodeCtrls[i].text.trim() : '';
+        final n = int.tryParse(v);
+        epCounts.add(n ?? 1);
+      }
+
+      seasons = List<Map<String, dynamic>>.generate(seasonsCount, (si) {
+        final epiCount = epCounts[si];
+        final episodes = List<Map<String, dynamic>>.generate(epiCount, (ei) => {'title': '${AppLocalizations.of(context)!.episode} ${ei + 1}'});
+        return {'title': AppLocalizations.of(context)!.season_label(si + 1), 'episodes': episodes};
+      });
     }
 
-    final seasons = List<Map<String, dynamic>>.generate(seasonsCount, (si) {
-      final epiCount = epCounts[si];
-      final episodes = List<Map<String, dynamic>>.generate(epiCount, (ei) => {'title': '${AppLocalizations.of(context)!.episode} ${ei + 1}'});
-      return {'title': AppLocalizations.of(context)!.season_label(si + 1), 'episodes': episodes};
-    });
-
     final id = 'local_${DateTime.now().millisecondsSinceEpoch}';
-    await _createCustomSeries(id, title, seasons);
+    // Build optional schedule metadata if user enabled date scheduling
+    const _weekdayLabels = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+    Map<String, dynamic>? schedule;
+    if (_useDates && _selectedDays.isNotEmpty) {
+      final days = _selectedDays.toList()..sort();
+      schedule = {
+        'days': days.map((i) => _weekdayLabels[i]).toList(),
+        'until': _untilDate?.toIso8601String(),
+      };
+    }
+
+    await _createCustomSeries(id, title, seasons, schedule: schedule);
   }
 
   Future<void> _createCustomSeries(
     String id,
     String title,
-    List<Map<String, dynamic>> seasons,
-  ) async {
+    List<Map<String, dynamic>> seasons, {
+    Map<String, dynamic>? schedule,
+  }) async {
     final u = FirebaseAuth.instance.currentUser;
     if (u == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -508,6 +627,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
     try {
       final meta = {'mediaType': 'series', 'title': title, 'seasons': seasons};
+      if (schedule != null) meta['schedule'] = schedule;
 
       await docRef.set({
         'watchlist': FieldValue.arrayUnion([id]),
