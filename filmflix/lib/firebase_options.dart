@@ -64,7 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
-    iosClientId: '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
+    iosClientId:
+        '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
     iosBundleId: 'com.MBS.CineTrackr',
   );
 
@@ -74,7 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
-    iosClientId: '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
+    iosClientId:
+        '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
     iosBundleId: 'com.MBS.CineTrackr',
   );
 
@@ -87,5 +89,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'assistant-434717.firebasestorage.app',
     measurementId: 'G-HS0E4MF25W',
   );
-
 }

@@ -16,183 +16,283 @@ import 'package:cinetrackr/widgets/app_background.dart'; // Importeer achtergron
 import 'package:permission_handler/permission_handler.dart'; // Importeer permission handler
 import 'package:shared_preferences/shared_preferences.dart'; // Importeer shared preferences voor lokale opslag
 
-class SettingsScreen extends StatefulWidget { // Definieer stateful widget voor instellingenscherm
+class SettingsScreen extends StatefulWidget {
+  // Definieer stateful widget voor instellingenscherm
   const SettingsScreen({super.key}); // Constructor met super.key
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState(); // Maak state object aan
 }
 
-class _SettingsScreenState extends State<SettingsScreen> { // State class voor SettingsScreen
-  final Color movieBlue = const Color.fromRGBO(43, 77, 91, 1); // Definieer MovieBlue kleur
-  final Color goldAccent = const Color(0xFFD4AF37); // Definieer goud accentkleur
+class _SettingsScreenState extends State<SettingsScreen> {
+  // State class voor SettingsScreen
+  final Color movieBlue = const Color.fromRGBO(
+    43,
+    77,
+    91,
+    1,
+  ); // Definieer MovieBlue kleur
+  final Color goldAccent = const Color(
+    0xFFD4AF37,
+  ); // Definieer goud accentkleur
   bool _notificationsEnabled = true; // Boolean voor notificatie status
-  StreamSubscription<User?>? _authSub; // Stream subscription voor auth wijzigingen
+  StreamSubscription<User?>?
+  _authSub; // Stream subscription voor auth wijzigingen
   User? _currentUser; // Huidige ingelogde gebruiker
   String? _displayName; // Weergavenaam van gebruiker
   String? _email; // Email van gebruiker
-  int _cachedUnreadCustomerReplies = 0; // Cache voor ongelezen klantenservice berichten
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _customerQuestionsSub; // Stream subscription voor klantvragen
+  int _cachedUnreadCustomerReplies =
+      0; // Cache voor ongelezen klantenservice berichten
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _customerQuestionsSub; // Stream subscription voor klantvragen
   String _languageCode = 'nl'; // Standaard taalcode Nederlands
 
   @override
-  void initState() { // Initialisatiemethode
+  void initState() {
+    // Initialisatiemethode
     super.initState(); // Roep parent initState aan
-    // Default to device locale unless a saved preference exists
-    try { // Probeer apparaat locale in te stellen
-      final deviceLang = WidgetsBinding.instance.platformDispatcher.locale.languageCode; // Haal apparaat taalcode op
+    // Standaard naar apparaatlocale tenzij er een opgeslagen voorkeur is
+    try {
+      // Probeer apparaat locale in te stellen
+      final deviceLang = WidgetsBinding
+          .instance
+          .platformDispatcher
+          .locale
+          .languageCode; // Haal apparaat taalcode op
       _languageCode = deviceLang; // Stel taalcode in op apparaat locale
-    } catch (_) { // Als er een fout optreedt
+    } catch (_) {
+      // Als er een fout optreedt
       _languageCode = 'nl'; // Stel standaard Nederlands in
     }
-    _currentUser = FirebaseAuth.instance.currentUser; // Haal huidige gebruiker op
+    _currentUser =
+        FirebaseAuth.instance.currentUser; // Haal huidige gebruiker op
     _displayName = _currentUser?.displayName; // Stel weergavenaam in
     _email = _currentUser?.email; // Stel email in
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) { // Luister naar auth wijzigingen
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      // Luister naar auth wijzigingen
       if (!mounted) return; // Stop als widget unmounted is
-      setState(() { // Update state
+      setState(() {
+        // Update state
         _currentUser = user; // Werk huidige gebruiker bij
         _displayName = user?.displayName; // Werk weergavenaam bij
         _email = user?.email; // Werk email bij
       });
 
-      if (user != null) { // Als gebruiker ingelogd is
+      if (user != null) {
+        // Als gebruiker ingelogd is
         _subscribeCustomerQuestions(user.uid); // Subscribe op klantvragen
-        _fetchUnreadCustomerReplies().then((v) { // Haal ongelezen antwoorden op
-          if (mounted) setState(() => _cachedUnreadCustomerReplies = v); // Update cache
+        _fetchUnreadCustomerReplies().then((v) {
+          // Haal ongelezen antwoorden op
+          if (mounted)
+            setState(() => _cachedUnreadCustomerReplies = v); // Update cache
         });
 
         // Initialiseer _notificationsEnabled op basis van of we een token hebben in firestore
-        FirebaseFirestore.instance.collection('users').doc(user.uid).get().then( // Haal gebruiker document op
-          (doc) { // Bij successful document ophalen
-            if (mounted && doc.exists) { // Check of document bestaat en widget nog gemount is
+        FirebaseFirestore.instance.collection('users').doc(user.uid).get().then(
+          // Haal gebruiker document op
+          (doc) {
+            // Bij successful document ophalen
+            if (mounted && doc.exists) {
+              // Check of document bestaat en widget nog gemount is
               final data = doc.data() ?? {}; // Haal document data op
-              setState(() { // Update state
-                _notificationsEnabled = data.containsKey('fcmToken') && (data['fcmToken']?.toString().isNotEmpty ?? false); // Controleer of FCM token aanwezig is
+              setState(() {
+                // Update state
+                _notificationsEnabled =
+                    data.containsKey('fcmToken') &&
+                    (data['fcmToken']?.toString().isNotEmpty ??
+                        false); // Controleer of FCM token aanwezig is
               });
             }
           },
         );
-      } else { // Als gebruiker uitgelogd is
+      } else {
+        // Als gebruiker uitgelogd is
         _customerQuestionsSub?.cancel(); // Zet klantvragen subscription uit
         _customerQuestionsSub = null; // Stel op null
-        if (mounted) setState(() => _cachedUnreadCustomerReplies = 0); // Reset ongelezen count
+        if (mounted)
+          setState(
+            () => _cachedUnreadCustomerReplies = 0,
+          ); // Reset ongelezen count
       }
     });
 
-    // Load saved language preference for display
+    // Laad opgeslagen taalvoorkeur voor weergave
     SharedPreferences.getInstance() // Haal shared preferences op
-        .then((prefs) { // Bij success
-          final lc = prefs.getString('app_locale') ?? _languageCode; // Haal opgeslagen taal op of gebruik standaard
-          if (mounted) setState(() => _languageCode = lc); // Update state met taal
+        .then((prefs) {
+          // Bij success
+          final lc =
+              prefs.getString('app_locale') ??
+              _languageCode; // Haal opgeslagen taal op of gebruik standaard
+          if (mounted)
+            setState(() => _languageCode = lc); // Update state met taal
         })
-        .catchError((e) { // Bij fout
+        .catchError((e) {
+          // Bij fout
           debugPrint('Failed to load saved language: $e'); // Print fout
         });
   }
 
   @override
-  void dispose() { // Dispose methode
+  void dispose() {
+    // Dispose methode
     _authSub?.cancel(); // Zet auth subscription uit
     _customerQuestionsSub?.cancel(); // Zet klantvragen subscription uit
     super.dispose(); // Roep parent dispose aan
   }
 
   @override
-  Widget build(BuildContext context) { // Build methode
-    final isDark = MediaQuery.of(context).platformBrightness == Brightness.dark; // Check of dark mode actief is
-    final textColor = isDark ? Colors.white : const Color(0xFF1A1C1E); // Stel tekstkleur in op basis van mode
-    final cardColor = isDark ? const Color(0xFF1C282E) : Colors.white; // Stel kaartkleur in op basis van mode
+  Widget build(BuildContext context) {
+    // Build methode
+    final isDark =
+        MediaQuery.of(context).platformBrightness ==
+        Brightness.dark; // Check of dark mode actief is
+    final textColor = isDark
+        ? Colors.white
+        : const Color(0xFF1A1C1E); // Stel tekstkleur in op basis van mode
+    final cardColor = isDark
+        ? const Color(0xFF1C282E)
+        : Colors.white; // Stel kaartkleur in op basis van mode
 
-    return AppBackground( // Wrap in app background
-      child: Scaffold( // Maak scaffold aan
+    return AppBackground(
+      // Wrap in app background
+      child: Scaffold(
+        // Maak scaffold aan
         backgroundColor: Colors.transparent, // Stel transparante achtergrond in
-        appBar: PreferredSize( // Definieer app bar
+        appBar: PreferredSize(
+          // Definieer app bar
           preferredSize: const Size.fromHeight(56), // Stel hoogte in
-          child: AppTopBar( // Maak custom top bar
-            title: L10n.of(context)?.settingsTitle ?? 'Instellingen', // Stel titel in
-            backgroundColor: Colors.transparent, // Stel transparante achtergrond in
+          child: AppTopBar(
+            // Maak custom top bar
+            title:
+                L10n.of(context)?.settingsTitle ??
+                'Instellingen', // Stel titel in
+            backgroundColor:
+                Colors.transparent, // Stel transparante achtergrond in
           ),
         ),
-        body: ListView( // Maak scrollbare list
+        body: ListView(
+          // Maak scrollbare list
           padding: const EdgeInsets.all(16.0), // Stel padding in
-          children: [ // Begin child lijst
-            _buildSectionLabel( // Maak sectie label
-              L10n.of(context)?.myDashboard ?? 'Mijn Dashboard', // Stel label tekst in
+          children: [
+            // Begin child lijst
+            _buildSectionLabel(
+              // Maak sectie label
+              L10n.of(context)?.myDashboard ??
+                  'Mijn Dashboard', // Stel label tekst in
             ),
             _buildAccountCard(cardColor, textColor), // Bouw account kaart
 
             const SizedBox(height: 24), // Voeg spacer toe
 
-            _buildSectionLabel(L10n.of(context)?.preferences ?? 'Voorkeuren'), // Maak voorkeur label
-            _buildProfessionalCard( // Bouw voorkeur kaart
+            _buildSectionLabel(
+              L10n.of(context)?.preferences ?? 'Voorkeuren',
+            ), // Maak voorkeur label
+            _buildProfessionalCard(
+              // Bouw voorkeur kaart
               cardColor,
-              child: Column( // Maak kolom voor inhoud
-                children: [ // Begin child lijst
-                  SwitchListTile.adaptive( // Maak adaptive switch
-                    secondary: Icon(Icons.notifications_none, color: movieBlue), // Voeg icon toe
-                    title: Text(L10n.of(context)?.notifications ?? 'Meldingen'), // Voeg titel toe
+              child: Column(
+                // Maak kolom voor inhoud
+                children: [
+                  // Begin child lijst
+                  SwitchListTile.adaptive(
+                    // Maak adaptive switch
+                    secondary: Icon(
+                      Icons.notifications_none,
+                      color: movieBlue,
+                    ), // Voeg icon toe
+                    title: Text(
+                      L10n.of(context)?.notifications ?? 'Meldingen',
+                    ), // Voeg titel toe
                     value: _notificationsEnabled, // Stel switch waarde in
                     activeColor: goldAccent, // Stel actieve kleur in
-                    onChanged: (val) async { // Bij switch wijziging
-                      if (val == true) { // Als ingeschakeld
-                        final granted = await requestNotificationPermission(); // Vraag permissie aan
+                    onChanged: (val) async {
+                      // Bij switch wijziging
+                      if (val == true) {
+                        // Als ingeschakeld
+                        final granted =
+                            await requestNotificationPermission(); // Vraag permissie aan
                         if (!mounted) return; // Stop als unmounted
 
-                        final ok = await registerFcmTokenForUser( // Registreer FCM token
+                        final ok = await registerFcmTokenForUser(
+                          // Registreer FCM token
                           FirebaseAuth.instance.currentUser,
                         );
 
                         if (!mounted) return; // Stop als unmounted
-                        setState(() => _notificationsEnabled = true); // Update state
+                        setState(
+                          () => _notificationsEnabled = true,
+                        ); // Update state
 
-                        if (granted && ok) { // Als beide succesvol
-                          ScaffoldMessenger.of(context).showSnackBar( // Toon succesmelding
+                        if (granted && ok) {
+                          // Als beide succesvol
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            // Toon succesmelding
                             SnackBar(
                               content: Text(
-                                L10n.of(context)?.notifications_enabled ?? 'Meldingen ingeschakeld',
+                                L10n.of(context)?.notifications_enabled ??
+                                    'Meldingen ingeschakeld',
                               ),
                             ),
                           );
-                        } else if (!granted) { // Als permissie geweigerd
-                          ScaffoldMessenger.of(context).showSnackBar( // Toon permissie melding
+                        } else if (!granted) {
+                          // Als permissie geweigerd
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            // Toon permissie melding
                             SnackBar(
                               content: Text(
-                                L10n.of(context)?.notifications_check_system ?? 'Controleer de Systeem Instellingen om meldingen toe te laten.',
+                                L10n.of(context)?.notifications_check_system ??
+                                    'Controleer de Systeem Instellingen om meldingen toe te laten.',
                               ),
                               duration: const Duration(seconds: 4),
                             ),
                           );
-                        } else { // Als registratie mislukt
-                          ScaffoldMessenger.of(context).showSnackBar( // Toon foutmelding
+                        } else {
+                          // Als registratie mislukt
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            // Toon foutmelding
                             SnackBar(
                               content: Text(
-                                L10n.of(context,)?.notifications_registration_failed ?? 'Aanmelden voor notificaties mislukt.',
+                                L10n.of(
+                                      context,
+                                    )?.notifications_registration_failed ??
+                                    'Aanmelden voor notificaties mislukt.',
                               ),
                             ),
                           );
-                          setState(() => _notificationsEnabled = false); // Update state
+                          setState(
+                            () => _notificationsEnabled = false,
+                          ); // Update state
                         }
-                      } else { // Als uitgeschakeld
-                        await unregisterFcmTokenForUser( // Unregister FCM token
+                      } else {
+                        // Als uitgeschakeld
+                        await unregisterFcmTokenForUser(
+                          // Unregister FCM token
                           FirebaseAuth.instance.currentUser,
                         );
                         if (!mounted) return; // Stop als unmounted
-                        setState(() => _notificationsEnabled = false); // Update state
+                        setState(
+                          () => _notificationsEnabled = false,
+                        ); // Update state
                       }
                     },
                   ),
                   _buildDivider(isDark), // Voeg scheidslijn toe
-                  _buildSimpleTile( // Bouw taal tile
+                  _buildSimpleTile(
+                    // Bouw taal tile
                     Icons.language,
                     L10n.of(context)?.language ?? 'Taal',
                     _languageLabel(_languageCode, context), // Toon huidige taal
                     textColor,
-                    () async { // Bij tap
-                      final prefs = await SharedPreferences.getInstance(); // Haal preferences op
-                      final current = prefs.getString('app_locale') ?? _languageCode; // Haal huidige taal op
+                    () async {
+                      // Bij tap
+                      final prefs =
+                          await SharedPreferences.getInstance(); // Haal preferences op
+                      final current =
+                          prefs.getString('app_locale') ??
+                          _languageCode; // Haal huidige taal op
 
-                      final langOptions = [ // Definieer taalopties
+                      final langOptions = [
+                        // Definieer taalopties
                         {
                           'code': 'nl',
                           'label': L10n.of(context)?.dutch ?? 'Nederlands',
@@ -219,30 +319,41 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                         },
                       ];
 
-                      final choice = await showDialog<String>( // Toon taal dialog
+                      final choice = await showDialog<String>(
+                        // Toon taal dialog
                         context: context,
-                        builder: (ctx) => AlertDialog( // Maak alert dialog
+                        builder: (ctx) => AlertDialog(
+                          // Maak alert dialog
                           backgroundColor: cardColor,
-                          title: Text( // Voeg titel toe
+                          title: Text(
+                            // Voeg titel toe
                             L10n.of(context)?.language ?? 'Taal',
                             style: TextStyle(color: textColor),
                           ),
-                          content: Column( // Maak kolom voor opties
+                          content: Column(
+                            // Maak kolom voor opties
                             mainAxisSize: MainAxisSize.min,
-                            children: langOptions.map((opt) { // Map taalopties naar RadioListTiles
-                              return RadioListTile<String>( // Maak radio button
+                            children: langOptions.map((opt) {
+                              // Map taalopties naar RadioListTiles
+                              return RadioListTile<String>(
+                                // Maak radio button
                                 value: opt['code']!,
                                 groupValue: current,
-                                title: Text( // Toon taal naam
+                                title: Text(
+                                  // Toon taal naam
                                   opt['label']!,
                                   style: TextStyle(color: textColor),
                                 ),
-                                onChanged: (v) => Navigator.of(ctx).pop(v), // Return gekozen taal
+                                onChanged: (v) => Navigator.of(
+                                  ctx,
+                                ).pop(v), // Return gekozen taal
                               );
                             }).toList(),
                           ),
-                          actions: [ // Voeg actions toe
-                            TextButton( // Maak close knop
+                          actions: [
+                            // Voeg actions toe
+                            TextButton(
+                              // Maak close knop
                               onPressed: () => Navigator.of(ctx).pop(),
                               child: Text(
                                 L10n.of(context)?.close ?? 'Close',
@@ -253,11 +364,17 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                         ),
                       );
 
-                      if (choice != null) { // Als taal gekozen
-                        await prefs.setString('app_locale', choice); // Sla taal op
+                      if (choice != null) {
+                        // Als taal gekozen
+                        await prefs.setString(
+                          'app_locale',
+                          choice,
+                        ); // Sla taal op
                         if (!mounted) return; // Stop als unmounted
                         setState(() => _languageCode = choice); // Update state
-                        localeNotifier.value = Locale(choice); // Update global notifier
+                        localeNotifier.value = Locale(
+                          choice,
+                        ); // Update global notifier
                       }
                     },
                   ),
@@ -267,34 +384,48 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
 
             const SizedBox(height: 24), // Voeg spacer toe
 
-            _buildSectionLabel(L10n.of(context)?.support ?? 'Support'), // Maak support label
-            _buildProfessionalCard( // Bouw support kaart
+            _buildSectionLabel(
+              L10n.of(context)?.support ?? 'Support',
+            ), // Maak support label
+            _buildProfessionalCard(
+              // Bouw support kaart
               cardColor,
-              child: Column( // Maak kolom
-                children: [ // Begin child lijst
-                  ListTile( // Maak klantenservice tile
-                    leading: Icon( // Voeg icon toe
+              child: Column(
+                // Maak kolom
+                children: [
+                  // Begin child lijst
+                  ListTile(
+                    // Maak klantenservice tile
+                    leading: Icon(
+                      // Voeg icon toe
                       Icons.help_outline,
                       color: movieBlue.withOpacity(0.7),
                     ),
-                    title: Text( // Voeg titel toe
-                      L10n.of(context)?.customerService_title ?? 'Klantenservice',
+                    title: Text(
+                      // Voeg titel toe
+                      L10n.of(context)?.customerService_title ??
+                          'Klantenservice',
                       style: TextStyle(
                         color: textColor,
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    trailing: Row( // Voeg trailing content toe
+                    trailing: Row(
+                      // Voeg trailing content toe
                       mainAxisSize: MainAxisSize.min,
-                      children: [ // Begin child lijst
-                        if (_cachedUnreadCustomerReplies > 0) // Als er ongelezen berichten zijn
-                          Container( // Maak badge container
+                      children: [
+                        // Begin child lijst
+                        if (_cachedUnreadCustomerReplies >
+                            0) // Als er ongelezen berichten zijn
+                          Container(
+                            // Maak badge container
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
                               vertical: 2,
                             ),
-                            decoration: BoxDecoration( // Maak ronde rode badge
+                            decoration: BoxDecoration(
+                              // Maak ronde rode badge
                               color: Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -302,9 +433,13 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                               minWidth: 20,
                               minHeight: 20,
                             ),
-                            child: Center( // Centreer content
-                              child: Text( // Toon nummer
-                                _cachedUnreadCustomerReplies > 99 ? '99+' : '$_cachedUnreadCustomerReplies',
+                            child: Center(
+                              // Centreer content
+                              child: Text(
+                                // Toon nummer
+                                _cachedUnreadCustomerReplies > 99
+                                    ? '99+'
+                                    : '$_cachedUnreadCustomerReplies',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -314,15 +449,18 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                             ),
                           ),
                         const SizedBox(width: 8), // Voeg kleine spacer toe
-                        const Icon( // Voeg chevron icon toe
+                        const Icon(
+                          // Voeg chevron icon toe
                           Icons.chevron_right,
                           size: 18,
                           color: Colors.grey,
                         ),
                       ],
                     ),
-                    onTap: () { // Bij tile tap
-                      Navigator.push( // Navigate naar klantenservice
+                    onTap: () {
+                      // Bij tile tap
+                      Navigator.push(
+                        // Navigate naar klantenservice
                         context,
                         MaterialPageRoute(
                           builder: (context) => const CustomerServiceScreen(),
@@ -331,13 +469,16 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                     },
                   ),
                   _buildDivider(isDark), // Voeg scheidslijn toe
-                  _buildSimpleTile( // Bouw over tile
+                  _buildSimpleTile(
+                    // Bouw over tile
                     Icons.info_outline,
                     L10n.of(context)?.aboutTitle ?? 'Over CineTrackr',
                     '',
                     textColor,
-                    () { // Bij tile tap
-                      Navigator.of(context).push( // Navigate naar about scherm
+                    () {
+                      // Bij tile tap
+                      Navigator.of(context).push(
+                        // Navigate naar about scherm
                         MaterialPageRoute(
                           builder: (_) => const AboutCineTrackrScreen(),
                         ),
@@ -345,13 +486,16 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                     },
                   ),
                   _buildDivider(isDark), // Voeg scheidslijn toe
-                  _buildSimpleTile( // Bouw disclaimer tile
+                  _buildSimpleTile(
+                    // Bouw disclaimer tile
                     Icons.description_outlined,
                     L10n.of(context)?.disclaimerTitle ?? 'Disclaimer',
                     '',
                     textColor,
-                    () { // Bij tile tap
-                      Navigator.of(context).push( // Navigate naar disclaimer scherm
+                    () {
+                      // Bij tile tap
+                      Navigator.of(context).push(
+                        // Navigate naar disclaimer scherm
                         MaterialPageRoute(
                           builder: (_) => const DisclaimerScreen(),
                           fullscreenDialog: true,
@@ -360,12 +504,14 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                     },
                   ),
                   _buildDivider(isDark), // Voeg scheidslijn toe
-                  _buildSimpleTile( // Bouw privacy tile
+                  _buildSimpleTile(
+                    // Bouw privacy tile
                     Icons.lock_outline,
                     L10n.of(context)?.privacyPolicy ?? 'Privacybeleid',
                     '',
                     textColor,
-                    () { // Bij tile tap
+                    () {
+                      // Bij tile tap
                       _openPrivacyPolicy(); // Open privacy beleid
                     },
                   ),
@@ -374,19 +520,26 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
             ),
 
             const SizedBox(height: 40), // Voeg grote spacer toe
-            Center( // Centreer logout/login knop
-              child: _currentUser != null // Als gebruiker ingelogd is
-                  ? TextButton( // Maak logout knop
-                      onPressed: () async { // Bij knop tap
+            Center(
+              // Centreer logout/login knop
+              child:
+                  _currentUser !=
+                      null // Als gebruiker ingelogd is
+                  ? TextButton(
+                      // Maak logout knop
+                      onPressed: () async {
+                        // Bij knop tap
                         await FirebaseAuth.instance.signOut(); // Log uit
                         if (!mounted) return; // Stop als unmounted
-                        Navigator.of(context).pushReplacement( // Ga naar main navigation
+                        Navigator.of(context).pushReplacement(
+                          // Ga naar main navigation
                           MaterialPageRoute(
                             builder: (_) => const MainNavigation(),
                           ),
                         );
                       },
-                      child: Text( // Voeg tekst toe
+                      child: Text(
+                        // Voeg tekst toe
                         (L10n.of(context)?.logout ?? 'Uitloggen').toUpperCase(),
                         style: const TextStyle(
                           color: Colors.redAccent,
@@ -395,15 +548,19 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                         ),
                       ),
                     )
-                  : TextButton( // Maak login knop
-                      onPressed: () { // Bij knop tap
-                        Navigator.of(context).push( // Navigate naar login
+                  : TextButton(
+                      // Maak login knop
+                      onPressed: () {
+                        // Bij knop tap
+                        Navigator.of(context).push(
+                          // Navigate naar login
                           MaterialPageRoute(
                             builder: (_) => const LoginScreen(),
                           ),
                         );
                       },
-                      child: Text( // Voeg tekst toe
+                      child: Text(
+                        // Voeg tekst toe
                         (L10n.of(context)?.loginIn ?? 'Inloggen').toUpperCase(),
                         style: const TextStyle(
                           color: Colors.blueAccent,
@@ -415,8 +572,10 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
             ),
 
             const SizedBox(height: 10), // Voeg kleine spacer toe
-            Center( // Centreer versie tekst
-              child: Text( // Toon versie nummer
+            Center(
+              // Centreer versie tekst
+              child: Text(
+                // Toon versie nummer
                 'v1.0.4',
                 style: TextStyle(
                   color: textColor.withValues(alpha: 0.3),
@@ -669,7 +828,7 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
                   // Merge seenEpisodes map in seenMap als het een Map is
                   if (seenRaw is Map)
                     seenRaw.forEach((k, v) => seenMap[k.toString()] = v);
-                  // Merge flattened seenEpisodes keys in seenMap
+                  // Voeg geflatteerde seenEpisodes-keys samen in seenMap
                   for (final k in data.keys) {
                     if (k.startsWith('seenEpisodes.')) {
                       final imdb = k.split('.').last;
@@ -1021,7 +1180,7 @@ class _SettingsScreenState extends State<SettingsScreen> { // State class voor S
               );
             }
           },
-          // Handle stream errors
+          // Handel streamfouten af
           onError: (e) {
             // Print stream fout naar console
             debugPrint('customerquestions listen error (settings): $e');

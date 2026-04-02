@@ -44,7 +44,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         // voeg epKey toe aan array van geziene episodes voor dit id
       } else {
         if (epKey == 'movie') {
-          // remove whole field when unchecking a movie 'Gezien' marker
+          // verwijder heel veld bij het uitvinken van een film 'Gezien'-markering
           await docRef.set({
             'seenEpisodes.$imdbId': FieldValue.delete(),
           }, SetOptions(merge: true));
@@ -135,7 +135,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   }
   // formatteert streaming type (subscription/buy/rent) met prijs indien beschikbaar
 
-  // Build a ListTile quickly from stored metadata to avoid extra API calls.
+  // Bouw snel een ListTile uit opgeslagen metadata om extra API-aanroepen te vermijden.
   String _truncate(String? s, [int max = 120]) {
     if (s == null) return '';
     final clean = s.replaceAll('\n', ' ').trim();
@@ -148,9 +148,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     try {
       dynamic val;
       if (ep is Map) {
-        if (ep['title'] != null) val = ep['title'];
-        else if (ep['name'] != null) val = ep['name'];
-        else if (ep['itemType'] != null) val = ep['itemType'];
+        if (ep['title'] != null)
+          val = ep['title'];
+        else if (ep['name'] != null)
+          val = ep['name'];
+        else if (ep['itemType'] != null)
+          val = ep['itemType'];
       } else {
         val = ep?.toString();
       }
@@ -164,7 +167,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       }
       if (val != null) {
         final s = val.toString();
-        if (!s.toLowerCase().contains('closure') && s.trim().isNotEmpty) return s;
+        if (!s.toLowerCase().contains('closure') && s.trim().isNotEmpty)
+          return s;
       }
     } catch (_) {}
     return AppLocalizations.of(ctx)!.episode;
@@ -237,7 +241,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   }
   // meta-listtile voor opgeslagen items met actieknoppen en navigatie
 
-  // Build a ListTile using MovieRepository when metadata is not available.
+  // Bouw een ListTile met MovieRepository wanneer metadata niet beschikbaar is.
   Widget _futureTile(
     String id,
     Future movieFuture,
@@ -269,7 +273,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                 rapid['type'] != null &&
                 rapid['type'].toString().toLowerCase().contains('series'))
               isSeries = true;
-            // try to get a short overview if available
+            // probeer een korte samenvatting te krijgen indien beschikbaar
             final overviewRaw = rapid?['overview'] ?? omdb?['Plot'];
             subtitle = _truncate(overviewRaw?.toString());
           } catch (_) {}
@@ -278,7 +282,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         if (showProgress) {
           final val = seenMap[id];
           if (val is List) seenCount = val.length;
-          // if we already have an overview subtitle, append progress else replace
+          // als er al een overzicht-subtitel is, voeg voortgang toe; anders vervang
           subtitle =
               subtitle.isNotEmpty &&
                   subtitle != AppLocalizations.of(ctx)!.open_details
@@ -312,7 +316,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   label: Text(AppLocalizations.of(ctx)!.seen_count(seenCount)),
                   visualDensity: VisualDensity.compact,
                 ),
-                  // toon voortgangsaanduiding indien gewenst
+              // toon voortgangsaanduiding indien gewenst
               IconButton(
                 icon: const Icon(Icons.bookmark_remove_outlined),
                 tooltip: AppLocalizations.of(
@@ -347,7 +351,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       await docRef.set({
         'watchlist': FieldValue.arrayRemove([imdbId]),
         'watchlist_meta.$imdbId': FieldValue.delete(),
-        // also remove any seenEpisodes entries for this id so it disappears from 'watching'
+        // verwijder ook eventuele seenEpisodes-vermeldingen voor dit id zodat het uit 'aan het kijken' verdwijnt
         'seenEpisodes.$imdbId': FieldValue.delete(),
       }, SetOptions(merge: true));
       // verwijder item uit watchlist en bijbehorende metadata uit Firestore
@@ -396,7 +400,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final titleCtl = TextEditingController();
     final seasonsCtl = TextEditingController();
     final List<TextEditingController> episodeCtrls = [];
-    // schedule UI state (weekday selection + until-date)
+    // UI-state voor planning (selectie weekdagen + tot-datum)
     final Set<int> _selectedDays = <int>{};
     DateTime? _untilDate;
     bool _useDates = false;
@@ -409,146 +413,194 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
-          child: StatefulBuilder(builder: (dctx, setState) {
-            int seasonsCount = int.tryParse(seasonsCtl.text.trim()) ?? 0;
-            if (seasonsCount < 0) seasonsCount = 0;
-            while (episodeCtrls.length < seasonsCount) {
-              episodeCtrls.add(TextEditingController());
-            }
-            while (episodeCtrls.length > seasonsCount) {
-              episodeCtrls.removeLast();
-            }
+          child: StatefulBuilder(
+            builder: (dctx, setState) {
+              int seasonsCount = int.tryParse(seasonsCtl.text.trim()) ?? 0;
+              if (seasonsCount < 0) seasonsCount = 0;
+              while (episodeCtrls.length < seasonsCount) {
+                episodeCtrls.add(TextEditingController());
+              }
+              while (episodeCtrls.length > seasonsCount) {
+                episodeCtrls.removeLast();
+              }
 
-
-        // gebruiker heeft bevestigd; verzamel input en maak custom series aan
-            return SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(AppLocalizations.of(ctx)!.add_series_title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
-                        IconButton(onPressed: () => Navigator.of(ctx).pop(false), icon: const Icon(Icons.close)),
-                      ],
+              // gebruiker heeft bevestigd; verzamel input en maak custom series aan
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 12.0,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              AppLocalizations.of(ctx)!.add_series_title,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      children: [
-                        TextField(
-                          controller: titleCtl,
-                          decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.title_label),
-                        ),
-                        const SizedBox(height: 8),
-                        // Show seasons/episodes inputs only when not using recurring date schedule
-                        if (!_useDates) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        children: [
                           TextField(
-                            controller: seasonsCtl,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.number_of_seasons),
-                            onChanged: (_) => setState(() {}),
+                            controller: titleCtl,
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(ctx)!.title_label,
+                            ),
                           ),
                           const SizedBox(height: 8),
-                        // Option to use weekday schedule with an end date
-                        ],
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(AppLocalizations.of(ctx)!.add_series_use_dates ?? 'Use recurring days'),
-                          value: _useDates,
-                          onChanged: (v) => setState(() => _useDates = v),
-                        ),
-                        if (_useDates) ...[
-                          const SizedBox(height: 8),
-                          // Weekday circles
-                          Wrap(
-                            spacing: 8,
-                            children: List<Widget>.generate(7, (i) {
-                              // Dutch short names: Ma, Di, Wo, Do, Vr, Za, Zo
-                              const labels = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-                              final selected = _selectedDays.contains(i);
-                              return GestureDetector(
-                                onTap: () => setState(() {
-                                  if (selected)
-                                    _selectedDays.remove(i);
-                                  else
-                                    _selectedDays.add(i);
-                                }),
-                                child: CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: selected
-                                      ? Theme.of(ctx).colorScheme.primary
-                                      : Colors.grey.shade300,
-                                  child: Text(
-                                    labels[i],
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: selected ? Colors.white : Colors.black,
+                          // Toon seizoenen/afleveringen invoervelden alleen wanneer geen terugkerende datumplanning gebruikt wordt
+                          if (!_useDates) ...[
+                            TextField(
+                              controller: seasonsCtl,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(
+                                  ctx,
+                                )!.number_of_seasons,
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                            const SizedBox(height: 8),
+                            // Optie om een weekdag-schema met een einddatum te gebruiken
+                          ],
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              AppLocalizations.of(ctx)!.add_series_use_dates ??
+                                  'Use recurring days',
+                            ),
+                            value: _useDates,
+                            onChanged: (v) => setState(() => _useDates = v),
+                          ),
+                          if (_useDates) ...[
+                            const SizedBox(height: 8),
+                            // Weekday circles
+                            Wrap(
+                              spacing: 8,
+                              children: List<Widget>.generate(7, (i) {
+                                // Dutch short names: Ma, Di, Wo, Do, Vr, Za, Zo
+                                const labels = [
+                                  'Ma',
+                                  'Di',
+                                  'Wo',
+                                  'Do',
+                                  'Vr',
+                                  'Za',
+                                  'Zo',
+                                ];
+                                final selected = _selectedDays.contains(i);
+                                return GestureDetector(
+                                  onTap: () => setState(() {
+                                    if (selected)
+                                      _selectedDays.remove(i);
+                                    else
+                                      _selectedDays.add(i);
+                                  }),
+                                  child: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: selected
+                                        ? Theme.of(ctx).colorScheme.primary
+                                        : Colors.grey.shade300,
+                                    child: Text(
+                                      labels[i],
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: selected
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
+                                  ),
+                                );
+                              }),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _untilDate == null
+                                        ? AppLocalizations.of(
+                                                ctx,
+                                              )!.add_series_until_date ??
+                                              'Until date'
+                                        : '${AppLocalizations.of(ctx)!.until_label ?? 'Until'} ${_untilDate!.toLocal().toString().split(' ')[0]}',
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    final now = DateTime.now();
+                                    final picked = await showDatePicker(
+                                      context: dctx,
+                                      initialDate: _untilDate ?? now,
+                                      firstDate: now,
+                                      lastDate: DateTime(now.year + 10),
+                                    );
+                                    if (picked != null)
+                                      setState(() => _untilDate = picked);
+                                  },
+                                  child: Text(
+                                    AppLocalizations.of(ctx)!.select ??
+                                        'Select',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (!_useDates && seasonsCount > 0)
+                            ...List<Widget>.generate(seasonsCount, (si) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: TextField(
+                                  controller: episodeCtrls[si],
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(
+                                      ctx,
+                                    )!.episodes_in_season(si + 1),
                                   ),
                                 ),
                               );
                             }),
-                          ),
                           const SizedBox(height: 12),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  _untilDate == null
-                                      ? AppLocalizations.of(ctx)!.add_series_until_date ?? 'Until date'
-                                      : '${AppLocalizations.of(ctx)!.until_label ?? 'Until'} ${_untilDate!.toLocal().toString().split(' ')[0]}',
-                                ),
-                              ),
                               TextButton(
-                                onPressed: () async {
-                                  final now = DateTime.now();
-                                  final picked = await showDatePicker(
-                                    context: dctx,
-                                    initialDate: _untilDate ?? now,
-                                    firstDate: now,
-                                    lastDate: DateTime(now.year + 10),
-                                  );
-                                  if (picked != null) setState(() => _untilDate = picked);
-                                },
-                                child: Text(AppLocalizations.of(ctx)!.select ?? 'Select'),
+                                onPressed: () => Navigator.of(ctx).pop(false),
+                                child: Text(AppLocalizations.of(ctx)!.cancel),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(ctx).pop(true),
+                                child: Text(AppLocalizations.of(ctx)!.save),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 12),
                         ],
-                        if (!_useDates && seasonsCount > 0)
-                          ...List<Widget>.generate(seasonsCount, (si) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: TextField(
-                                controller: episodeCtrls[si],
-                                keyboardType: TextInputType.number,
-                                decoration: InputDecoration(labelText: AppLocalizations.of(ctx)!.episodes_in_season(si + 1)),
-                              ),
-                            );
-                          }),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(AppLocalizations.of(ctx)!.cancel)),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              child: Text(AppLocalizations.of(ctx)!.save),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -559,7 +611,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     final seasonsCount = int.tryParse(seasonsCtl.text.trim()) ?? 0;
 
     if (title.isEmpty || (!_useDates && seasonsCount <= 0)) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.invalid_series_input)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.invalid_series_input),
+        ),
+      );
       return;
     }
 
@@ -567,12 +623,18 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     List<Map<String, dynamic>> seasons;
 
     if (_useDates) {
-      // When using recurring days, generate dated episodes for the selected weekdays
+      // Bij gebruik van terugkerende dagen: genereer gedateerde afleveringen voor de geselecteerde weekdagen
       seasons = <Map<String, dynamic>>[];
       if (_selectedDays.isNotEmpty && _untilDate != null) {
         final start = DateTime.now();
-        final end = DateTime(_untilDate!.year, _untilDate!.month, _untilDate!.day);
-        final Set<int> weekdays = _selectedDays.map((i) => i + 1).toSet(); // DateTime.weekday: 1=Mon..7=Sun
+        final end = DateTime(
+          _untilDate!.year,
+          _untilDate!.month,
+          _untilDate!.day,
+        );
+        final Set<int> weekdays = _selectedDays
+            .map((i) => i + 1)
+            .toSet(); // DateTime.weekday: 1=Mon..7=Sun
         final episodes = <Map<String, dynamic>>[];
         DateTime cur = DateTime(start.year, start.month, start.day);
         while (!cur.isAfter(end)) {
@@ -593,7 +655,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             {
               'title': AppLocalizations.of(context)!.season_label(1),
               'episodes': episodes,
-            }
+            },
           ];
         }
       }
@@ -606,13 +668,21 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
       seasons = List<Map<String, dynamic>>.generate(seasonsCount, (si) {
         final epiCount = epCounts[si];
-        final episodes = List<Map<String, dynamic>>.generate(epiCount, (ei) => {'title': '${AppLocalizations.of(context)!.episode} ${ei + 1}'});
-        return {'title': AppLocalizations.of(context)!.season_label(si + 1), 'episodes': episodes};
+        final episodes = List<Map<String, dynamic>>.generate(
+          epiCount,
+          (ei) => {
+            'title': '${AppLocalizations.of(context)!.episode} ${ei + 1}',
+          },
+        );
+        return {
+          'title': AppLocalizations.of(context)!.season_label(si + 1),
+          'episodes': episodes,
+        };
       });
     }
 
     final id = 'local_${DateTime.now().millisecondsSinceEpoch}';
-    // Build optional schedule metadata if user enabled date scheduling
+    // Bouw optionele schema-metadata als gebruiker datumplanning heeft ingeschakeld
     const _weekdayLabels = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
     Map<String, dynamic>? schedule;
     if (_useDates && _selectedDays.isNotEmpty) {
@@ -756,7 +826,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   ),
                 );
 
-              // gebruiker is ingelogd; luister naar Firestore gebruikersdocument
+                // gebruiker is ingelogd; luister naar Firestore gebruikersdocument
               }
 
               return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -794,7 +864,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   if (seenMapRaw is Map) {
                     seenMapRaw.forEach((k, v) => seenMap[k.toString()] = v);
                   }
-                  // merge flattened keys like 'seenEpisodes.tt1632701'
+                  // voeg geflatteerde keys zoals 'seenEpisodes.tt1632701' samen
                   for (final k in data.keys) {
                     if (k.startsWith('seenEpisodes.')) {
                       final imdb = k.split('.').last;
@@ -831,7 +901,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   }
 
                   final savedSeries = watchlist.where((id) {
-                    // Prefer explicit mediaType stored in watchlist_meta when available
+                    // Geef voorkeur aan expliciet 'mediaType' opgeslagen in 'watchlist_meta' wanneer beschikbaar
                     final meta = metaMap[id];
                     if (meta is Map && meta['mediaType'] != null) {
                       final mt = meta['mediaType'].toString().toLowerCase();
@@ -841,14 +911,14 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
                     final val = seenMap[id];
                     if (val is List) {
-                      // if the saved seen list explicitly contains 'movie', treat as film
+                      // als de opgeslagen seen-lijst expliciet 'movie' bevat, behandel als film
                       if (seenIndicatesMovie(val)) return false;
                       return true; // has seen entries (episodes) -> series
                     }
                     return false;
                   }).toList();
 
-                  // Sort savedSeries by IMDb id (e.g. tt1632701)
+                  // Sorteer opgeslagen series op IMDb-id (bijv. tt1632701)
                   savedSeries.sort(
                     (a, b) => a.toLowerCase().compareTo(b.toLowerCase()),
                   );
@@ -856,7 +926,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   // sorteer series op imdb id voor consistente weergave
 
                   final savedFilms = watchlist.where((id) {
-                    // Prefer explicit mediaType stored in watchlist_meta when available
+                    // Geef voorkeur aan expliciet 'mediaType' opgeslagen in 'watchlist_meta' wanneer beschikbaar
                     final meta = metaMap[id];
                     if (meta is Map && meta['mediaType'] != null) {
                       final mt = meta['mediaType'].toString().toLowerCase();
@@ -869,11 +939,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       if (seenIndicatesMovie(val)) return true;
                       return false;
                     }
-                    // no seen entries -> treat as film by default
+                    // geen 'seen' vermeldingen -> behandel standaard als film
                     return !seenMap.containsKey(id);
                   }).toList();
 
-                  // Sort savedFilms alphabetically by stored title (fallback to id)
+                  // Sorteer opgeslagen films alfabetisch op opgeslagen titel (val terug op id)
                   savedFilms.sort((a, b) {
                     final ta =
                         (metaMap[a] is Map && metaMap[a]!['title'] != null)
@@ -894,7 +964,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   for (final e in seenMap.entries) {
                     final val = e.value;
                     if (val is List) {
-                      // if list explicitly contains the marker 'movie', treat as film
+                      // als de lijst expliciet de marker 'movie' bevat, behandel als film
                       final hasMovieMarker = val.any(
                         (x) =>
                             x != null && x.toString().toLowerCase() == 'movie',
@@ -902,21 +972,23 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       if (hasMovieMarker) {
                         watchingFilms.add(e.key.toString());
                       } else if (val.isNotEmpty) {
-                        // non-empty list of episode keys -> series
+                        // niet-lege lijst van episode-keys -> series
                         watchingSeries.add(e.key.toString());
                       }
                     }
                   }
 
-                  // Also include explicit series from the user's watchlist metadata
+                  // Neem ook expliciete series op uit de watchlist-metadata van de gebruiker
                   for (final id in watchlist) {
                     final m = metaMap[id];
-                    if (m is Map && m['mediaType'] != null && m['mediaType'].toString().toLowerCase() == 'series') {
+                    if (m is Map &&
+                        m['mediaType'] != null &&
+                        m['mediaType'].toString().toLowerCase() == 'series') {
                       if (!watchingSeries.contains(id)) watchingSeries.add(id);
                     }
                   }
 
-                  // Sort watchingSeries by IMDb id (e.g. tt1632701)
+                  // Sorteer 'aan het kijken' series op IMDb-id (bijv. tt1632701)
                   watchingSeries.sort(
                     (a, b) => a.toLowerCase().compareTo(b.toLowerCase()),
                   );
@@ -995,9 +1067,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                 : <String>{};
 
                             final children = <Widget>[];
-
-                            // Prefer stored metadata seasons from Firestore (`watchlist_meta`) when available,
-                            // otherwise fall back to API `rapid['seasons']`.
+                            // probeer seizoenen/episodes uit metadata te halen, indien beschikbaar. Geef voorkeur aan watchlist_meta boven API data omdat gebruikers mogelijk custom series hebben toegevoegd of episode titels hebben aangepast.
                             final seasonsRaw =
                                 (meta is Map && meta['seasons'] != null)
                                 ? meta['seasons']
@@ -1081,13 +1151,16 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                       ) {
                                         final ei = entry.key;
                                         final ep = entry.value is Map
-                                          ? entry.value
-                                              as Map<String, dynamic>
-                                          : {'title': entry.value.toString()};
-                                        final epTitle = _getEpisodeTitle(ep, ctx);
+                                            ? entry.value
+                                                  as Map<String, dynamic>
+                                            : {'title': entry.value.toString()};
+                                        final epTitle = _getEpisodeTitle(
+                                          ep,
+                                          ctx,
+                                        );
                                         final epKey = 's${si}_e${ei}';
 
-                                        // gather episode streaming options (nl preferred)
+                                        // verzamel streamingopties voor aflevering (nl heeft voorkeur)
                                         final epStreamRaw =
                                             ep['streamingOptions']?['nl'] ??
                                             ep['streamingOptions'];
@@ -1098,7 +1171,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                         .toList()
                                                   : <dynamic>[]);
 
-                                        // Capture loop variables into locals to avoid closure issues
+                                        // Sla loopvariabelen lokaal op om closure-problemen te voorkomen
                                         final localId = id;
                                         final localSi = si;
                                         final localEi = ei;
@@ -1116,7 +1189,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                               // togglet gezien-status en vraagt optioneel bevestiging
                                               final newVal = val ?? false;
                                               if (newVal) {
-                                                // collect previous unseen episodes in this season
+                                                // verzamel voorgaande niet-geziene afleveringen in dit seizoen
                                                 final unseenPrev = <int>[];
                                                 for (
                                                   var p = 0;
@@ -1232,7 +1305,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                     Icons.play_arrow,
                                                   ),
                                                   onPressed: () {
-                                                    // dedupe per service+type
+                                                    // verwijder duplicaten per service+type
                                                     final Map<
                                                       String,
                                                       Map<String, dynamic>
@@ -1405,20 +1478,27 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                     AppLocalizations.of(ctx)!.label_series,
                                   ),
                                   children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                                          child: ElevatedButton.icon(
-                                            onPressed: () => _showAddSeriesDialog(),
-                                            icon: const Icon(Icons.add),
-                                            label: Text(AppLocalizations.of(ctx)!.add_series_button),
-                                          ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0,
+                                        horizontal: 4.0,
+                                      ),
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => _showAddSeriesDialog(),
+                                        icon: const Icon(Icons.add),
+                                        label: Text(
+                                          AppLocalizations.of(
+                                            ctx,
+                                          )!.add_series_button,
                                         ),
-                                        SizedBox(
-                                          height: 300,
-                                          child: buildWatchingSeries(
-                                            watchingSeries,
-                                          ),
-                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 300,
+                                      child: buildWatchingSeries(
+                                        watchingSeries,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 ExpansionTile(
@@ -1450,7 +1530,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                                                       ),
                                                   builder: (ctx, snapMovie) {
                                                     String title = id;
-                                                    // prefer stored metadata from Firestore
+                                                    // geef voorkeur aan opgeslagen metadata uit Firestore
                                                     final meta = metaMap[id];
                                                     if (meta is Map &&
                                                         meta['title'] != null) {

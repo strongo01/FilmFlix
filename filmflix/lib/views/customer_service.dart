@@ -27,7 +27,7 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
   String _query = '';
   final TextEditingController _searchController = TextEditingController();
 
-  // Fixed system prompt to prepend to every user question
+  // Vaste systeem-prompt die aan elke gebruikersvraag wordt toegevoegd
   final String _aiSystemPrompt =
       '''Je bent een gespecialiseerde entertainment-assistent voor een streamingapp.
 
@@ -75,7 +75,7 @@ ANTWOORDSTIJL:
 
 Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
 
-  // Rate limit / quota
+  // Rate limit / quotum
   static const int _maxAiPerDay = 5; // Maximaal 5 AI-vragen per dag
   static const int _aiCooldownSeconds =
       30; // 30 seconden wachttijd tussen AI-vragen
@@ -97,7 +97,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
   List<QueryDocumentSnapshot<Map<String, dynamic>>> _customerQuestions =
       []; // Lijst met alle klantvragen van de huidige gebruiker
   int _customerRepliesUnread = 0; // Aantal ongelezen antwoorden van admins
-  // Track whether the user opened an individual chat while on this screen.
+  // Houd bij of de gebruiker een individuele chat heeft geopend terwijl dit scherm actief is.
   bool _openedChat =
       false; // Geeft aan of de gebruiker een chatvenster heeft geopend
 
@@ -156,8 +156,8 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
     });
   }
 
-  // Optimistically move a question document to the top of the cached list
-  // so the UI reorders immediately when a chat is opened or a reply is sent.
+  // Verplaats een vraagdocument optimistisch naar boven in de cache-lijst
+  // zodat de UI direct opnieuw ordent wanneer een chat geopend wordt of een antwoord wordt verzonden.
   void _moveQuestionToTop(String docId) {
     // Verplaats een vraag naar de bovenkant van de lijst
     final idx = _customerQuestions.indexWhere(
@@ -195,15 +195,15 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                   data['userRead'] ==
                   true; // Controleer of vraag door gebruiker is gelezen
 
-              // If the document is marked unread for the user, count it.
+              // Als het document voor de gebruiker als ongelezen gemarkeerd is, tel het mee.
               if (!userRead) {
                 // Als vraag niet gelezen is
                 unread += 1; // Tel het als ongelezen
                 continue; // Ga naar volgende vraag
               }
 
-              // Otherwise, check adminReplies for individual seen state; if any admin reply
-              // has a seenBy list that does NOT include this user, count as unread.
+              // Anders, controleer adminReplies op individuele 'seen'-status; als een admin-antwoord
+              // een 'seenBy'-lijst heeft die DEZE gebruiker NIET bevat, tel het als ongelezen.
               for (final ar in adminReplies) {
                 // Loop door admin-antwoorden
                 if (ar is Map) {
@@ -234,7 +234,7 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
                     v['seconds'] != null &&
                     v['nanoseconds'] != null) {
                   // Als het een kaart-representatie van timestamp is
-                  // raw map representation
+                  // ruwe maprepresentatie
                   final s = v['seconds'] as int? ?? 0; // Haal seconden haalt op
                   return s * 1000; // Zet om naar milliseconden
                 }

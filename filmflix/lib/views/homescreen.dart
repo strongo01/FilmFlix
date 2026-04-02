@@ -11,7 +11,8 @@ import 'package:cinetrackr/views/search_screen.dart'; // Importeer zoekscherm
 import 'package:cinetrackr/views/settingscreen.dart'; // Importeer instellingenscherm
 import 'package:cinetrackr/views/watchlistscreen.dart'; // Importeer watchlistscherm
 import 'package:flutter/material.dart'; // Importeer Flutter Material Design
-import 'package:http/http.dart' as http; // Importeer HTTP-pakket voor API-verzoeken
+import 'package:http/http.dart'
+    as http; // Importeer HTTP-pakket voor API-verzoeken
 import 'package:firebase_auth/firebase_auth.dart'; // Importeer Firebase-authenticatie
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importeer Firestore-database
 
@@ -29,7 +30,8 @@ class FilmNowItem {
   final String? backdrop; // URL van filmachtergrond
   String? imdbId; // IMDB ID voor navigatie naar detail-scherm
 
-  FilmNowItem({ // Constructor voor FilmNowItem
+  FilmNowItem({
+    // Constructor voor FilmNowItem
     required this.tmdbId,
     required this.title,
     this.poster,
@@ -38,7 +40,8 @@ class FilmNowItem {
   });
 }
 
-class HomeScreen extends StatefulWidget { // Statefulwidget voor het homescherm
+class HomeScreen extends StatefulWidget {
+  // Statefulwidget voor het homescherm
   const HomeScreen({super.key});
 
   @override
@@ -46,29 +49,42 @@ class HomeScreen extends StatefulWidget { // Statefulwidget voor het homescherm
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final String baseApi = 'https://film-flix-olive.vercel.app/api/movies'; // API-URL voor filmgegevens
+  final String baseApi =
+      'https://film-flix-olive.vercel.app/api/movies'; // API-URL voor filmgegevens
   List<FilmNowItem> films = []; // Lijst met huidige films
   bool loadingFilms = true; // Laadstatus van films
   int currentIndex = 0; // Huidige geselecteerde filmindex
-  final PageController _pageController = PageController(viewportFraction: 0.85); // Controller voor filmcarrousel
+  final PageController _pageController = PageController(
+    viewportFraction: 0.85,
+  ); // Controller voor filmcarrousel
 
   int _cachedUnreadCustomerReplies = 0; // Cache voor ongelezen klantreplies
   int _cachedUnreadAdminChats = 0; // Cache voor ongelezen admin-chats
   Future<void>? _initialLoads; // Future voor initiële laadprocessen
   StreamSubscription<User?>? _authSub; // Abonnement op authenticatiewijzigingen
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _customerQuestionsSub; // Abonnement op klantenvragen
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _allCustomerQuestionsSub; // Abonnement op alle klantenvragen
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _customerQuestionsSub; // Abonnement op klantenvragen
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
+  _allCustomerQuestionsSub; // Abonnement op alle klantenvragen
 
   @override
-  void initState() { // Initialisatie van de widget
+  void initState() {
+    // Initialisatie van de widget
     super.initState();
     // Start de initiële laden- en controleprocessen
     _initialLoads = (() async {
       final loadNow = _loadNowPlaying(); // Laad hudig speelende films
-      final fetchUnread = _fetchUnreadCustomerReplies().then((v) { // Haal ongelezen replies op
-        if (mounted) setState(() => _cachedUnreadCustomerReplies = v); // Update cache indien widget nog actief is
+      final fetchUnread = _fetchUnreadCustomerReplies().then((v) {
+        // Haal ongelezen replies op
+        if (mounted)
+          setState(
+            () => _cachedUnreadCustomerReplies = v,
+          ); // Update cache indien widget nog actief is
       });
-      await Future.wait([loadNow, fetchUnread]); // Wacht tot alle taken klaar zijn
+      await Future.wait([
+        loadNow,
+        fetchUnread,
+      ]); // Wacht tot alle taken klaar zijn
     })();
 
     // Voer displaynaam-controle uit na initiële laden
@@ -78,15 +94,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Abonneer op authenticatiewijzigingen voor live badge-updates
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user != null) { // Als gebruiker ingelogd is
+      if (user != null) {
+        // Als gebruiker ingelogd is
         _subscribeCustomerQuestions(user.uid); // Abonneer op klantenvragen
-        _maybeSubscribeAdmin(user.uid); // Controleer admin-status en abonneer indien nodig
-      } else { // Als gebruiker uitgelogd is
+        _maybeSubscribeAdmin(
+          user.uid,
+        ); // Controleer admin-status en abonneer indien nodig
+      } else {
+        // Als gebruiker uitgelogd is
         _customerQuestionsSub?.cancel(); // Zeg abonnement op
         _customerQuestionsSub = null;
         _allCustomerQuestionsSub?.cancel(); // Zeg admin-abonnement op
         _allCustomerQuestionsSub = null;
-        if (mounted) { // Update badge indien widget nog actief is
+        if (mounted) {
+          // Update badge indien widget nog actief is
           setState(() {
             _cachedUnreadCustomerReplies = 0;
             _cachedUnreadAdminChats = 0;
@@ -96,7 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _maybeSubscribeAdmin(String uid) async { // Controleer of gebruiker admin is en abonneer op admin-chats
+  void _maybeSubscribeAdmin(String uid) async {
+    // Controleer of gebruiker admin is en abonneer op admin-chats
     try {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -104,27 +126,37 @@ class _HomeScreenState extends State<HomeScreen> {
           .get(); // Haal gebruikersdocument op
       final data = doc.data();
       bool isAdmin = false;
-      if (data != null) { // Als document bestaat
+      if (data != null) {
+        // Als document bestaat
         final role = data['role']; // Haal rolveld op
-        if (role is String) isAdmin = role.toLowerCase() == 'admin'; // Controleer of rol admin is (als string)
+        if (role is String)
+          isAdmin =
+              role.toLowerCase() ==
+              'admin'; // Controleer of rol admin is (als string)
         if (role is List) // Controleer of rol admin is (als lijst)
           isAdmin = role.any(
             (e) => (e?.toString().toLowerCase() ?? '') == 'admin',
           );
       }
-      if (isAdmin) { // Als gebruiker admin is
+      if (isAdmin) {
+        // Als gebruiker admin is
         _subscribeAllCustomerQuestions(); // Abonneer op alle klantenvragen
-      } else { // Als gebruiker geen admin is
+      } else {
+        // Als gebruiker geen admin is
         _allCustomerQuestionsSub?.cancel(); // Zeg abonnement op
         _allCustomerQuestionsSub = null;
-        if (mounted) setState(() => _cachedUnreadAdminChats = 0); // Reset admin-chat-counter
+        if (mounted)
+          setState(
+            () => _cachedUnreadAdminChats = 0,
+          ); // Reset admin-chat-counter
       }
     } catch (e) {
       debugPrint('Failed to determine admin role (home): $e'); // Log fout
     }
   }
 
-  void _subscribeAllCustomerQuestions() { // Abonneer op alle klantenvragen voor admin-badge
+  void _subscribeAllCustomerQuestions() {
+    // Abonneer op alle klantenvragen voor admin-badge
     _allCustomerQuestionsSub?.cancel(); // Zeg vorig abonnement op
     _allCustomerQuestionsSub = FirebaseFirestore.instance
         .collection('customerquestions')
@@ -133,10 +165,12 @@ class _HomeScreenState extends State<HomeScreen> {
           (snap) {
             try {
               int adminUnread = 0;
-              for (final d in snap.docs) { // Loop door alle documenten
+              for (final d in snap.docs) {
+                // Loop door alle documenten
                 final data = d.data();
 
-                int _tsToMs(dynamic ts) { // Helperfunctie: converteer timestamp naar milliseconden
+                int _tsToMs(dynamic ts) {
+                  // Helperfunctie: converteer timestamp naar milliseconden
                   try {
                     if (ts == null) return 0;
                     if (ts is Timestamp) return ts.millisecondsSinceEpoch;
@@ -148,17 +182,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   return 0;
                 }
 
-                final adminReplies = (data['adminReplies'] as List?) ?? []; // Haal admin-replies op
-                final userReplies = (data['userReplies'] as List?) ?? []; // Haal gebruiker-replies op
-                final answer = (data['answer'] ?? '').toString(); // Haal antwoord op
+                final adminReplies =
+                    (data['adminReplies'] as List?) ??
+                    []; // Haal admin-replies op
+                final userReplies =
+                    (data['userReplies'] as List?) ??
+                    []; // Haal gebruiker-replies op
+                final answer = (data['answer'] ?? '')
+                    .toString(); // Haal antwoord op
 
-                int lastUserMs = _tsToMs(data['createdAt']); // Zet aanmaakdatum als laatste gebruikersreactie
-                for (final ur in userReplies) { // Loop door gebruiker-replies
+                int lastUserMs = _tsToMs(
+                  data['createdAt'],
+                ); // Zet aanmaakdatum als laatste gebruikersreactie
+                for (final ur in userReplies) {
+                  // Loop door gebruiker-replies
                   try {
                     final ts = ur is Map
                         ? (ur['createdAt'] ?? ur['updatedAt'])
                         : null;
-                    lastUserMs = Math.max(lastUserMs, _tsToMs(ts)); // Voeg nieuwe gebruikerstijd bij indien recenter
+                    lastUserMs = Math.max(
+                      lastUserMs,
+                      _tsToMs(ts),
+                    ); // Voeg nieuwe gebruikerstijd bij indien recenter
                   } catch (_) {}
                 }
 
@@ -174,24 +219,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   lastAdminMs,
                   _tsToMs(data['adminSeenAt']),
                 ); // Voeg gezien-time bij indien recenter
-                for (final ar in adminReplies) { // Loop door admin-replies
+                for (final ar in adminReplies) {
+                  // Loop door admin-replies
                   try {
                     final ts = ar is Map
                         ? (ar['createdAt'] ?? ar['answerAt'] ?? ar['updatedAt'])
                         : null;
-                    lastAdminMs = Math.max(lastAdminMs, _tsToMs(ts)); // Voeg nieuwe admin-tijd bij indien recenter
+                    lastAdminMs = Math.max(
+                      lastAdminMs,
+                      _tsToMs(ts),
+                    ); // Voeg nieuwe admin-tijd bij indien recenter
                   } catch (_) {}
                 }
 
                 final bool adminReadFlag = data['adminRead'] is bool
-                  ? data['adminRead'] as bool
-                  : true; // Lees admin-gelezen-status
+                    ? data['adminRead'] as bool
+                    : true; // Lees admin-gelezen-status
                 final bool unreadForAdmin =
-                  (!adminReadFlag && lastUserMs > 0) || (lastUserMs > lastAdminMs); // Controleer of ongelezen voor admin
+                    (!adminReadFlag && lastUserMs > 0) ||
+                    (lastUserMs >
+                        lastAdminMs); // Controleer of ongelezen voor admin
                 if (unreadForAdmin) adminUnread += 1; // Tel ongelezen vraag
               }
               if (mounted)
-                setState(() => _cachedUnreadAdminChats = adminUnread); // Update admin-chat-counter
+                setState(
+                  () => _cachedUnreadAdminChats = adminUnread,
+                ); // Update admin-chat-counter
             } catch (e) {
               debugPrint(
                 'Failed to compute admin unread count in HomeScreen: $e',
@@ -199,12 +252,15 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
           onError: (e) {
-            debugPrint('customerquestions listen error (home admin): $e'); // Log abonnementsfout
+            debugPrint(
+              'customerquestions listen error (home admin): $e',
+            ); // Log abonnementsfout
           },
         );
   }
 
-  void _subscribeCustomerQuestions(String uid) { // Abonneer op klantenvragen van huidige gebruiker
+  void _subscribeCustomerQuestions(String uid) {
+    // Abonneer op klantenvragen van huidige gebruiker
     _customerQuestionsSub?.cancel(); // Zeg vorig abonnement op
     _customerQuestionsSub = FirebaseFirestore.instance
         .collection('customerquestions')
@@ -214,24 +270,33 @@ class _HomeScreenState extends State<HomeScreen> {
           (snap) {
             try {
               int unread = 0;
-              for (final d in snap.docs) { // Loop door alle documenten
+              for (final d in snap.docs) {
+                // Loop door alle documenten
                 final data = d.data();
-                final adminReplies = (data['adminReplies'] as List?) ?? []; // Haal admin-replies op
-                final userRead = data['userRead'] == true; // Controleer of gebruiker heeft gelezen
+                final adminReplies =
+                    (data['adminReplies'] as List?) ??
+                    []; // Haal admin-replies op
+                final userRead =
+                    data['userRead'] ==
+                    true; // Controleer of gebruiker heeft gelezen
 
-                if (!userRead) { // Als gebruiker niet heeft gelezen
+                if (!userRead) {
+                  // Als gebruiker niet heeft gelezen
                   unread += 1; // Tel als ongelezen
                   continue;
                 }
 
-                for (final ar in adminReplies) { // Loop door admin-replies
-                  if (ar is Map) { // Als reply een Map is
+                for (final ar in adminReplies) {
+                  // Loop door admin-replies
+                  if (ar is Map) {
+                    // Als reply een Map is
                     final seenBy =
                         (ar['seenBy'] as List?)
                             ?.map((e) => e.toString())
                             .toList() ??
                         []; // Haal lijst op van gebruikers die gezien hebben
-                    if (!seenBy.contains(uid)) { // Als huidige gebruiker niet in gezien-lijst
+                    if (!seenBy.contains(uid)) {
+                      // Als huidige gebruiker niet in gezien-lijst
                       unread += 1; // Tel als ongelezen
                       break;
                     }
@@ -239,19 +304,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               }
               if (mounted)
-                setState(() => _cachedUnreadCustomerReplies = unread); // Update ongelezen-counter
+                setState(
+                  () => _cachedUnreadCustomerReplies = unread,
+                ); // Update ongelezen-counter
             } catch (e) {
-              debugPrint('Failed to compute unread count in HomeScreen: $e'); // Log fout
+              debugPrint(
+                'Failed to compute unread count in HomeScreen: $e',
+              ); // Log fout
             }
           },
           onError: (e) {
-            debugPrint('customerquestions listen error (home): $e'); // Log abonnementsfout
+            debugPrint(
+              'customerquestions listen error (home): $e',
+            ); // Log abonnementsfout
           },
         );
   }
 
   @override
-  void dispose() { // Schoonmaak bij verwijdering van widget
+  void dispose() {
+    // Schoonmaak bij verwijdering van widget
     _pageController.dispose(); // Verwijder PageController
     _authSub?.cancel(); // Zeg authenticatie-abonnement op
     _customerQuestionsSub?.cancel(); // Zeg klantenvragen-abonnement op
@@ -259,7 +331,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _loadNowPlaying() async { // Laad hudig speelende films van API
+  Future<void> _loadNowPlaying() async {
+    // Laad hudig speelende films van API
     try {
       final uri = Uri.parse(baseApi).replace(
         queryParameters: {
@@ -270,12 +343,15 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ); // Bouw API-URL met parameters
       final resp = await http.get(uri); // Verstuur GET-verzoek
-      if (resp.statusCode == 200) { // Als verzoek succesvol is
+      if (resp.statusCode == 200) {
+        // Als verzoek succesvol is
         final jsonData = jsonDecode(resp.body); // Decodeer JSON-antwoord
-        final results = (jsonData['results'] as List<dynamic>?) ?? []; // Haal resultaten op
+        final results =
+            (jsonData['results'] as List<dynamic>?) ?? []; // Haal resultaten op
         final temp = <FilmNowItem>[]; // Maak tijdelijke filmlijst
 
-        for (final r in results) { // Loop door alle filmresultaten
+        for (final r in results) {
+          // Loop door alle filmresultaten
           final map = r as Map<String, dynamic>;
           temp.add(
             FilmNowItem(
@@ -296,7 +372,8 @@ class _HomeScreenState extends State<HomeScreen> {
           loadingFilms = false;
         }); // Update state met films en zet laden op false
 
-        for (var item in films) { // Loop door alle films
+        for (var item in films) {
+          // Loop door alle films
           _fetchImdbIdFor(item); // Haal IMDB ID op voor elke film
         }
       }
@@ -306,13 +383,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _fetchImdbIdFor(FilmNowItem item) async { // Haal IMDB ID op voor een film
+  Future<void> _fetchImdbIdFor(FilmNowItem item) async {
+    // Haal IMDB ID op voor een film
     try {
       final uri = Uri.parse(baseApi).replace(
         queryParameters: {'type': 'tmdbmovieinfo', 'movie_id': item.tmdbId},
       ); // Bouw API-URL voor filmdetails
       final resp = await http.get(uri); // Verstuur GET-verzoek
-      if (resp.statusCode == 200) { // Als verzoek succesvol is
+      if (resp.statusCode == 200) {
+        // Als verzoek succesvol is
         final data = jsonDecode(resp.body); // Decodeer JSON-antwoord
         item.imdbId = data['imdb_id']; // Zet IMDB ID
       }
@@ -322,7 +401,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String proxiedUrl(String url) =>
       '$baseApi?type=image-proxy&imageUrl=${Uri.encodeComponent(url)}'; // Bouw proxy-URL voor afbeeldingen
 
-  Future<void> _ensureDisplayName() async { // Zorg ervoor dat gebruiker een displaynaam heeft
+  Future<void> _ensureDisplayName() async {
+    // Zorg ervoor dat gebruiker een displaynaam heeft
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return; // Stop als geen gebruiker ingelogd is
     final doc = await FirebaseFirestore.instance
@@ -330,9 +410,14 @@ class _HomeScreenState extends State<HomeScreen> {
         .doc(user.uid)
         .get(); // Haal gebruikersdocument op
     var data = doc.data();
-    
-    if (data == null && user.displayName != null && user.displayName!.trim().isNotEmpty) { // Als doc niet bestaat maar gebruiker heeft displaynaam
-      debugPrint('ensureDisplayName: doc null but user.displayName found. Creating doc.');
+
+    if (data == null &&
+        user.displayName != null &&
+        user.displayName!.trim().isNotEmpty) {
+      // Als doc niet bestaat maar gebruiker heeft displaynaam
+      debugPrint(
+        'ensureDisplayName: doc null but user.displayName found. Creating doc.',
+      );
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'displayName': user.displayName,
         'email': user.email,
@@ -341,16 +426,22 @@ class _HomeScreenState extends State<HomeScreen> {
       data = {'displayName': user.displayName};
     }
 
-    debugPrint('ensureDisplayName: uid=${user.uid}, userdoc=${data ?? '<null>'}');
+    debugPrint(
+      'ensureDisplayName: uid=${user.uid}, userdoc=${data ?? '<null>'}',
+    );
 
     final dynamic rawName = data == null
         ? null
-        : (data['displayName'] ?? data['display_name'] ?? data['name']); // Haal displaynaam op
-    if (rawName is String && rawName.trim().isNotEmpty) return; // Stop als displaynaam bestaat
+        : (data['displayName'] ??
+              data['display_name'] ??
+              data['name']); // Haal displaynaam op
+    if (rawName is String && rawName.trim().isNotEmpty)
+      return; // Stop als displaynaam bestaat
     await _promptForDisplayName(user.uid); // Vraag om displaynaam
   }
 
-  Future<void> _promptForDisplayName(String uid) async { // Toon dialoog om displaynaam in te voeren
+  Future<void> _promptForDisplayName(String uid) async {
+    // Toon dialoog om displaynaam in te voeren
     final formKey = GlobalKey<FormState>();
     final ctrl = TextEditingController();
 
@@ -385,25 +476,35 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () async { // Bij klikken op knop
-                  if (!formKey.currentState!.validate()) return; // Valideer form
+                onPressed: () async {
+                  // Bij klikken op knop
+                  if (!formKey.currentState!.validate())
+                    return; // Valideer form
                   final name = ctrl.text.trim();
                   try {
                     final user = FirebaseAuth.instance.currentUser;
-                    if (user != null) { // Als gebruiker ingelogd is
-                      await user.updateDisplayName(name); // Update displaynaam in Auth
+                    if (user != null) {
+                      // Als gebruiker ingelogd is
+                      await user.updateDisplayName(
+                        name,
+                      ); // Update displaynaam in Auth
                       await user.reload(); // Herlaad gebruikersgegevens
                     }
                     final usersRef = FirebaseFirestore.instance
                         .collection('users')
                         .doc(uid);
-                    await usersRef.set({
-                      'displayName': name,
-                      'email': user?.email,
-                      'updatedAt': FieldValue.serverTimestamp(),
-                    }, SetOptions(merge: true)); // Update displaynaam in Firestore
+                    await usersRef.set(
+                      {
+                        'displayName': name,
+                        'email': user?.email,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      },
+                      SetOptions(merge: true),
+                    ); // Update displaynaam in Firestore
                   } catch (e) {
-                    debugPrint('Failed saving displayName from dialog: $e'); // Log fout
+                    debugPrint(
+                      'Failed saving displayName from dialog: $e',
+                    ); // Log fout
                   }
                   if (mounted) Navigator.of(ctx).pop(); // Sluit dialoog
                 },
@@ -416,7 +517,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<int> _fetchUnreadCustomerReplies() async { // Haal aantal ongelezen replies op
+  Future<int> _fetchUnreadCustomerReplies() async {
+    // Haal aantal ongelezen replies op
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return 0; // Stop als geen gebruiker ingelogd is
@@ -426,22 +528,29 @@ class _HomeScreenState extends State<HomeScreen> {
           .where('userId', isEqualTo: uid)
           .get(); // Haal alle vragen van gebruiker op
       int unread = 0;
-      for (final d in snap.docs) { // Loop door alle documenten
+      for (final d in snap.docs) {
+        // Loop door alle documenten
         final data = d.data();
-        final adminReplies = (data['adminReplies'] as List?) ?? []; // Haal admin-replies op
-        final userRead = data['userRead'] == true; // Controleer of gebruiker heeft gelezen
+        final adminReplies =
+            (data['adminReplies'] as List?) ?? []; // Haal admin-replies op
+        final userRead =
+            data['userRead'] == true; // Controleer of gebruiker heeft gelezen
 
-        if (!userRead) { // Als gebruiker niet heeft gelezen
+        if (!userRead) {
+          // Als gebruiker niet heeft gelezen
           unread += 1; // Tel als ongelezen
           continue;
         }
 
-        for (final ar in adminReplies) { // Loop door admin-replies
-          if (ar is Map) { // Als reply een Map is
+        for (final ar in adminReplies) {
+          // Loop door admin-replies
+          if (ar is Map) {
+            // Als reply een Map is
             final seenBy =
                 (ar['seenBy'] as List?)?.map((e) => e.toString()).toList() ??
                 []; // Haal lijst op van gebruikers die gezien hebben
-            if (!seenBy.contains(uid)) { // Als huidige gebruiker niet in gezien-lijst
+            if (!seenBy.contains(uid)) {
+              // Als huidige gebruiker niet in gezien-lijst
               unread += 1; // Tel als ongelezen
               break;
             }
@@ -455,14 +564,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<bool> _checkIfAdmin() async { // Controleer of gebruiker admin is
+  Future<bool> _checkIfAdmin() async {
+    // Controleer of gebruiker admin is
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false; // Stop als geen gebruiker ingelogd is
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get(); // Haal gebruikersdocument op
-    return doc.data()?['role']?.toString().toLowerCase() == 'admin'; // Controleer rol
+    return doc.data()?['role']?.toString().toLowerCase() ==
+        'admin'; // Controleer rol
   }
 
   @override
@@ -544,7 +655,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           onPressed: () => Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => const AdminScreen(),
+                                              builder: (_) =>
+                                                  const AdminScreen(),
                                             ),
                                           ),
                                         ),
@@ -555,24 +667,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                             top: 6,
                                             child: IgnorePointer(
                                               child: Container(
-                                                padding: const EdgeInsets.all(2),
+                                                padding: const EdgeInsets.all(
+                                                  2,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.red,
                                                   shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.white, width: 1),
+                                                  border: Border.all(
+                                                    color: Colors.white,
+                                                    width: 1,
+                                                  ),
                                                 ),
-                                                constraints: const BoxConstraints(
-                                                  minWidth: 16,
-                                                  minHeight: 16,
-                                                ),
+                                                constraints:
+                                                    const BoxConstraints(
+                                                      minWidth: 16,
+                                                      minHeight: 16,
+                                                    ),
                                                 child: Center(
                                                   // Toon het aantal ongelezen chats (max 99+)
                                                   child: Text(
-                                                    _cachedUnreadAdminChats > 99 ? '99+' : '$_cachedUnreadAdminChats',
+                                                    _cachedUnreadAdminChats > 99
+                                                        ? '99+'
+                                                        : '$_cachedUnreadAdminChats',
                                                     style: const TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                     ),
                                                   ),
                                                 ),
@@ -608,7 +729,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         decoration: BoxDecoration(
                                           color: Colors.red,
                                           shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white, width: 1),
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 1,
+                                          ),
                                         ),
                                         constraints: const BoxConstraints(
                                           minWidth: 16,
@@ -753,7 +877,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // --- DOT INDICATOR ---
               Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewPadding.bottom + 30),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewPadding.bottom + 30,
+                ),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(

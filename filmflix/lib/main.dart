@@ -25,9 +25,11 @@ import 'package:cinetrackr/l10n/l10n.dart';
 // dit zorgt voor dat we de gekozen taal kunnen opslaan en teruglezen, zodat de app in de juiste taal start bij volgende keren openen.
 final ValueNotifier<Locale?> localeNotifier = ValueNotifier<Locale?>(null);
 
-Future<void> main() async { // Zorgt ervoor dat we eerst de benodigde services initialiseren voordat de app start.
+Future<void> main() async {
+  // Zorgt ervoor dat we eerst de benodigde services initialiseren voordat de app start.
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([ // Forceer portrait mode voor een betere gebruikerservaring op mobiele apparaten.
+  await SystemChrome.setPreferredOrientations([
+    // Forceer portrait mode voor een betere gebruikerservaring op mobiele apparaten.
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
@@ -37,7 +39,9 @@ Future<void> main() async { // Zorgt ervoor dat we eerst de benodigde services i
 
   final user = FirebaseAuth.instance.currentUser;
   if (user != null) {
-    await analytics.setUserId(id: user.uid); // Als de gebruiker al is ingelogd, stel dan de userId in voor analytics zodat we gebruikersgedrag kunnen volgen.
+    await analytics.setUserId(
+      id: user.uid,
+    ); // Als de gebruiker al is ingelogd, stel dan de userId in voor analytics zodat we gebruikersgedrag kunnen volgen.
   } else {
     final prefs = await SharedPreferences.getInstance();
     var anon = prefs.getString('analytics_anon_id');
@@ -50,14 +54,17 @@ Future<void> main() async { // Zorgt ervoor dat we eerst de benodigde services i
   }
 
   try {
-    await analytics.logAppOpen(); // Log een app open event voor analytics zodat we kunnen zien hoe vaak de app wordt geopend.
+    await analytics
+        .logAppOpen(); // Log een app open event voor analytics zodat we kunnen zien hoe vaak de app wordt geopend.
   } catch (_) {}
 
-  // Load saved locale preference (if any) so the app can start in the chosen language.
+  // Laad opgeslagen taalvoorkeur (indien aanwezig) zodat de app in de gekozen taal kan starten.
   try {
-    final prefs = await SharedPreferences.getInstance(); // Toegang tot SharedPreferences om de opgeslagen taalvoorkeur te lezen.
+    final prefs =
+        await SharedPreferences.getInstance(); // Toegang tot SharedPreferences om de opgeslagen taalvoorkeur te lezen.
     final saved = prefs.getString('app_locale');
-    if (saved != null) { // Als er een opgeslagen taal is, stel deze dan in op de localeNotifier zodat de app in die taal start.
+    if (saved != null) {
+      // Als er een opgeslagen taal is, stel deze dan in op de localeNotifier zodat de app in die taal start.
       if (saved == 'nl')
         localeNotifier.value = const Locale('nl');
       else if (saved == 'en')
@@ -70,29 +77,37 @@ Future<void> main() async { // Zorgt ervoor dat we eerst de benodigde services i
   runApp(const CineTrackrApp());
 }
 
-class CineTrackrApp extends StatelessWidget { // De root widget van de app, verantwoordelijk voor het instellen van thema, taal en navigatie.
+class CineTrackrApp extends StatelessWidget {
+  // De root widget van de app, verantwoordelijk voor het instellen van thema, taal en navigatie.
   const CineTrackrApp({super.key}); // Constructor voor de app widget.
 
   @override
   Widget build(BuildContext context) {
-    final l10n = L10n.of(context); // Toegang tot de gelokaliseerde strings zodat we de app-titel en andere teksten in de juiste taal kunnen tonen.
-    return ValueListenableBuilder<Locale?>( // Gebruik een ValueListenableBuilder om te luisteren naar veranderingen in de gekozen taal (locale) en de app opnieuw op te bouwen met de nieuwe taalinstelling.
+    final l10n = L10n.of(
+      context,
+    ); // Toegang tot de gelokaliseerde strings zodat we de app-titel en andere teksten in de juiste taal kunnen tonen.
+    return ValueListenableBuilder<Locale?>(
+      // Gebruik een ValueListenableBuilder om te luisteren naar veranderingen in de gekozen taal (locale) en de app opnieuw op te bouwen met de nieuwe taalinstelling.
       valueListenable: localeNotifier,
       builder: (context, locale, _) {
         return MaterialApp(
           locale: locale,
-          title: l10n?.appTitle ?? 'CineTrackr', // Stel de app-titel in op basis van de gelokaliseerde string, met een fallback naar 'CineTrackr' als de gelokaliseerde string niet beschikbaar is.
+          title:
+              l10n?.appTitle ??
+              'CineTrackr', // Stel de app-titel in op basis van de gelokaliseerde string, met een fallback naar 'CineTrackr' als de gelokaliseerde string niet beschikbaar is.
           debugShowCheckedModeBanner: false,
           darkTheme: ThemeData.dark().copyWith(
             scaffoldBackgroundColor: Colors.black,
-            colorScheme: const ColorScheme.dark( // Pas de kleuren aan voor het donkere thema zodat het er stijlvol uitziet.
+            colorScheme: const ColorScheme.dark(
+              // Pas de kleuren aan voor het donkere thema zodat het er stijlvol uitziet.
               primary: Color(0xFFD4AF37),
               secondary: Color(0xFFB22222),
             ),
           ),
           theme: ThemeData.light().copyWith(
             scaffoldBackgroundColor: const Color(0xFFF5F7F8),
-            colorScheme: const ColorScheme.light( // Pas de kleuren aan voor het lichte thema zodat het er fris uitziet.
+            colorScheme: const ColorScheme.light(
+              // Pas de kleuren aan voor het lichte thema zodat het er fris uitziet.
               primary: Color(0xFFD4AF37),
               secondary: Color(0xFFB22222),
             ),
@@ -102,21 +117,20 @@ class CineTrackrApp extends StatelessWidget { // De root widget van de app, vera
             final mediaQuery = MediaQuery.of(context);
             return MediaQuery(
               data: mediaQuery.copyWith(
-                textScaleFactor: mediaQuery.textScaleFactor.clamp(
-                  1.0,
-                  1.3,
-                ),
+                textScaleFactor: mediaQuery.textScaleFactor.clamp(1.0, 1.3),
               ),
               child: child!,
             );
           },
-          localizationsDelegates: [ // Voeg de benodigde localizations delegates toe zodat de app in meerdere talen kan worden gebruikt.
+          localizationsDelegates: [
+            // Voeg de benodigde localizations delegates toe zodat de app in meerdere talen kan worden gebruikt.
             L10n.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          supportedLocales: const [ // Definieer de ondersteunde talen voor de app.
+          supportedLocales: const [
+            // Definieer de ondersteunde talen voor de app.
             Locale('nl'),
             Locale('en'),
             Locale('de'),
@@ -128,8 +142,10 @@ class CineTrackrApp extends StatelessWidget { // De root widget van de app, vera
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold( 
-                  body: Center(child: CircularProgressIndicator()), // Toon een laadindicator terwijl we wachten op de auth state om te laden, zodat de gebruiker weet dat er iets gebeurt.
+                return const Scaffold(
+                  body: Center(
+                    child: CircularProgressIndicator(),
+                  ), // Toon een laadindicator terwijl we wachten op de auth state om te laden, zodat de gebruiker weet dat er iets gebeurt.
                 );
               }
 
@@ -141,7 +157,8 @@ class CineTrackrApp extends StatelessWidget { // De root widget van de app, vera
               //return const LoginScreen();
             },
           ),
-          routes: { // Definieer de routes voor navigatie binnen de app, zodat we gemakkelijk kunnen navigeren tussen verschillende schermen.
+          routes: {
+            // Definieer de routes voor navigatie binnen de app, zodat we gemakkelijk kunnen navigeren tussen verschillende schermen.
             '/login': (context) => const LoginScreen(),
             '/home': (context) => const MainNavigation(),
           },
@@ -151,11 +168,13 @@ class CineTrackrApp extends StatelessWidget { // De root widget van de app, vera
   }
 }
 
-class MainNavigation extends StatefulWidget { // Het hoofdscherm van de app met een bottom navigation bar om te navigeren tussen verschillende secties zoals Home, Watchlist, Search, Food en Profile.
-//statefulwidget is nodig omdat we de geselecteerde index van de navigatiebalk moeten bijhouden en mogelijk ook andere state zoals of de tutorial al is getoond.
+class MainNavigation extends StatefulWidget {
+  // Het hoofdscherm van de app met een bottom navigation bar om te navigeren tussen verschillende secties zoals Home, Watchlist, Search, Food en Profile.
+  //statefulwidget is nodig omdat we de geselecteerde index van de navigatiebalk moeten bijhouden en mogelijk ook andere state zoals of de tutorial al is getoond.
   const MainNavigation({super.key});
 
-  static final GlobalKey kaartKey = GlobalKey(); // Een globale key die we kunnen gebruiken om de kaart in de tutorial te targeten, zodat we gebruikers kunnen laten zien waar ze de kaart kunnen vinden in de app.
+  static final GlobalKey kaartKey =
+      GlobalKey(); // Een globale key die we kunnen gebruiken om de kaart in de tutorial te targeten, zodat we gebruikers kunnen laten zien waar ze de kaart kunnen vinden in de app.
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -163,7 +182,8 @@ class MainNavigation extends StatefulWidget { // Het hoofdscherm van de app met 
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
-  StreamSubscription<User?>? _authSub; // Een subscription om te luisteren naar veranderingen in de auth state, zodat we bijvoorbeeld analytics kunnen bijwerken wanneer de gebruiker inlogt of uitlogt.
+  StreamSubscription<User?>?
+  _authSub; // Een subscription om te luisteren naar veranderingen in de auth state, zodat we bijvoorbeeld analytics kunnen bijwerken wanneer de gebruiker inlogt of uitlogt.
 
   final GlobalKey _homeKey = GlobalKey();
   final GlobalKey _watchlistKey = GlobalKey();
@@ -172,11 +192,11 @@ class _MainNavigationState extends State<MainNavigation> {
   final GlobalKey _profileKey = GlobalKey();
 
   // Alle schermen die je in de balk wilt kunnen aanklikken
-  final List<Widget> _screens = [ 
+  final List<Widget> _screens = [
     const HomeScreen(), // Index 0
-    const WatchlistScreen(), // Index 1 
+    const WatchlistScreen(), // Index 1
     const SearchScreen(), // Index 2
-    const FoodScreen(), // Index 3 
+    const FoodScreen(), // Index 3
     const ProfileScreen(), // Index 4
   ];
 
@@ -190,8 +210,10 @@ class _MainNavigationState extends State<MainNavigation> {
     }
 
     final l10n = L10n.of(context);
-    List<TargetFocus> targets = [ // Definieer de targets voor de tutorial, waarbij we elke belangrijke functie in de navigatiebalk targeten met een beschrijving van wat het doet, zodat nieuwe gebruikers snel kunnen leren hoe ze de app kunnen gebruiken.
-      TutorialService.createTarget( // Target voor de Home-knop in de navigatiebalk.
+    List<TargetFocus> targets = [
+      // Definieer de targets voor de tutorial, waarbij we elke belangrijke functie in de navigatiebalk targeten met een beschrijving van wat het doet, zodat nieuwe gebruikers snel kunnen leren hoe ze de app kunnen gebruiken.
+      TutorialService.createTarget(
+        // Target voor de Home-knop in de navigatiebalk.
         identify: "home",
         key: _homeKey,
         text:
@@ -238,7 +260,8 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     ];
 
-    void markTutorialAsDone() async { // Functie om aan te geven dat de tutorial is voltooid, zodat we deze niet opnieuw hoeven te tonen bij volgende app-starts.
+    void markTutorialAsDone() async {
+      // Functie om aan te geven dat de tutorial is voltooid, zodat we deze niet opnieuw hoeven te tonen bij volgende app-starts.
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('tutorial_done', true);
       debugPrint("Tutorial: Marked as done in SharedPreferences.");
@@ -253,13 +276,15 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   @override
-  Widget build(BuildContext context) { // Bouw het hoofdscherm van de app met een Scaffold, waarbij we een IndexedStack gebruiken om de verschillende schermen te tonen op
+  Widget build(BuildContext context) {
+    // Bouw het hoofdscherm van de app met een Scaffold, waarbij we een IndexedStack gebruiken om de verschillende schermen te tonen op
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = L10n.of(context);
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
-      bottomNavigationBar: Container( // Een container voor de bottom navigation bar, waarbij we de achtergrondkleur aanpassen op basis van het thema (donker of licht) en een subtiele scheidingslijn toevoegen aan de bovenkant.
+      bottomNavigationBar: Container(
+        // Een container voor de bottom navigation bar, waarbij we de achtergrondkleur aanpassen op basis van het thema (donker of licht) en een subtiele scheidingslijn toevoegen aan de bovenkant.
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1C282E) : Colors.white,
           border: Border(
@@ -270,7 +295,8 @@ class _MainNavigationState extends State<MainNavigation> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem( // Bouw elk item in de navigatiebalk met een icon, label en een key voor de tutorial, zodat we gebruikers kunnen laten zien waar ze op moeten klikken om naar verschillende secties van de app te gaan.
+            _buildNavItem(
+              // Bouw elk item in de navigatiebalk met een icon, label en een key voor de tutorial, zodat we gebruikers kunnen laten zien waar ze op moeten klikken om naar verschillende secties van de app te gaan.
               0,
               Icons.home_outlined,
               Icons.home_rounded,
@@ -311,7 +337,8 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
-  Widget _buildNavItem( // Helperfunctie om een item in de navigatiebalk te bouwen, waarbij we de geselecteerde status controleren om de juiste icon en kleur te tonen, en een GestureDetector gebruiken om te reageren op taps zodat we kunnen navigeren naar het juiste scherm.
+  Widget _buildNavItem(
+    // Helperfunctie om een item in de navigatiebalk te bouwen, waarbij we de geselecteerde status controleren om de juiste icon en kleur te tonen, en een GestureDetector gebruiken om te reageren op taps zodat we kunnen navigeren naar het juiste scherm.
     int index,
     IconData icon,
     IconData activeIcon,
@@ -321,9 +348,11 @@ class _MainNavigationState extends State<MainNavigation> {
     final isSelected = _selectedIndex == index;
     final color = isSelected ? const Color(0xFFD4AF37) : Colors.grey;
 
-    return GestureDetector( // Gebruik een GestureDetector om te detecteren wanneer de gebruiker op een item in de navigatiebalk tikt, zodat we de geselecteerde index kunnen bijwerken en het juiste scherm kunnen tonen.
+    return GestureDetector(
+      // Gebruik een GestureDetector om te detecteren wanneer de gebruiker op een item in de navigatiebalk tikt, zodat we de geselecteerde index kunnen bijwerken en het juiste scherm kunnen tonen.
       onTap: () => setState(() => _selectedIndex = index),
-      behavior: HitTestBehavior.opaque, // Zorg ervoor dat de hele ruimte van het item klikbaar is, niet alleen het icon of label, voor een betere gebruikerservaring.
+      behavior: HitTestBehavior
+          .opaque, // Zorg ervoor dat de hele ruimte van het item klikbaar is, niet alleen het icon of label, voor een betere gebruikerservaring.
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -336,9 +365,11 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   @override
-  void initState() { // In de initState van het hoofdscherm zetten we een post-frame callback om te controleren of we de tutorial moeten tonen, en we luisteren naar veranderingen in de auth state om analytics bij te werken, zodat we gebruikersgedrag kunnen volgen en de tutorial kunnen tonen aan nieuwe gebruikers.
+  void initState() {
+    // In de initState van het hoofdscherm zetten we een post-frame callback om te controleren of we de tutorial moeten tonen, en we luisteren naar veranderingen in de auth state om analytics bij te werken, zodat we gebruikersgedrag kunnen volgen en de tutorial kunnen tonen aan nieuwe gebruikers.
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) { //   Zodra het eerste frame is gerenderd, controleren we of we de tutorial moeten tonen door te kijken naar de opgeslagen voorkeuren, zodat nieuwe gebruikers een introductie krijgen tot de belangrijkste functies van de app.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      //   Zodra het eerste frame is gerenderd, controleren we of we de tutorial moeten tonen door te kijken naar de opgeslagen voorkeuren, zodat nieuwe gebruikers een introductie krijgen tot de belangrijkste functies van de app.
       // Gebruik een herhalende check om te wachten tot de key beschikbaar is
       _checkAndStartTutorial();
     });
@@ -366,7 +397,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   int _tutorialRetryCount = 0;
-  void _checkAndStartTutorial() async { 
+  void _checkAndStartTutorial() async {
     final prefs = await SharedPreferences.getInstance();
     final bool isDone = prefs.getBool('tutorial_done') ?? false;
 
@@ -374,7 +405,8 @@ class _MainNavigationState extends State<MainNavigation> {
     //TUTORIAL UIT/AAN
     if (isDone) return;
 
-    Future.delayed(const Duration(milliseconds: 500), () { //dit stukje doet een check na een korte vertraging om te zien of de home key beschikbar is
+    Future.delayed(const Duration(milliseconds: 500), () {
+      //dit stukje doet een check na een korte vertraging om te zien of de home key beschikbar is
       if (!mounted) return;
 
       if (_homeKey.currentContext != null) {
@@ -393,7 +425,8 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   @override
-  void dispose() { //dispose betekent dat we resources opruimen wanneer deze widget uit de widget tree wordt verwijderd, in dit geval annuleren we de subscription naar auth state changes om geheugenlekken te voorkomen.
+  void dispose() {
+    //dispose betekent dat we resources opruimen wanneer deze widget uit de widget tree wordt verwijderd, in dit geval annuleren we de subscription naar auth state changes om geheugenlekken te voorkomen.
     _authSub?.cancel();
     super.dispose();
   }

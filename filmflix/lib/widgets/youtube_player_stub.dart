@@ -3,7 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 class YouTubePlayerWidget extends StatelessWidget {
   final String videoId;
-  const YouTubePlayerWidget({Key? key, required this.videoId}) : super(key: key);
+  const YouTubePlayerWidget({Key? key, required this.videoId})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,11 @@ class YouTubePlayerWidget extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(thumb, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.black12)),
+            Image.network(
+              thumb,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: Colors.black12),
+            ),
             Container(color: Colors.black26),
             const Center(
               child: Icon(

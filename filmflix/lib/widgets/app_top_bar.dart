@@ -15,8 +15,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.rightWidgets,
     this.backgroundColor,
     this.textColor,
-  })  : assert(title != null || titleWidget != null),
-        super(key: key);
+  }) : assert(title != null || titleWidget != null),
+       super(key: key);
 
   @override
   Size get preferredSize => const Size.fromHeight(56);
@@ -24,19 +24,26 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Color bgCandidate = backgroundColor ?? theme.appBarTheme.backgroundColor ?? Colors.transparent;
+    Color bgCandidate =
+        backgroundColor ??
+        theme.appBarTheme.backgroundColor ??
+        Colors.transparent;
 
-    // If the app is in dark mode but a light background (e.g. Colors.white) was supplied,
-    // prefer a dark app bar background so the bar isn't white in dark mode.
-    if (theme.brightness == Brightness.dark && ThemeData.estimateBrightnessForColor(bgCandidate) == Brightness.light) {
-      bgCandidate = theme.appBarTheme.backgroundColor ?? const Color.fromRGBO(28, 40, 46, 1);
+    // Als de app in dark mode staat maar er een lichte achtergrond is opgegeven
+    // (bijv. Colors.white), gebruik dan een donkere appbar-achtergrond zodat de
+    // balk niet wit oogt in dark mode.
+    if (theme.brightness == Brightness.dark &&
+        ThemeData.estimateBrightnessForColor(bgCandidate) == Brightness.light) {
+      bgCandidate =
+          theme.appBarTheme.backgroundColor ??
+          const Color.fromRGBO(28, 40, 46, 1);
     }
 
     final bg = bgCandidate;
     final bool isBgTransparent = bg == Colors.transparent;
     final isDarkBg = isBgTransparent
-      ? theme.brightness == Brightness.dark
-      : ThemeData.estimateBrightnessForColor(bg) == Brightness.dark;
+        ? theme.brightness == Brightness.dark
+        : ThemeData.estimateBrightnessForColor(bg) == Brightness.dark;
     final defaultText = textColor ?? (isDarkBg ? Colors.white : Colors.black87);
 
     return Container(
@@ -50,31 +57,39 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Left: back button when possible
+                // Links: terugknop wanneer mogelijk
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Builder(builder: (ctx) {
-                    if (Navigator.of(ctx).canPop()) {
-                      return IconButton(
-                        icon: Icon(Icons.arrow_back, color: defaultText),
-                        onPressed: () => Navigator.of(ctx).maybePop(),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  }),
-                ),
-
-                // Center title
-                Align(
-                  alignment: Alignment.center,
-                  child: titleWidget ?? Text(
-                    title ?? AppLocalizations.of(context)!.appTitle,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: defaultText),
+                  child: Builder(
+                    builder: (ctx) {
+                      if (Navigator.of(ctx).canPop()) {
+                        return IconButton(
+                          icon: Icon(Icons.arrow_back, color: defaultText),
+                          onPressed: () => Navigator.of(ctx).maybePop(),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
                   ),
                 ),
 
-                // Right widgets
+                // Midden: titel
+                Align(
+                  alignment: Alignment.center,
+                  child:
+                      titleWidget ??
+                      Text(
+                        title ?? AppLocalizations.of(context)!.appTitle,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: defaultText,
+                        ),
+                      ),
+                ),
+
+                // Rechts: extra widgets
                 Align(
                   alignment: Alignment.centerRight,
                   child: Row(
