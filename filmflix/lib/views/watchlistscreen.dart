@@ -1434,6 +1434,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       // Opgeslagen
                       Column(
                         children: [
+                          
                           Expanded(
                             child: ListView(
                               padding: const EdgeInsets.all(8),
@@ -1468,6 +1469,38 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       // Aan het kijken
                       Column(
                         children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0,
+                              vertical: 8.0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.info_outline),
+                                  tooltip: 'Info',
+                                  onPressed: () {
+                                    showDialog(
+                                      context: ctx,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Info'),
+                                        content: const Text(
+                                          'De app kan helaas niet gegevens halen uit de streamingdiensten. Je kunt zelf alle afleveringen handig afvinken die je hebt gekeken.',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context),
+                                            child: const Text('OK'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
                           Expanded(
                             child: ListView(
                               padding: const EdgeInsets.all(8),

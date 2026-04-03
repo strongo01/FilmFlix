@@ -215,8 +215,8 @@ class _FoodScreenState extends State<FoodScreen> {
 
     final Uri url = Uri.parse(urlString); // Parsed URL string
     try {
-      // Probeert URL te openen
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      // Probeert URL te openen in in-app WebView (voorkomt openen native app)
+      await launchUrl(url, mode: LaunchMode.inAppWebView);
     } catch (e) {
       // Vangt fouten op
       debugPrint('Fout bij openen: $e');

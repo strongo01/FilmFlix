@@ -1139,7 +1139,10 @@ class _SearchScreenState extends State<SearchScreen> {
       body: AppBackground(
         child: SafeArea(
           bottom: false,
-          child: Column(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Column(
             children: [
               Padding(
                 padding: const EdgeInsets.all(12),
@@ -1147,7 +1150,10 @@ class _SearchScreenState extends State<SearchScreen> {
                   controller: controller,
                   // controller voor zoekinput
                   textInputAction: TextInputAction.search,
-                  onSubmitted: (_) => search(),
+                  onSubmitted: (_) {
+                    FocusScope.of(context).unfocus();
+                    search();
+                  },
                   // voer zoekactie uit bij submit
                   style: TextStyle(
                     color: isDark ? Colors.white : Colors.black87,
@@ -1167,6 +1173,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               context,
                             )!.clear_tooltip,
                             onPressed: () {
+                              FocusScope.of(context).unfocus();
                               setState(() {
                                 controller.clear();
                                 results = [];
@@ -1195,7 +1202,10 @@ class _SearchScreenState extends State<SearchScreen> {
                             Icons.search,
                             color: isDark ? Colors.white54 : Colors.black54,
                           ),
-                          onPressed: search,
+                          onPressed: () {
+                            FocusScope.of(context).unfocus();
+                            search();
+                          },
                         ),
                       ],
                     ),
@@ -1427,6 +1437,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

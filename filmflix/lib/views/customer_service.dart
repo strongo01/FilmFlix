@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cinetrackr/widgets/app_top_bar.dart';
+import 'package:cinetrackr/widgets/app_background.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -509,129 +511,125 @@ Je moet deze regels ALTIJD volgen, zonder uitzonderingen.''';
           final questionCtrl =
               TextEditingController(); // Controller voor vraagtekst
 
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                AppLocalizations.of(ctx)!.contact_admin_title,
-                style: const TextStyle(color: Colors.white),
+          return AppBackground(
+            child: Scaffold(
+              extendBodyBehindAppBar: true,
+              backgroundColor: Colors.transparent,
+              appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(56),
+                child: AppTopBar(
+                  title: AppLocalizations.of(ctx)!.contact_admin_title,
+                  backgroundColor: Colors.transparent,
+                ),
               ),
-              backgroundColor: const Color.fromRGBO(
-                43,
-                77,
-                91,
-                1,
-              ), // Stel achtergrondkleur in
-              iconTheme: const IconThemeData(
-                color: Colors.white,
-              ), // Stel pictogramkleur in op wit
-            ),
-            body: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0), // Voeg vulling toe
-                  physics:
-                      const AlwaysScrollableScrollPhysics(), // Sta altijd scrollen toe
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight:
-                          constraints.maxHeight - 32, // Stel minimumhoogte in
-                    ),
-                    child: IntrinsicHeight(
-                      child: Form(
-                        key: formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            TextFormField(
-                              controller: emailCtrl,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(
-                                  ctx,
-                                )!.emailLabel, // Label voor e-mailinvoer
-                              ),
-                              keyboardType: TextInputType
-                                  .emailAddress, // Pas toetsenbordtype aan
-                            ),
-                            const SizedBox(height: 8), // Voeg ruimte toe
-                            TextFormField(
-                              controller: nameCtrl,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(
-                                  ctx,
-                                )!.contactNameLabel, // Label voor naminvoer
-                              ),
-                            ),
-                            const SizedBox(height: 8), // Voeg ruimte toe
-                            TextFormField(
-                              controller: questionCtrl,
-                              decoration: InputDecoration(
-                                labelText: AppLocalizations.of(
-                                  ctx,
-                                )!.contactQuestionLabel, // Label voor vraagtekst
-                              ),
-                              keyboardType: TextInputType
-                                  .multiline, // Zet toetsenbord op meerdere regels
-                              minLines: 6, // Minimaal 6 lijnen
-                              maxLines: null, // Onbeperkt aantal lijnen
-                              validator: (v) {
-                                // Valideer of het veld niet leeg is
-                                if (v == null || v.trim().isEmpty)
-                                  return AppLocalizations.of(
+              body: SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0), // Voeg vulling toe
+                    physics:
+                        const AlwaysScrollableScrollPhysics(), // Sta altijd scrollen toe
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight:
+                            constraints.maxHeight - 32, // Stel minimumhoogte in
+                      ),
+                      child: IntrinsicHeight(
+                        child: Form(
+                          key: formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              TextFormField(
+                                controller: emailCtrl,
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(
                                     ctx,
-                                  )!.question_validation; // Geef foutbericht
-                                return null;
-                              },
-                            ),
-                            const Spacer(), // Vul resterende ruimte
-                            const SizedBox(height: 12), // Voeg ruimte toe
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: () => Navigator.of(
+                                  )!.emailLabel, // Label voor e-mailinvoer
+                                ),
+                                keyboardType: TextInputType
+                                    .emailAddress, // Pas toetsenbordtype aan
+                              ),
+                              const SizedBox(height: 8), // Voeg ruimte toe
+                              TextFormField(
+                                controller: nameCtrl,
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(
+                                    ctx,
+                                  )!.contactNameLabel, // Label voor naminvoer
+                                ),
+                              ),
+                              const SizedBox(height: 8), // Voeg ruimte toe
+                              TextFormField(
+                                controller: questionCtrl,
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(
+                                    ctx,
+                                  )!.contactQuestionLabel, // Label voor vraagtekst
+                                ),
+                                keyboardType: TextInputType
+                                    .multiline, // Zet toetsenbord op meerdere regels
+                                minLines: 6, // Minimaal 6 lijnen
+                                maxLines: null, // Onbeperkt aantal lijnen
+                                validator: (v) {
+                                  // Valideer of het veld niet leeg is
+                                  if (v == null || v.trim().isEmpty)
+                                    return AppLocalizations.of(
                                       ctx,
-                                    ).pop(), // Sluit dialoog
-                                    child: Text(
-                                      AppLocalizations.of(
+                                    )!.question_validation; // Geef foutbericht
+                                  return null;
+                                },
+                              ),
+                              const Spacer(), // Vul resterende ruimte
+                              const SizedBox(height: 12), // Voeg ruimte toe
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () => Navigator.of(
                                         ctx,
-                                      )!.cancel, // Annuleerknopp
+                                      ).pop(), // Sluit dialoog
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          ctx,
+                                        )!.cancel, // Annuleerknopp
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 12), // Voeg ruimte toe
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      // Verstuur formulier
-                                      if (!formKey.currentState!.validate())
-                                        return; // Stop als formulier ongeldig is
-                                      final email = emailCtrl.text
-                                          .trim(); // Haal gereinigde e-mail op
-                                      final name = nameCtrl.text
-                                          .trim(); // Haal gereinigde naam op
-                                      final question = questionCtrl.text
-                                          .trim(); // Haal gereinigde vraag op
-                                      try {
-                                        await _sendCustomerQuestion(
-                                          // Verstuur vraag naar database
-                                          email: email,
-                                          name: name,
-                                          question: question,
-                                        );
-                                      } catch (_) {} // Negeer fouten
-                                      if (ctx.mounted)
-                                        Navigator.of(
-                                          ctx,
-                                        ).pop(); // Sluit dialoog als actief
-                                    },
-                                    child: Text(
-                                      AppLocalizations.of(ctx)!.send,
-                                    ), // Verzendknop
+                                  const SizedBox(width: 12), // Voeg ruimte toe
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        // Verstuur formulier
+                                        if (!formKey.currentState!.validate())
+                                          return; // Stop als formulier ongeldig is
+                                        final email = emailCtrl.text
+                                            .trim(); // Haal gereinigde e-mail op
+                                        final name = nameCtrl.text
+                                            .trim(); // Haal gereinigde naam op
+                                        final question = questionCtrl.text
+                                            .trim(); // Haal gereinigde vraag op
+                                        try {
+                                          await _sendCustomerQuestion(
+                                            // Verstuur vraag naar database
+                                            email: email,
+                                            name: name,
+                                            question: question,
+                                          );
+                                        } catch (_) {} // Negeer fouten
+                                        if (ctx.mounted)
+                                          Navigator.of(
+                                            ctx,
+                                          ).pop(); // Sluit dialoog als actief
+                                      },
+                                      child: Text(
+                                        AppLocalizations.of(ctx)!.send,
+                                      ), // Verzendknop
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
