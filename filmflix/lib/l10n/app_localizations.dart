@@ -610,7 +610,7 @@ abstract class AppLocalizations {
   /// No description provided for @question_label.
   ///
   /// In en, this message translates to:
-  /// **'Question'**
+  /// **'Question/Comment'**
   String get question_label;
 
   /// No description provided for @answer_label.
@@ -721,11 +721,35 @@ abstract class AppLocalizations {
   /// **'Food'**
   String get navFood;
 
+  /// No description provided for @navigationReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder navigation'**
+  String get navigationReorder;
+
   /// No description provided for @navProfile.
   ///
   /// In en, this message translates to:
   /// **'Profile'**
   String get navProfile;
+
+  /// No description provided for @infoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get infoTooltip;
+
+  /// No description provided for @watchlistInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get watchlistInfoTitle;
+
+  /// No description provided for @watchlistInfoContent.
+  ///
+  /// In en, this message translates to:
+  /// **'The app cannot fetch data from streaming services. You can manually check off episodes you\'ve watched.'**
+  String get watchlistInfoContent;
 
   /// No description provided for @tutorialHome.
   ///
@@ -756,6 +780,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage your profile and settings here.'**
   String get tutorialProfile;
+
+  /// No description provided for @tutorialNavBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you can switch screens. Long-press a button to reorder pages.'**
+  String get tutorialNavBar;
+
+  /// No description provided for @tutorialHomeExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'On the Home screen you see latest releases and recommendations.'**
+  String get tutorialHomeExtra;
+
+  /// No description provided for @tutorialWatchlistExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'In your Watchlist you can remove films or mark them to watch later.'**
+  String get tutorialWatchlistExtra;
+
+  /// No description provided for @tutorialSearchExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the search bar to quickly find titles and actors.'**
+  String get tutorialSearchExtra;
+
+  /// No description provided for @tutorialFoodExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Find snacks and recipes that match your movie choice.'**
+  String get tutorialFoodExtra;
+
+  /// No description provided for @tutorialProfileExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage settings, preferences and account details in your profile.'**
+  String get tutorialProfileExtra;
 
   /// No description provided for @tutorialMap.
   ///

@@ -190,6 +190,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final GlobalKey _searchKey = GlobalKey();
   final GlobalKey _foodKey = GlobalKey();
   final GlobalKey _profileKey = GlobalKey();
+  final GlobalKey _navBarKey = GlobalKey();
 
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
@@ -199,6 +200,20 @@ class _MainNavigationState extends State<MainNavigation> {
     const FoodScreen(), // Index 3
     const ProfileScreen(), // Index 4
   ];
+
+  // Nav order stores the screen ids in the order they should appear in the bar.
+  // Default is [0,1,2,3,4]. Persisted in SharedPreferences as strings.
+  List<int> _navOrder = [0, 1, 2, 3, 4];
+  bool _reorderMode = false; // When true, user can drag to reorder items
+
+  // Map screen id -> GlobalKey used for tutorial targeting (keep existing keys)
+  late final Map<int, GlobalKey> _navKeys = {
+    0: _homeKey,
+    1: _watchlistKey,
+    2: _searchKey,
+    3: _foodKey,
+    4: _profileKey,
+  };
 
   void _showTutorial() {
     // Check of de eerste key wel echt in de widget tree zit
@@ -211,6 +226,15 @@ class _MainNavigationState extends State<MainNavigation> {
 
     final l10n = L10n.of(context);
     List<TargetFocus> targets = [
+      // Whole navigation bar target
+      TutorialService.createTarget(
+        identify: "nav-bar",
+        key: _navBarKey,
+        text:
+            l10n?.tutorialNavBar ??
+            "Hier kan je veranderen van scherm. Als je een knop langindrukt houdt, kan je de volgorde van de pagina's aanpassen.",
+        align: ContentAlign.top,
+      ),
       // Definieer de targets voor de tutorial, waarbij we elke belangrijke functie in de navigatiebalk targeten met een beschrijving van wat het doet, zodat nieuwe gebruikers snel kunnen leren hoe ze de app kunnen gebruiken.
       TutorialService.createTarget(
         // Target voor de Home-knop in de navigatiebalk.
@@ -260,6 +284,70 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     ];
 
+    // Add screen-specific tips that appear when the user is currently on that screen.
+    final displayedScreenId =
+        (_selectedIndex >= 0 && _selectedIndex < _navOrder.length)
+        ? _navOrder[_selectedIndex]
+        : _navOrder.first;
+
+    /* switch (displayedScreenId) {
+      case 0: // Home
+        if (!targets.any((t) => t.keyTarget == _homeKey)) {
+          targets.add(TutorialService.createTarget(
+            identify: 'home-screen-tip',
+            key: _homeKey,
+            text: l10n?.tutorialHomeExtra ??
+                'Op het Home-scherm zie je de nieuwste releases en aanbevelingen.',
+            align: ContentAlign.bottom,
+          ));
+        }
+        break;
+      case 1: // Watchlist
+        if (!targets.any((t) => t.keyTarget == _watchlistKey)) {
+          targets.add(TutorialService.createTarget(
+            identify: 'watchlist-screen-tip',
+            key: _watchlistKey,
+            text: l10n?.tutorialWatchlistExtra ??
+                'In je Watchlist kun je films verwijderen of later terugkijken.',
+            align: ContentAlign.bottom,
+          ));
+        }
+        break;
+      case 2: // Search
+        if (!targets.any((t) => t.keyTarget == _searchKey)) {
+          targets.add(TutorialService.createTarget(
+            identify: 'search-screen-tip',
+            key: _searchKey,
+            text: l10n?.tutorialSearchExtra ??
+                'Gebruik de zoekbalk om snel titels en acteurs te vinden.',
+            align: ContentAlign.bottom,
+          ));
+        }
+        break;
+      case 3: // Food
+        if (!targets.any((t) => t.keyTarget == _foodKey)) {
+          targets.add(TutorialService.createTarget(
+            identify: 'food-screen-tip',
+            key: _foodKey,
+            text: l10n?.tutorialFoodExtra ??
+                'Bekijk hier snacks en recepten die passen bij je filmkeuze.',
+            align: ContentAlign.bottom,
+          ));
+        }
+        break;
+      case 4: // Profile
+        if (!targets.any((t) => t.keyTarget == _profileKey)) {
+          targets.add(TutorialService.createTarget(
+            identify: 'profile-screen-tip',
+            key: _profileKey,
+            text: l10n?.tutorialProfileExtra ??
+                'In je profiel beheer je instellingen, voorkeuren en accountgegevens.',
+            align: ContentAlign.bottom,
+          ));
+        }
+        break;
+    }*/
+
     void markTutorialAsDone() async {
       // Functie om aan te geven dat de tutorial is voltooid, zodat we deze niet opnieuw hoeven te tonen bij volgende app-starts.
       final prefs = await SharedPreferences.getInstance();
@@ -281,84 +369,263 @@ class _MainNavigationState extends State<MainNavigation> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = L10n.of(context);
 
+    final displayedScreenId =
+        (_selectedIndex >= 0 && _selectedIndex < _navOrder.length)
+        ? _navOrder[_selectedIndex]
+        : _navOrder.first;
+
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: _screens),
-      bottomNavigationBar: Container(
-        // Een container voor de bottom navigation bar, waarbij we de achtergrondkleur aanpassen op basis van het thema (donker of licht) en een subtiele scheidingslijn toevoegen aan de bovenkant.
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1C282E) : Colors.white,
-          border: Border(
-            top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+      body: IndexedStack(index: displayedScreenId, children: _screens),
+      bottomNavigationBar: GestureDetector(
+        onLongPress: _showReorderDialog,
+        child: Container(
+          key: _navBarKey,
+          // Een container voor de bottom navigation bar, waarbij we de achtergrondkleur aanpassen op basis van het thema (donker of licht) en een subtiele scheidingslijn toevoegen aan de bovenkant.
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1C282E) : Colors.white,
+            border: Border(
+              top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+            ),
           ),
-        ),
-        padding: const EdgeInsets.only(top: 8, bottom: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(
-              // Bouw elk item in de navigatiebalk met een icon, label en een key voor de tutorial, zodat we gebruikers kunnen laten zien waar ze op moeten klikken om naar verschillende secties van de app te gaan.
-              0,
-              Icons.home_outlined,
-              Icons.home_rounded,
-              l10n?.navHome ?? 'Home',
-              _homeKey,
-            ),
-            _buildNavItem(
-              1,
-              Icons.movie_outlined,
-              Icons.movie_filter_rounded,
-              l10n?.navWatchlist ?? 'Watchlist',
-              _watchlistKey,
-            ),
-            _buildNavItem(
-              2,
-              Icons.search_rounded,
-              Icons.search_rounded,
-              l10n?.navSearch ?? 'Zoeken',
-              _searchKey,
-            ),
-            _buildNavItem(
-              3,
-              Icons.fastfood_outlined,
-              Icons.fastfood_rounded,
-              l10n?.navFood ?? 'Food',
-              _foodKey,
-            ),
-            _buildNavItem(
-              4,
-              Icons.person_outline_rounded,
-              Icons.person_rounded,
-              l10n?.navProfile ?? 'Profiel',
-              _profileKey,
-            ),
-          ],
+          padding: const EdgeInsets.only(top: 8, bottom: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_navOrder.length, (pos) {
+              final screenId = _navOrder[pos];
+              // Define icons/labels based on screenId
+              IconData icon = Icons.home_outlined;
+              IconData activeIcon = Icons.home_rounded;
+              String label = l10n?.navHome ?? 'Home';
+              switch (screenId) {
+                case 0:
+                  icon = Icons.home_outlined;
+                  activeIcon = Icons.home_rounded;
+                  label = l10n?.navHome ?? 'Home';
+                  break;
+                case 1:
+                  icon = Icons.movie_outlined;
+                  activeIcon = Icons.movie_filter_rounded;
+                  label = l10n?.navWatchlist ?? 'Watchlist';
+                  break;
+                case 2:
+                  icon = Icons.search_rounded;
+                  activeIcon = Icons.search_rounded;
+                  label = l10n?.navSearch ?? 'Zoeken';
+                  break;
+                case 3:
+                  icon = Icons.fastfood_outlined;
+                  activeIcon = Icons.fastfood_rounded;
+                  label = l10n?.navFood ?? 'Food';
+                  break;
+                case 4:
+                  icon = Icons.person_outline_rounded;
+                  activeIcon = Icons.person_rounded;
+                  label = l10n?.navProfile ?? 'Profiel';
+                  break;
+              }
+
+              final baseItem = _buildNavItem(
+                pos,
+                screenId,
+                icon,
+                activeIcon,
+                label,
+                _navKeys[screenId]!,
+              );
+
+              if (_reorderMode) {
+                // Make draggable and a drag target to allow swapping positions.
+                return LongPressDraggable<int>(
+                  data: pos,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Opacity(
+                      opacity: 0.9,
+                      // Use a key-less copy for feedback to avoid duplicate GlobalKey errors.
+                      child: _buildNavItem(
+                        pos,
+                        screenId,
+                        icon,
+                        activeIcon,
+                        label,
+                        null,
+                      ),
+                    ),
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.4,
+                    child: _buildNavItem(
+                      pos,
+                      screenId,
+                      icon,
+                      activeIcon,
+                      label,
+                      null,
+                    ),
+                  ),
+                  child: DragTarget<int>(
+                    onWillAccept: (from) => from != pos,
+                    onAccept: (from) {
+                      setState(() {
+                        final moving = _navOrder.removeAt(from);
+                        _navOrder.insert(pos, moving);
+                        _saveNavOrder();
+                        // adjust selected pos if needed
+                        if (_selectedIndex == from)
+                          _selectedIndex = pos;
+                        else if (from < _selectedIndex && pos >= _selectedIndex)
+                          _selectedIndex -= 1;
+                        else if (from > _selectedIndex && pos <= _selectedIndex)
+                          _selectedIndex += 1;
+                      });
+                    },
+                    builder: (context, candidateData, rejectedData) => baseItem,
+                  ),
+                );
+              }
+
+              return baseItem;
+            }),
+          ),
         ),
       ),
     );
   }
 
+  Future<void> _showReorderDialog() async {
+    setState(() => _reorderMode = true);
+
+    final l10n = L10n.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text(l10n?.navigationReorder ?? 'Herorden navigatie'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 320,
+                child: ReorderableListView(
+                  buildDefaultDragHandles: true,
+                  children: _navOrder.map((screenId) {
+                    String label;
+                    IconData icon;
+                    switch (screenId) {
+                      case 0:
+                        label = l10n?.navHome ?? 'Home';
+                        icon = Icons.home_outlined;
+                        break;
+                      case 1:
+                        label = l10n?.navWatchlist ?? 'Watchlist';
+                        icon = Icons.movie_outlined;
+                        break;
+                      case 2:
+                        label = l10n?.navSearch ?? 'Zoeken';
+                        icon = Icons.search_rounded;
+                        break;
+                      case 3:
+                        label = l10n?.navFood ?? 'Food';
+                        icon = Icons.fastfood_outlined;
+                        break;
+                      default:
+                        label = l10n?.navProfile ?? 'Profiel';
+                        icon = Icons.person_outline_rounded;
+                    }
+
+                    return ListTile(
+                      key: ValueKey('nav-$screenId'),
+                      leading: Icon(icon),
+                      title: Text(label),
+                      trailing: const Icon(Icons.drag_handle),
+                      onTap: () async {
+                        // allow tapping to set as start screen
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setInt('start_screen_id', screenId);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${label} ingesteld als startscherm'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
+                  onReorder: (oldIndex, newIndex) {
+                    // update dialog UI first
+                    setStateDialog(() {
+                      if (newIndex > oldIndex) newIndex -= 1;
+                      final item = _navOrder.removeAt(oldIndex);
+                      _navOrder.insert(newIndex, item);
+                    });
+                    // persist and update outer UI
+                    setState(() {
+                      _saveNavOrder();
+                      if (_selectedIndex == oldIndex)
+                        _selectedIndex = newIndex;
+                      else if (oldIndex < _selectedIndex &&
+                          newIndex >= _selectedIndex)
+                        _selectedIndex -= 1;
+                      else if (oldIndex > _selectedIndex &&
+                          newIndex <= _selectedIndex)
+                        _selectedIndex += 1;
+                    });
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(l10n?.close ?? 'Sluiten'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    setState(() => _reorderMode = false);
+  }
+
   Widget _buildNavItem(
-    // Helperfunctie om een item in de navigatiebalk te bouwen, waarbij we de geselecteerde status controleren om de juiste icon en kleur te tonen, en een GestureDetector gebruiken om te reageren op taps zodat we kunnen navigeren naar het juiste scherm.
-    int index,
+    int position,
+    int screenId,
     IconData icon,
     IconData activeIcon,
     String label,
-    GlobalKey key,
+    GlobalKey? key,
   ) {
-    final isSelected = _selectedIndex == index;
+    final isSelected = _selectedIndex == position;
     final color = isSelected ? const Color(0xFFD4AF37) : Colors.grey;
 
     return GestureDetector(
-      // Gebruik een GestureDetector om te detecteren wanneer de gebruiker op een item in de navigatiebalk tikt, zodat we de geselecteerde index kunnen bijwerken en het juiste scherm kunnen tonen.
-      onTap: () => setState(() => _selectedIndex = index),
-      behavior: HitTestBehavior
-          .opaque, // Zorg ervoor dat de hele ruimte van het item klikbaar is, niet alleen het icon of label, voor een betere gebruikerservaring.
+      onTap: () => setState(() => _selectedIndex = position),
+      onLongPress: () async {
+        // A plain long press (without drag) sets this screen as the start screen.
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('start_screen_id', screenId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${label} ingesteld als startscherm'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isSelected ? activeIcon : icon, key: key, color: color),
+          if (key != null)
+            Icon(isSelected ? activeIcon : icon, key: key, color: color)
+          else
+            Icon(isSelected ? activeIcon : icon, color: color),
           const SizedBox(height: 4),
           Text(label, style: TextStyle(color: color, fontSize: 10)),
+          if (_reorderMode) const SizedBox(height: 4),
+          if (_reorderMode)
+            Icon(Icons.drag_indicator_rounded, size: 12, color: color),
         ],
       ),
     );
@@ -373,6 +640,8 @@ class _MainNavigationState extends State<MainNavigation> {
       // Gebruik een herhalende check om te wachten tot de key beschikbaar is
       _checkAndStartTutorial();
     });
+    // load nav order and preferred start screen
+    _loadNavOrder();
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
       // Keep analytics user id in sync with auth state.
       final analytics = FirebaseAnalytics.instance;
@@ -394,6 +663,34 @@ class _MainNavigationState extends State<MainNavigation> {
         await analytics.setUserId(id: anon);
       }
     });
+  }
+
+  Future<void> _loadNavOrder() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList('nav_order');
+      if (list != null && list.isNotEmpty) {
+        _navOrder = list.map((s) => int.tryParse(s) ?? 0).toList();
+      }
+      final startId = prefs.getInt('start_screen_id');
+      if (startId != null) {
+        final pos = _navOrder.indexOf(startId);
+        _selectedIndex = pos >= 0 ? pos : 0;
+      } else {
+        _selectedIndex = 0;
+      }
+      setState(() {});
+    } catch (e) {
+      debugPrint('Could not load nav order: $e');
+    }
+  }
+
+  Future<void> _saveNavOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      'nav_order',
+      _navOrder.map((i) => i.toString()).toList(),
+    );
   }
 
   int _tutorialRetryCount = 0;

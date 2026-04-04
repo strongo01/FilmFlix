@@ -287,7 +287,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get new_faq_title => 'Nouvelle FAQ';
 
   @override
-  String get question_label => 'Question';
+  String get question_label => 'Question/Commentaire';
 
   @override
   String get answer_label => 'Réponse';
@@ -348,7 +348,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navFood => 'Food';
 
   @override
+  String get navigationReorder => 'Réorganiser la navigation';
+
+  @override
   String get navProfile => 'Profil';
+
+  @override
+  String get infoTooltip => 'Info';
+
+  @override
+  String get watchlistInfoTitle => 'Info';
+
+  @override
+  String get watchlistInfoContent => 'L\'application ne peut malheureusement pas récupérer les données des services de streaming. Vous pouvez marquer manuellement les épisodes que vous avez regardés.';
 
   @override
   String get tutorialHome => 'Bienvenue ! Retrouvez ici les derniers films et séries.';
@@ -364,6 +376,24 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tutorialProfile => 'Gérez ici votre profil et vos paramètres.';
+
+  @override
+  String get tutorialNavBar => 'Ici vous pouvez changer d\'écran. Maintenez un bouton pour réorganiser l\'ordre des pages.';
+
+  @override
+  String get tutorialHomeExtra => 'Sur l\'écran d\'accueil, vous voyez les dernières sorties et recommandations.';
+
+  @override
+  String get tutorialWatchlistExtra => 'Dans votre Watchlist, vous pouvez supprimer des films ou les sauvegarder pour plus tard.';
+
+  @override
+  String get tutorialSearchExtra => 'Utilisez la barre de recherche pour trouver rapidement titres et acteurs.';
+
+  @override
+  String get tutorialFoodExtra => 'Trouvez des snacks et recettes adaptés à votre film.';
+
+  @override
+  String get tutorialProfileExtra => 'Gérez vos paramètres, préférences et compte dans votre profil.';
 
   @override
   String get tutorialMap => 'Consultez la carte pour trouver les cinémas à proximité !';

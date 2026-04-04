@@ -124,7 +124,12 @@
   "@navFood": {
     "description": "Bottom navigation: Food"
   },
+  "navigationReorder": "Navigation neu anordnen",
+  "@navigationReorder": { "description": "Dialog title for reordering the bottom navigation" },
   "navProfile": "Profil",
+  "infoTooltip": "Info",
+  "watchlistInfoTitle": "Info",
+  "watchlistInfoContent": "Die App kann leider keine Daten von Streaming-Diensten abrufen. Du kannst manuell die Episoden abhaken, die du gesehen hast.",
   "@navProfile": {
     "description": "Bottom navigation: Profile"
   },
@@ -148,6 +153,12 @@
   "@tutorialProfile": {
     "description": "Tutorial text for profile"
   },
+  "tutorialNavBar": "Hier kannst du zwischen Bildschirmen wechseln. Halte einen Button lange gedrückt, um die Reihenfolge zu ändern.",
+  "tutorialHomeExtra": "Auf dem Home-Bildschirm siehst du die neuesten Veröffentlichungen und Empfehlungen.",
+  "tutorialWatchlistExtra": "In deiner Watchlist kannst du Filme entfernen oder für später speichern.",
+  "tutorialSearchExtra": "Verwende die Suche, um schnell Titel und Schauspieler zu finden.",
+  "tutorialFoodExtra": "Finde Snacks und Rezepte, die zu deinem Film passen.",
+  "tutorialProfileExtra": "Verwalte Einstellungen, Präferenzen und Kontodaten in deinem Profil.",
   "tutorialMap": "Hier können Sie die Karte ansehen, um Kinos in Ihrer Nähe zu finden!",
   "@tutorialMap": {
     "description": "Tutorial text for map"

@@ -287,7 +287,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get new_faq_title => 'Nieuwe veelgestelde vraag';
 
   @override
-  String get question_label => 'Vraag';
+  String get question_label => 'Vraag/Opmerking';
 
   @override
   String get answer_label => 'Antwoord';
@@ -348,7 +348,19 @@ class AppLocalizationsNl extends AppLocalizations {
   String get navFood => 'Eten';
 
   @override
+  String get navigationReorder => 'Herorden navigatie';
+
+  @override
   String get navProfile => 'Profiel';
+
+  @override
+  String get infoTooltip => 'Info';
+
+  @override
+  String get watchlistInfoTitle => 'Info';
+
+  @override
+  String get watchlistInfoContent => 'De app kan helaas geen gegevens ophalen uit streamingdiensten. Je kunt handmatig afleveringen aanvinken die je hebt gekeken.';
 
   @override
   String get tutorialHome => 'Welkom! Hier vind je de nieuwste films en series.';
@@ -364,6 +376,24 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tutorialProfile => 'Beheer hier je profiel en instellingen.';
+
+  @override
+  String get tutorialNavBar => 'Hier kan je van scherm wisselen. Houd een knop lang ingedrukt om de volgorde van de pagina\'s aan te passen.';
+
+  @override
+  String get tutorialHomeExtra => 'Op het Home-scherm zie je de nieuwste releases en aanbevelingen.';
+
+  @override
+  String get tutorialWatchlistExtra => 'In je Watchlist kun je films verwijderen of later terugkijken.';
+
+  @override
+  String get tutorialSearchExtra => 'Gebruik de zoekbalk om snel titels en acteurs te vinden.';
+
+  @override
+  String get tutorialFoodExtra => 'Bekijk snacks en recepten die passen bij je filmkeuze.';
+
+  @override
+  String get tutorialProfileExtra => 'Beheer instellingen, voorkeuren en accountgegevens in je profiel.';
 
   @override
   String get tutorialMap => 'Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!';

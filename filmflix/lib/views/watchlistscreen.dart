@@ -1479,19 +1479,19 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.info_outline),
-                                  tooltip: 'Info',
+                                  tooltip: AppLocalizations.of(ctx)!.infoTooltip,
                                   onPressed: () {
                                     showDialog(
                                       context: ctx,
                                       builder: (context) => AlertDialog(
-                                        title: const Text('Info'),
-                                        content: const Text(
-                                          'De app kan helaas niet gegevens halen uit de streamingdiensten. Je kunt zelf alle afleveringen handig afvinken die je hebt gekeken.',
+                                        title: Text(AppLocalizations.of(ctx)!.watchlistInfoTitle),
+                                        content: Text(
+                                          AppLocalizations.of(ctx)!.watchlistInfoContent,
                                         ),
                                         actions: [
                                           TextButton(
                                             onPressed: () => Navigator.pop(context),
-                                            child: const Text('OK'),
+                                            child: Text(AppLocalizations.of(ctx)!.ok),
                                           ),
                                         ],
                                       ),

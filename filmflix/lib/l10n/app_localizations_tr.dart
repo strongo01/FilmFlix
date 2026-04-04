@@ -287,7 +287,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get new_faq_title => 'Yeni SSS';
 
   @override
-  String get question_label => 'Soru';
+  String get question_label => 'Soru/Yorum';
 
   @override
   String get answer_label => 'Cevap';
@@ -348,7 +348,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get navFood => 'Yemek';
 
   @override
+  String get navigationReorder => 'Gezinmeyi yeniden sırala';
+
+  @override
   String get navProfile => 'Profil';
+
+  @override
+  String get infoTooltip => 'Bilgi';
+
+  @override
+  String get watchlistInfoTitle => 'Bilgi';
+
+  @override
+  String get watchlistInfoContent => 'Uygulama ne yazık ki yayın hizmetlerinden veri çekemiyor. İzlediğiniz bölümleri kendiniz işaretleyebilirsiniz.';
 
   @override
   String get tutorialHome => 'Hoş geldiniz! Burada en yeni film ve dizileri bulabilirsiniz.';
@@ -364,6 +376,24 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tutorialProfile => 'Profilinizi ve ayarlarınızı buradan yönetin.';
+
+  @override
+  String get tutorialNavBar => 'Buradan ekranlar arasında geçiş yapabilirsin. Sayfaların sırasını değiştirmek için bir düğmeye uzun bas.';
+
+  @override
+  String get tutorialHomeExtra => 'Ana ekranda en yeni yayınları ve önerileri görürsün.';
+
+  @override
+  String get tutorialWatchlistExtra => 'İzleme listende filmleri kaldırabilir veya daha sonra izlemek üzere kaydedebilirsin.';
+
+  @override
+  String get tutorialSearchExtra => 'Başlıkları ve oyuncuları hızlıca bulmak için arama çubuğunu kullan.';
+
+  @override
+  String get tutorialFoodExtra => 'Film tercihine uygun atıştırmalıkları ve tarifleri bul.';
+
+  @override
+  String get tutorialProfileExtra => 'Profilinde ayarları, tercihleri ve hesap bilgilerini yönet.';
 
   @override
   String get tutorialMap => 'Yakındaki sinemaları bulmak için haritaya bakabilirsiniz!';
