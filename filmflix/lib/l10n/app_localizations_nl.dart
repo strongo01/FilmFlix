@@ -1273,4 +1273,91 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tutorialSearchScreenDesc => 'Uitleg over het zoekscherm';
+
+  @override
+  String get tutorialFoodZip => 'Vul hier je postcode in om sneller eten te vinden en te bestellen bij jou in de buurt.';
+
+  @override
+  String get tutorialFoodDiet => 'Geef hier je dieetwensen of allergieën aan, dan filteren wij het eten voor je.';
+
+  @override
+  String get tutorialFoodQuick => 'Tik hier snel op wat je wil eten! Houd een favoriet vast om hem te bewerken.';
+
+  @override
+  String get tutorialFoodSearch => 'Zoek handmatig naar eten waar je zin in hebt en druk op zoeken.';
+
+  @override
+  String get tutorialFoodScreenMain => 'Food scherm';
+
+  @override
+  String get tutorialFoodScreenDesc => 'Uitleg over het foodscherm (eten bestellen)';
+
+  @override
+  String get tutorialWatchlistTabs => 'Hier wissel je tussen je opgeslagen films/series en de series die je nu aan het kijken bent.';
+
+  @override
+  String get tutorialWatchlistLogin => 'Log hier in of maak een account aan om je films en series op te kunnen slaan.';
+
+  @override
+  String get tutorialWatchlistContent => 'Hier beheer je alles wat je hebt opgeslagen of waar je gebleven was met kijken.';
+
+  @override
+  String get tutorialWatchlistScreenMain => 'Mijn lijst';
+
+  @override
+  String get tutorialWatchlistScreenDesc => 'Uitleg over de volglijst en bewaarde films';
+
+  @override
+  String get tutorialProfileAvatar => 'Klik hier om je avatar en je weergavenaam aan te passen.';
+
+  @override
+  String get tutorialProfileStats => 'Hier zie je in één oogopslag hoeveel films je hebt bekeken en opgeslagen.';
+
+  @override
+  String get tutorialProfileBadges => 'Door de app te gebruiken verdien je badgen. Tik erop om ze te bekijken!';
+
+  @override
+  String get tutorialProfileSettings => 'Hier vind je alle app-instellingen, zoals notificaties of thema.';
+
+  @override
+  String get tutorialProfileScreenMain => 'Profielscherm';
+
+  @override
+  String get tutorialProfileScreenDesc => 'Uitleg over het profielscherm';
+
+  @override
+  String get badge_adventurer_desc => 'Voeg 10 avontuurlijke films of series toe om dit level te verhogen.';
+
+  @override
+  String get badge_horror_desc => 'Voeg 5 horror- of thrillerfilms toe aan je lijst om dit level te verhogen.';
+
+  @override
+  String get badge_binge_desc => 'Voeg binnen 10 minuten 2 of meer items toe. Doe dit 3 keer om dit level te verhogen.';
+
+  @override
+  String get badge_early_desc => 'Voeg 5 items toe tussen 00:00 en 06:00 \'s nachts om dit level te verhogen.';
+
+  @override
+  String get badge_dialog_close => 'Sluiten';
+
+  @override
+  String get tutorialMovieDetailInfo => 'Hier zie je de belangrijkste informatie over de film of serie, inclusief de beschrijving (die je met 1 druk op de knop kunt vertalen).';
+
+  @override
+  String get tutorialMovieDetailWatchlist => 'Voeg deze titel toe aan je volglijst met het opslaan-icoon of markeer de film in één keer gemakkelijk als gezien!';
+
+  @override
+  String get tutorialMovieDetailStreaming => 'Kijk of deze titel gratis beschikbaar is binnen je abonnementen, of waar je hem kunt huren/kopen.';
+
+  @override
+  String get tutorialMovieDetailSeasons => 'Omdat deze titel een serie is, vind je hier alle informatie over de seizoenen en individuele afleveringen om je voortgang bij te houden.';
+
+  @override
+  String get tutorialMovieDetailMain => 'Filmdetail scherm';
+
+  @override
+  String get tutorialMovieDetailDesc => 'Uitleg over de informatie, het toevoegen en streamen in de filmdetailpagina';
+
+  @override
+  String get tutorialMovieDetailResetToast => 'Ga naar een willekeurige film of serie om de tutorial te bekijken!';
 }

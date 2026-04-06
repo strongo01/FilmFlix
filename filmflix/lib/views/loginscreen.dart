@@ -53,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState(); // Roep parent initState aan
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       // Luister naar login veranderingen
-      if (user != null && // Gebruiker is ingelogd
+        if (user != null && // Gebruiker is ingelogd
           mounted && // Widget bestaat nog
           ModalRoute.of(context)?.isCurrent == true) {
         // Dit scherm is actief
@@ -61,13 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
           // Moet teruggaan
           Navigator.of(context).pop(true); // Ga terug naar vorige scherm
         } else {
-          // Anders ga naar home
-          Navigator.of(context).pushReplacement(
-            // Vervang huidiig scherm
-            MaterialPageRoute(
-              builder: (_) => MainNavigation(key: MainNavigation.mainKey),
-            ), // Met home scherm
-          );
+          // Anders ga naar home — gebruik named route en verwijder vorige routes
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
         }
       }
     });
@@ -120,11 +115,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return; // Stop als widget weg is
       if (!widget.returnAfterLogin) {
-        // Niet teruggaan
-        Navigator.of(context).pushReplacement(
-          // Ga naar home
-          MaterialPageRoute(builder: (_) => MainNavigation(key: MainNavigation.mainKey)),
-        );
+        // Niet teruggaan: ga naar home en verwijder vorige routes
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       // Firebase auth fout
@@ -347,11 +339,9 @@ class _LoginScreenState extends State<LoginScreen> {
           if (widget.returnAfterLogin) {
             // Moet teruggaan
             Navigator.of(context).pop(true); // Ga terug
-          } else {
+            } else {
             // Anders ga naar home
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => MainNavigation(key: MainNavigation.mainKey)),
-            );
+            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
           }
         }
       }
@@ -435,9 +425,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.of(context).pop(true); // Ga terug
         } else {
           // Anders ga naar home
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => MainNavigation(key: MainNavigation.mainKey)),
-          );
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
         }
       }
       final userBefore =
@@ -835,12 +823,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ).pop(true); // Pop navigatie
                                       } else {
                                         // Anders ga naar home
-                                        Navigator.of(context).pushReplacement(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                MainNavigation(key: MainNavigation.mainKey),
-                                          ),
-                                        );
+                                        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
                                       }
                                     } finally {
                                       // Ook als geen fouten

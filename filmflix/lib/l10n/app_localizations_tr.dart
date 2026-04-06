@@ -1273,4 +1273,91 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tutorialSearchScreenDesc => 'Arama ekranının açıklaması';
+
+  @override
+  String get tutorialFoodZip => 'Bölgenizde daha hızlı yemek bulmak için posta kodunuzu buraya girin.';
+
+  @override
+  String get tutorialFoodDiet => 'Yiyecekleri filtreleyebilmemiz için diyet gereksinimlerinizi buraya girin.';
+
+  @override
+  String get tutorialFoodQuick => 'Sipariş vermek için buraya dokunun! Bir favoriyi düzenlemek için basılı tutun.';
+
+  @override
+  String get tutorialFoodSearch => 'Canınızın çektiği şeyi manuel olarak arayın ve arabaya basın.';
+
+  @override
+  String get tutorialFoodScreenMain => 'Yemek ekranı';
+
+  @override
+  String get tutorialFoodScreenDesc => 'Yemek ekranı açıklaması';
+
+  @override
+  String get tutorialWatchlistTabs => 'Burada kaydedilmiş filmleriniz/dizileriniz ile şu anda izledikleriniz arasında geçiş yapın.';
+
+  @override
+  String get tutorialWatchlistLogin => 'Filmlerinizi ve dizilerinizi kaydetmek için buradan giriş yapın veya hesap oluşturun.';
+
+  @override
+  String get tutorialWatchlistContent => 'Kaydettiğiniz her şeyi yönetin veya kaldığınız yerden izlemeye devam edin.';
+
+  @override
+  String get tutorialWatchlistScreenMain => 'Listem';
+
+  @override
+  String get tutorialWatchlistScreenDesc => 'İzleme listesi ve kaydedilen filmlerin açıklaması';
+
+  @override
+  String get tutorialProfileAvatar => 'Avatarınızı ve görünen adınızı değiştirmek için buraya dokunun.';
+
+  @override
+  String get tutorialProfileStats => 'Kaç film izlediğinizi ve kaydettiğinizi bir bakışta görün.';
+
+  @override
+  String get tutorialProfileBadges => 'Uygulamayı kullanarak rozet kazanın. Detayları görmek için dokunun!';
+
+  @override
+  String get tutorialProfileSettings => 'Bildirimler veya tema gibi tüm uygulama ayarlarını burada bulabilirsiniz.';
+
+  @override
+  String get tutorialProfileScreenMain => 'Profil ekranı';
+
+  @override
+  String get tutorialProfileScreenDesc => 'Profil ekranının açıklaması';
+
+  @override
+  String get badge_adventurer_desc => 'Seviye atlamak için 10 macera filmi veya dizisi kaydedin.';
+
+  @override
+  String get badge_horror_desc => 'Seviye atlamak için listenize 10 korku veya gerilim filmi ekleyin.';
+
+  @override
+  String get badge_binge_desc => 'Seviye atlamak için bir günde 10 öğe izleyin veya işaretleyin.';
+
+  @override
+  String get badge_early_desc => 'Seviye atlamak için sabah 05:00 ile 08:00 arasında 10 öğe kaydedin.';
+
+  @override
+  String get badge_dialog_close => 'Kapat';
+
+  @override
+  String get tutorialMovieDetailInfo => 'Burada açıklama (çevirebileceğiniz) dâhil olmak üzere film veya dizi hakkında en önemli bilgileri görürsünüz.';
+
+  @override
+  String get tutorialMovieDetailWatchlist => 'Tıkla düğmesiyle bu filmi kolayca izlendi olarak işaretleyin veya izleme listenize ekleyin!';
+
+  @override
+  String get tutorialMovieDetailStreaming => 'Bu dizinin abonelikleriniz dâhilinde izlenebileceğini veya kiralayıp satın alabileceğiniz yerleri buradan bulun.';
+
+  @override
+  String get tutorialMovieDetailSeasons => 'Bu başlık bir dizi olduğundan, diziyi izlemeye devam edebilmeniz için tüm sezon bilgilerini burada bulabilirsiniz.';
+
+  @override
+  String get tutorialMovieDetailMain => 'Film/Dizi Ayrıntıları';
+
+  @override
+  String get tutorialMovieDetailDesc => 'Detaylar, ekleme işlemleri ve akış seçenekleri hakkında bilgi ekranı';
+
+  @override
+  String get tutorialMovieDetailResetToast => 'Öğreticiyi görüntülemek için herhangi bir filme veya diziye gidin!';
 }

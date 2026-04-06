@@ -17,6 +17,10 @@ import 'package:url_launcher/url_launcher.dart'; // Importeert URL launcher
 import 'package:cinetrackr/widgets/youtube_player.dart'; // Importeert YouTube player widget
 import 'package:cinetrackr/services/movie_repository.dart'; // Importeert movie data repository
 import 'package:cinetrackr/services/movie_api.dart'; // Importeert movie API service
+import 'package:cinetrackr/services/tutorial_service.dart'; // Importeert tutorial service
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart'; // Importeert coach mark
+import 'package:shared_preferences/shared_preferences.dart'; // Importeert shared prefs
+
 import 'package:http/http.dart'
     as http; // Importeert HTTP client voor API requests
 
@@ -199,6 +203,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Map<String, String> _translatedTexts = {}; // Map voor vertaalde teksten
   Map<String, bool> _isTranslating = {}; // Map voor translation status per key
+  
+  final GlobalKey _infoKey = GlobalKey(); // Ref naar de info card
+  final GlobalKey _watchlistKey = GlobalKey(); // Ref naar opslaan/bookmark knop
+  final GlobalKey _streamingKey = GlobalKey(); // Ref naar streaming card
+  final GlobalKey _seasonsKey = GlobalKey(); // Ref naar seizoenen card
+
   User? _user; // Huidige ingelogde gebruiker
   StreamSubscription<User?>? _authSub; // Subscription op auth state changes
   bool _isInWatchlist = false; // Status of film in watchlist zit
@@ -875,6 +885,8 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // Roept de parent initState aan.
     _user = FirebaseAuth.instance.currentUser;
     // Haalt de huidige ingelogde gebruiker op.
+    startMovieDetailTutorial();
+    // Load auth status and data...
 
     _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
       // Luistert naar veranderingen in de auth status.
@@ -1063,6 +1075,91 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         // Zet loading state op false.
       });
     }
+  }
+
+  void startMovieDetailTutorial({bool force = false}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('tutorial_done_movie_detail') ?? false;
+    
+    if (done && !force) return;
+
+    _tryStart(prefs, force, 0);
+  }
+
+  void _tryStart(SharedPreferences prefs, bool force, int attempts) {
+    if (!mounted) return;
+    if (attempts > 30) return; // 30 pogingen (6 sec)
+    if (_loadingMovie) {
+      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      return;
+    }
+
+    final infoCtx = _infoKey.currentContext;
+    final watchlistCtx = _watchlistKey.currentContext;
+    
+    bool infoReady = infoCtx != null && infoCtx.findRenderObject() != null;
+    bool watchlistReady = watchlistCtx != null && watchlistCtx.findRenderObject() != null;
+
+    if (!infoReady || !watchlistReady) {
+      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      return;
+    }
+
+    final loc = AppLocalizations.of(context);
+    if (loc != null) {
+      _showTutorialTargets(loc, prefs, force);
+    }
+  }
+
+  void _showTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force) {
+     List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "movie-info",
+        key: _infoKey,
+        text: loc.tutorialMovieDetailInfo,
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "movie-watchlist",
+        key: _watchlistKey,
+        text: loc.tutorialMovieDetailWatchlist,
+        align: ContentAlign.bottom,
+      ),
+    ];
+
+    if (_streamingKey.currentContext != null) {
+       targets.add(
+         TutorialService.createTarget(
+          identify: "movie-streaming",
+          key: _streamingKey,
+          text: loc.tutorialMovieDetailStreaming,
+          align: ContentAlign.top,
+         )
+       );
+    }
+
+    if (_seasonsKey.currentContext != null) {
+       targets.add(
+         TutorialService.createTarget(
+          identify: "movie-seasons",
+          key: _seasonsKey,
+          text: loc.tutorialMovieDetailSeasons,
+          align: ContentAlign.top,
+         )
+       );
+    }
+
+    TutorialService.checkAndShowTutorial(
+      context,
+      tutorialKey: force ? 'force_movie_detail' : 'movie_detail',
+      targets: targets,
+      onFinish: () async {
+        await prefs.setBool('tutorial_done_movie_detail', true);
+      },
+      onSkip: () async {
+        await prefs.setBool('tutorial_done_movie_detail', true);
+      },
+    );
   }
 
   @override
@@ -2339,6 +2436,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               const SizedBox(height: 12), // Voegt verticale ruimte toe.
               // Main Info card
               Card(
+                key: _infoKey,
                 // Bouwt info kaart.
                 elevation: 3, // Zet schaduw hoogte.
                 color: isDark
@@ -2462,6 +2560,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                       .end, // Lijnt items rechts uit.
                                   children: [
                                     OutlinedButton.icon(
+                                      key: _watchlistKey,
                                       // Bouwt watchlist knop.
                                       style: OutlinedButton.styleFrom(
                                         // Zet knop stijl.
@@ -2798,6 +2897,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               if (_streaming.isNotEmpty ||
                   isMovie) // Checkt of streaming beschikbaar of film.
                 Card(
+                  key: _streamingKey,
                   // Bouwt streaming kaart.
                   color: isDark
                       ? Colors.grey.shade900
@@ -2838,6 +2938,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               // Seasons & Episodes expansion
               if (_seasons.isNotEmpty) // Checkt of seizoenen beschikbaar.
                 Card(
+                  key: _seasonsKey,
                   // Bouwt seizoen kaart.
                   color: isDark
                       ? Colors.grey.shade900

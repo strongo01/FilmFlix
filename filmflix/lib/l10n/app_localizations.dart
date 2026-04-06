@@ -2478,6 +2478,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Explanation of the search screen'**
   String get tutorialSearchScreenDesc;
+
+  /// No description provided for @tutorialFoodZip.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your zipcode here to find and order food faster in your area.'**
+  String get tutorialFoodZip;
+
+  /// No description provided for @tutorialFoodDiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Specify your dietary requirements or allergies here, so we can filter the food.'**
+  String get tutorialFoodDiet;
+
+  /// No description provided for @tutorialFoodQuick.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here quickly to order! Hold a favorite to edit it.'**
+  String get tutorialFoodQuick;
+
+  /// No description provided for @tutorialFoodSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Manually search for what you are craving and press search.'**
+  String get tutorialFoodSearch;
+
+  /// No description provided for @tutorialFoodScreenMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Food screen'**
+  String get tutorialFoodScreenMain;
+
+  /// No description provided for @tutorialFoodScreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the food screen'**
+  String get tutorialFoodScreenDesc;
+
+  /// No description provided for @tutorialWatchlistTabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between your saved movies/series and what you\'re currently watching here.'**
+  String get tutorialWatchlistTabs;
+
+  /// No description provided for @tutorialWatchlistLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in or create an account here to save your movies and series.'**
+  String get tutorialWatchlistLogin;
+
+  /// No description provided for @tutorialWatchlistContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage everything you\'ve saved or continue watching from where you left off.'**
+  String get tutorialWatchlistContent;
+
+  /// No description provided for @tutorialWatchlistScreenMain.
+  ///
+  /// In en, this message translates to:
+  /// **'My list'**
+  String get tutorialWatchlistScreenMain;
+
+  /// No description provided for @tutorialWatchlistScreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the watchlist and saved movies'**
+  String get tutorialWatchlistScreenDesc;
+
+  /// No description provided for @tutorialProfileAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap here to change your avatar and display name.'**
+  String get tutorialProfileAvatar;
+
+  /// No description provided for @tutorialProfileStats.
+  ///
+  /// In en, this message translates to:
+  /// **'See at a glance how many movies you\'ve watched and saved.'**
+  String get tutorialProfileStats;
+
+  /// No description provided for @tutorialProfileBadges.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn badges by using the app. Tap them to view details!'**
+  String get tutorialProfileBadges;
+
+  /// No description provided for @tutorialProfileSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you can find all app settings, such as notifications or theme.'**
+  String get tutorialProfileSettings;
+
+  /// No description provided for @tutorialProfileScreenMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile screen'**
+  String get tutorialProfileScreenMain;
+
+  /// No description provided for @tutorialProfileScreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the profile screen'**
+  String get tutorialProfileScreenDesc;
+
+  /// No description provided for @badge_adventurer_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add 10 adventure movies or series to increase this level.'**
+  String get badge_adventurer_desc;
+
+  /// No description provided for @badge_horror_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add 5 horror or thriller movies to your list to increase this level.'**
+  String get badge_horror_desc;
+
+  /// No description provided for @badge_binge_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add 2 or more items within 10 minutes. Do this 3 times to increase this level.'**
+  String get badge_binge_desc;
+
+  /// No description provided for @badge_early_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Add 5 items between 00:00 and 06:00 at night to increase this level.'**
+  String get badge_early_desc;
+
+  /// No description provided for @badge_dialog_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get badge_dialog_close;
+
+  /// No description provided for @tutorialMovieDetailInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you see the most important information about the movie or series, including the description (which you can translate).'**
+  String get tutorialMovieDetailInfo;
+
+  /// No description provided for @tutorialMovieDetailWatchlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Add this title to your watchlist with the save icon or easily mark the movie as seen!'**
+  String get tutorialMovieDetailWatchlist;
+
+  /// No description provided for @tutorialMovieDetailStreaming.
+  ///
+  /// In en, this message translates to:
+  /// **'See if this title is available within your subscriptions or where you can rent/buy it.'**
+  String get tutorialMovieDetailStreaming;
+
+  /// No description provided for @tutorialMovieDetailSeasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Because this title is a series, you\'ll find all the information about seasons and individual episodes right here to track your progress.'**
+  String get tutorialMovieDetailSeasons;
+
+  /// No description provided for @tutorialMovieDetailMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Movie Details Screen'**
+  String get tutorialMovieDetailMain;
+
+  /// No description provided for @tutorialMovieDetailDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the information, tracking and streaming options on the movie details page'**
+  String get tutorialMovieDetailDesc;
+
+  /// No description provided for @tutorialMovieDetailResetToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigate to any movie or series to view the tutorial!'**
+  String get tutorialMovieDetailResetToast;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

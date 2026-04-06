@@ -4,8 +4,13 @@ import 'package:flutter/services.dart'; // Importeert input formatters en servic
 import 'package:url_launcher/url_launcher.dart'; // Importeert URL launcher voor externe links
 import 'package:cinetrackr/widgets/app_top_bar.dart'; // Importeert custom top bar widget
 import 'package:cinetrackr/widgets/app_background.dart'; // Importeert custom background widget
+import 'package:cinetrackr/main.dart'; // Importeert MainNavigation
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:cinetrackr/services/tutorial_service.dart';
 
 class FoodScreen extends StatefulWidget {
+  static final GlobalKey<_FoodScreenState> foodScreenKey = GlobalKey<_FoodScreenState>();
   // Definieert stateful widget voor voedsel scherm
   const FoodScreen({super.key}); // Constructor met key parameter
 
@@ -19,6 +24,121 @@ class _FoodScreenState extends State<FoodScreen> {
       TextEditingController(); // Controller voor voedsel input
   final TextEditingController _zipCodeController =
       TextEditingController(); // Controller voor postcode input
+
+  final GlobalKey _zipCodeKey = GlobalKey();
+  final GlobalKey _dietKey = GlobalKey();
+  final GlobalKey _quickChoicesKey = GlobalKey();
+  final GlobalKey _searchFoodKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    startFoodScreenTutorial();
+  }
+
+  @override
+  void didUpdateWidget(FoodScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    startFoodScreenTutorial();
+  }
+
+  void startFoodScreenTutorial({bool force = false}) async {
+    debugPrint("startFoodScreenTutorial called with force=$force");
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('tutorial_done_food_screen') ?? false;
+    
+    if (done && !force) return;
+
+    _tryStart(prefs, force, 0);
+  }
+
+  void _tryStart(SharedPreferences prefs, bool force, int attempts) {
+    debugPrint("Food _tryStart: attempts=$attempts, force=$force");
+    if (!mounted) {
+      debugPrint("Food _tryStart: not mounted, aborting.");
+      return;
+    }
+    if (attempts > 10) {
+      debugPrint("Food _tryStart: max attempts reached, aborting.");
+      return;
+    }
+
+    final isCurrentScreen = (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 3;
+    debugPrint("Food _tryStart: isCurrentScreen=$isCurrentScreen");
+    if (!isCurrentScreen && !force) {
+      // If we switched away or not yet switched, stop retrying unless force
+      debugPrint("Food _tryStart: Not current screen and not forced, aborting.");
+      return; 
+    }
+
+    // Check if the essential targets have a context and render box. 
+    final zipCtx = _zipCodeKey.currentContext;
+    final dietCtx = _dietKey.currentContext;
+    final quickCtx = _quickChoicesKey.currentContext;
+    final searchCtx = _searchFoodKey.currentContext;
+    
+    bool zipReady = zipCtx != null && zipCtx.findRenderObject() != null;
+    bool dietReady = dietCtx != null && dietCtx.findRenderObject() != null;
+    bool quickReady = quickCtx != null && quickCtx.findRenderObject() != null;
+    bool searchReady = searchCtx != null && searchCtx.findRenderObject() != null;
+
+    debugPrint("Food _tryStart: zipReady=$zipReady, dietReady=$dietReady, quickReady=$quickReady, searchReady=$searchReady");
+
+    if (!zipReady || !dietReady || !quickReady || !searchReady) {
+      debugPrint("Food _tryStart: waiting for UI elements, retrying...");
+      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      return;
+    }
+
+    final loc = AppLocalizations.of(context);
+    if (loc != null) {
+      debugPrint("Food _tryStart: Elements ready, triggering tutorial.");
+      _showFoodTutorialTargets(loc, prefs, force);
+    }
+  }
+
+  void _showFoodTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force) {
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "food-zip",
+        key: _zipCodeKey,
+        text: loc.tutorialFoodZip,
+        align: ContentAlign.bottom,
+        shape: ShapeLightFocus.RRect,
+      ),
+      TutorialService.createTarget(
+        identify: "food-diet",
+        key: _dietKey,
+        text: loc.tutorialFoodDiet,
+        align: ContentAlign.bottom,
+      ),
+      TutorialService.createTarget(
+        identify: "food-quick",
+        key: _quickChoicesKey,
+        text: loc.tutorialFoodQuick,
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "food-search",
+        key: _searchFoodKey,
+        text: loc.tutorialFoodSearch,
+        align: ContentAlign.top,
+        shape: ShapeLightFocus.RRect,
+      ),
+    ];
+
+    TutorialService.checkAndShowTutorial(
+      context,
+      tutorialKey: force ? 'force_food_screen_tut' : 'food_screen',
+      targets: targets,
+      onFinish: () async {
+        await prefs.setBool('tutorial_done_food_screen', true);
+      },
+      onSkip: () async {
+        await prefs.setBool('tutorial_done_food_screen', true);
+      },
+    );
+  }
 
   final Color movieBlue = const Color.fromRGBO(
     43,
@@ -270,6 +390,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 ),
                 const SizedBox(height: 10), // Spacer
                 TextField(
+                  key: _zipCodeKey, // Key add to zipcode
                   // Postcode invoerveld
                   controller: _zipCodeController,
                   style: TextStyle(color: textColor),
@@ -348,6 +469,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 ),
                 const SizedBox(height: 10), // Spacer
                 Wrap(
+                  key: _dietKey,
                   // Rij die aflopt naar volgende regel
                   spacing: 10,
                   children: _filterOptions.map((filter) {
@@ -435,6 +557,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 ),
                 const SizedBox(height: 15), // Spacer
                 Row(
+                  key: _quickChoicesKey,
                   // Rij met snelkeuzes
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: List.generate(_quickChoices.length, (index) {
@@ -490,6 +613,7 @@ class _FoodScreenState extends State<FoodScreen> {
                 ),
                 const SizedBox(height: 35), // Grote spacer
                 TextField(
+                  key: _searchFoodKey,
                   // Zoek invoerveld
                   controller: _foodController,
                   style: TextStyle(color: textColor),

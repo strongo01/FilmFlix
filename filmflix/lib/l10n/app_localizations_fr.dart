@@ -1273,4 +1273,91 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tutorialSearchScreenDesc => 'Explication de l\'écran de recherche';
+
+  @override
+  String get tutorialFoodZip => 'Entrez votre code postal ici pour trouver de la nourriture plus rapidement dans votre région.';
+
+  @override
+  String get tutorialFoodDiet => 'Indiquez vos besoins alimentaires ici, afin que nous puissions filtrer la nourriture.';
+
+  @override
+  String get tutorialFoodQuick => 'Appuyez ici rapidement pour commander ! Maintenez un favori enfoncé pour le modifier.';
+
+  @override
+  String get tutorialFoodSearch => 'Recherchez manuellement ce dont vous avez envie et appuyez sur rechercher.';
+
+  @override
+  String get tutorialFoodScreenMain => 'Écran de nourriture';
+
+  @override
+  String get tutorialFoodScreenDesc => 'Explication de l\'écran de nourriture';
+
+  @override
+  String get tutorialWatchlistTabs => 'Basculez ici entre vos films/séries enregistrés et ce que vous regardez actuellement.';
+
+  @override
+  String get tutorialWatchlistLogin => 'Connectez-vous ou créez un compte ici pour enregistrer vos films et séries.';
+
+  @override
+  String get tutorialWatchlistContent => 'Gérez tout ce que vous avez enregistré ou reprenez la lecture là où vous vous étiez arrêté.';
+
+  @override
+  String get tutorialWatchlistScreenMain => 'Ma liste';
+
+  @override
+  String get tutorialWatchlistScreenDesc => 'Explication de la liste de suivi et des films enregistrés';
+
+  @override
+  String get tutorialProfileAvatar => 'Appuyez ici pour changer votre avatar et nom d\'affichage.';
+
+  @override
+  String get tutorialProfileStats => 'Voyez en un coup d\'œil combien de films vous avez regardés et enregistrés.';
+
+  @override
+  String get tutorialProfileBadges => 'Gagnez des badges en utilisant l\'application. Appuyez dessus pour voir les détails !';
+
+  @override
+  String get tutorialProfileSettings => 'Vous trouverez ici tous les paramètres de l\'application, comme les notifications ou le thème.';
+
+  @override
+  String get tutorialProfileScreenMain => 'Écran de profil';
+
+  @override
+  String get tutorialProfileScreenDesc => 'Explication de l\'écran de profil';
+
+  @override
+  String get badge_adventurer_desc => 'Ajoutez 10 films ou séries d\'aventure pour augmenter ce niveau.';
+
+  @override
+  String get badge_horror_desc => 'Ajoutez 5 films d\'horreur ou à suspense à votre liste pour augmenter ce niveau.';
+
+  @override
+  String get badge_binge_desc => 'Ajoutez 2 éléments ou plus en moins de 10 minutes. Faites cela 3 fois pour augmenter ce niveau.';
+
+  @override
+  String get badge_early_desc => 'Ajoutez 5 éléments entre 00h00 et 06h00 de la nuit pour augmenter ce niveau.';
+
+  @override
+  String get badge_dialog_close => 'Fermer';
+
+  @override
+  String get tutorialMovieDetailInfo => 'Ici, vous voyez les informations les plus importantes sur le film ou la série, y compris la description (que vous pouvez traduire).';
+
+  @override
+  String get tutorialMovieDetailWatchlist => 'Ajoutez ce titre à votre liste de suivi avec l\'icône de sauvegarde ou marquez facilement le film comme vu !';
+
+  @override
+  String get tutorialMovieDetailStreaming => 'Regardez si ce titre est disponible dans vos abonnements ou où vous pouvez le louer/l\'acheter.';
+
+  @override
+  String get tutorialMovieDetailSeasons => 'Comme ce titre est une série, vous trouverez toutes les informations sur les saisons et les épisodes individuels pour suivre vos progrès.';
+
+  @override
+  String get tutorialMovieDetailMain => 'Écran Détails du Film';
+
+  @override
+  String get tutorialMovieDetailDesc => 'Explication des informations, du suivi et des options de streaming sur la page des détails du film';
+
+  @override
+  String get tutorialMovieDetailResetToast => 'Naviguez vers n\'importe quel film ou série pour voir le tutoriel !';
 }

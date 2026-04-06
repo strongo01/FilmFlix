@@ -82,6 +82,20 @@ class TutorialService {
       onClickTarget: (target) {
         debugPrint('Target clicked: ${target.identify}');
       },
+      beforeFocus: (target) async {
+        final key = target.keyTarget;
+        if (key is GlobalKey) {
+          final ctx = key.currentContext;
+          if (ctx != null) {
+            Scrollable.ensureVisible(
+              ctx,
+              duration: const Duration(milliseconds: 300),
+              alignment: 0.5, // 0.5 scrolls to the center, 0 scrolls it to top
+            );
+            await Future.delayed(const Duration(milliseconds: 300));
+          }
+        }
+      },
       onFinish: () {
         debugPrint("Tutorial finished");
         if (onFinish != null) onFinish();

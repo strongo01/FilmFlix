@@ -202,10 +202,10 @@ class _MainNavigationState extends State<MainNavigation> {
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
     HomeScreen(key: HomeScreen.homeKey), // Index 0
-    const WatchlistScreen(), // Index 1
+    WatchlistScreen(key: WatchlistScreen.watchlistScreenKey), // Index 1
     SearchScreen(key: SearchScreen.searchScreenKey), // Index 2
-    const FoodScreen(), // Index 3
-    const ProfileScreen(), // Index 4
+    FoodScreen(key: FoodScreen.foodScreenKey), // Index 3
+    ProfileScreen(key: ProfileScreen.profileScreenKey), // Index 4
   ];
 
   // Nav order stores the screen ids in the order they should appear in the bar.
@@ -655,6 +655,21 @@ class _MainNavigationState extends State<MainNavigation> {
                WidgetsBinding.instance.addPostFrameCallback((_) {
                  SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial();
                });
+            } else if (screenId == 3) {
+               // When switching to food tab, try starting the food tutorial
+               WidgetsBinding.instance.addPostFrameCallback((_) {
+                 FoodScreen.foodScreenKey.currentState?.startFoodScreenTutorial();
+               });
+            } else if (screenId == 1) {
+               // When switching to watchlist tab, try starting the watchlist tutorial
+               WidgetsBinding.instance.addPostFrameCallback((_) {
+                 WatchlistScreen.watchlistScreenKey.currentState?.startWatchlistScreenTutorial();
+               });
+            } else if (screenId == 4) {
+               // When switching to profile tab, try starting the profile tutorial
+               WidgetsBinding.instance.addPostFrameCallback((_) {
+                 ProfileScreen.profileScreenKey.currentState?.startProfileScreenTutorial();
+               });
             }
           },
           onLongPress: () async {
@@ -793,6 +808,36 @@ class _MainNavigationState extends State<MainNavigation> {
       setState(() => _selectedIndex = pos);
       Future.delayed(const Duration(milliseconds: 300), () {
         SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial(force: true);
+      });
+    }
+  }
+
+  void startFoodTutorial() {
+    final pos = _navOrder.indexOf(3);
+    if (pos != -1) {
+      setState(() => _selectedIndex = pos);
+      Future.delayed(const Duration(milliseconds: 300), () {
+        FoodScreen.foodScreenKey.currentState?.startFoodScreenTutorial(force: true);
+      });
+    }
+  }
+
+  void startWatchlistTutorial() {
+    final pos = _navOrder.indexOf(1);
+    if (pos != -1) {
+      setState(() => _selectedIndex = pos);
+      Future.delayed(const Duration(milliseconds: 300), () {
+        WatchlistScreen.watchlistScreenKey.currentState?.startWatchlistScreenTutorial(force: true);
+      });
+    }
+  }
+
+  void startProfileTutorial() {
+    final pos = _navOrder.indexOf(4);
+    if (pos != -1) {
+      setState(() => _selectedIndex = pos);
+      Future.delayed(const Duration(milliseconds: 300), () {
+        ProfileScreen.profileScreenKey.currentState?.startProfileScreenTutorial(force: true);
       });
     }
   }

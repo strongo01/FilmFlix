@@ -195,6 +195,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _triggerFoodTutorial() {
+    try {
+      final navState = MainNavigation.mainKey.currentState;
+      if (navState != null) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        (navState as dynamic).startFoodTutorial();
+      }
+    } catch (e) {
+      debugPrint('Failed to trigger food tutorial: $e');
+    }
+  }
+
+  void _triggerWatchlistTutorial() {
+    try {
+      final navState = MainNavigation.mainKey.currentState;
+      if (navState != null) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        (navState as dynamic).startWatchlistTutorial();
+      }
+    } catch (e) {
+      debugPrint('Failed to trigger watchlist tutorial: $e');
+    }
+  }
+
+  void _triggerProfileTutorial() {
+    try {
+      final navState = MainNavigation.mainKey.currentState;
+      if (navState != null) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        (navState as dynamic).startProfileTutorial();
+      }
+    } catch (e) {
+      debugPrint('Failed to trigger profile tutorial: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Build methode
@@ -454,86 +496,168 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             l10n?.resetTutorial ?? 'Start tutorial opnieuw',
                             style: TextStyle(color: textColor),
                           ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.navigation,
-                                  color: Colors.blue,
-                                ),
-                                title: Text(l10n?.tutorialMainNavigation ?? 'Hoofd navigatie'),
-                                subtitle: Text(
-                                  l10n?.tutorialMainNavigationDesc ?? 'Uitleg over de balk en startscherm',
-                                ),
-                                onTap: () async {
-                                  await prefs.setBool(
-                                    'tutorial_done_main_navigation',
-                                    false,
-                                  );
-                                  Navigator.pop(ctx);
-                                  _triggerMainTutorial();
-                                },
+                          content: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+                            ),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.navigation,
+                                      color: Colors.blue,
+                                    ),
+                                    title: Text(l10n?.navHome ?? 'Home'),
+                                    subtitle: Text(
+                                      l10n?.tutorialMainNavigationDesc ?? 'Uitleg over de balk en startscherm',
+                                    ),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_main_navigation',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      _triggerMainTutorial();
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.home,
+                                      color: Colors.green,
+                                    ),
+                                    title: Text(l10n?.navHome ?? 'Home'),
+                                    subtitle: Text(
+                                      l10n?.tutorialHomeScreenDesc ?? 'Uitleg over het hoofdscherm',
+                                    ),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_home_screen',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      _triggerHomeTutorial(); // Gebruik de juiste methode
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.search,
+                                      color: Colors.purple,
+                                    ),
+                                    title: Text(l10n?.navSearch ?? 'Search'),
+                                    subtitle: Text(
+                                      l10n?.tutorialSearchScreenDesc ?? 'Uitleg over het zoekscherm',
+                                    ),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_search_screen',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      _triggerSearchTutorial(); 
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.fastfood,
+                                      color: Colors.brown,
+                                    ),
+                                    title: Text(l10n?.navFood ?? 'Food'),
+                                    subtitle: Text(
+                                      l10n?.tutorialFoodExtra ?? 'Uitleg over het food scherm',
+                                    ),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_food_screen',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      _triggerFoodTutorial();
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.save_alt,
+                                      color: Colors.teal,
+                                    ),
+                                    title: Text(l10n?.navWatchlist ?? 'Watchlist'),
+                                    subtitle: Text(
+                                      l10n?.tutorialWatchlistExtra ?? 'Uitleg over de watchlist',
+                                    ),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_watchlist_screen',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      _triggerWatchlistTutorial();
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.person,
+                                      color: Colors.indigo,
+                                    ),
+                                    title: Text(l10n?.navProfile ?? 'Profile'),
+                                    subtitle: Text(
+                                      l10n?.tutorialProfileExtra ?? 'Uitleg over profiel en instellingen',
+                                    ),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_profile_screen',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      _triggerProfileTutorial();
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.movie,
+                                      color: Colors.blueGrey,
+                                    ),
+                                    title: Text(l10n?.details ?? 'Details'),
+                                    subtitle: Text(l10n?.tutorialMovieDetailDesc ?? ''),
+                                    onTap: () async {
+                                      await prefs.setBool(
+                                        'tutorial_done_movie_detail',
+                                        false,
+                                      );
+                                      Navigator.pop(ctx);
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(l10n?.tutorialMovieDetailResetToast ?? 'Ga naar een film of serie om de tutorial te zien.'),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const Divider(),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.refresh,
+                                      color: Colors.orange,
+                                    ),
+                                    title: Text(l10n?.tutorialResetAll ?? 'Alles resetten'),
+                                    onTap: () async {
+                                      final allKeys = prefs.getKeys().where(
+                                        (k) => k.startsWith('tutorial_done'),
+                                      );
+                                      for (final key in allKeys) {
+                                        await prefs.setBool(key, false);
+                                      }
+                                      await prefs.setBool(
+                                        'tutorial_done',
+                                        false,
+                                      ); // Oude key ook voor de zekerheid
+                                      Navigator.pop(ctx);
+                                      _triggerMainTutorial();
+                                    },
+                                  ),
+                                ],
                               ),
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.home,
-                                  color: Colors.green,
-                                ),
-                                title: Text(l10n?.tutorialHomeScreen ?? 'Home scherm'),
-                                subtitle: Text(
-                                  l10n?.tutorialHomeScreenDesc ?? 'Uitleg over het hoofdscherm',
-                                ),
-                                onTap: () async {
-                                  await prefs.setBool(
-                                    'tutorial_done_home_screen',
-                                    false,
-                                  );
-                                  Navigator.pop(ctx);
-                                  _triggerHomeTutorial(); // Gebruik de juiste methode
-                                },
-                              ),
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.search,
-                                  color: Colors.purple,
-                                ),
-                                title: Text(l10n?.tutorialSearchScreenMain ?? 'Zoek scherm'),
-                                subtitle: Text(
-                                  l10n?.tutorialSearchScreenDesc ?? 'Uitleg over het zoekscherm',
-                                ),
-                                onTap: () async {
-                                  await prefs.setBool(
-                                    'tutorial_done_search_screen',
-                                    false,
-                                  );
-                                  Navigator.pop(ctx);
-                                  _triggerSearchTutorial(); 
-                                },
-                              ),
-                              const Divider(),
-                              ListTile(
-                                leading: const Icon(
-                                  Icons.refresh,
-                                  color: Colors.orange,
-                                ),
-                                title: Text(l10n?.tutorialResetAll ?? 'Alles resetten'),
-                                onTap: () async {
-                                  final allKeys = prefs.getKeys().where(
-                                    (k) => k.startsWith('tutorial_done'),
-                                  );
-                                  for (final key in allKeys) {
-                                    await prefs.setBool(key, false);
-                                  }
-                                  await prefs.setBool(
-                                    'tutorial_done',
-                                    false,
-                                  ); // Oude key ook voor de zekerheid
-                                  Navigator.pop(ctx);
-                                  _triggerMainTutorial();
-                                },
-                              ),
-                            ],
+                            ),
                           ),
                           actions: [
                             TextButton(
@@ -698,12 +822,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // Bij knop tap
                         await FirebaseAuth.instance.signOut(); // Log uit
                         if (!mounted) return; // Stop als unmounted
-                        Navigator.of(context).pushReplacement(
-                          // Ga naar main navigation
-                          MaterialPageRoute(
-                            builder: (_) => MainNavigation(key: MainNavigation.mainKey),
-                          ),
-                        );
+                        // Navigeer naar de login route en verwijder alle voorgaande routes
+                        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                       },
                       child: Text(
                         // Voeg tekst toe

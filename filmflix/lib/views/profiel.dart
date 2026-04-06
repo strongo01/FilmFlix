@@ -10,12 +10,17 @@ import 'loginscreen.dart'; // Importeert login scherm
 import 'settingscreen.dart'; // Importeert instellingen scherm
 import 'package:cinetrackr/widgets/app_background.dart'; // Importeert achtergrond widget
 import 'package:cinetrackr/widgets/app_top_bar.dart'; // Importeert top navigatie bar
+import 'package:shared_preferences/shared_preferences.dart'; // Importeert shared preferences
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart'; // Importeert tutorial coach mark
+import 'package:cinetrackr/services/tutorial_service.dart'; // Importeert tutorial service
+import 'package:cinetrackr/main.dart'; // Importeert MainNavigation
 
 void main() => runApp(
   const MaterialApp(home: ProfileScreen()),
 ); // Start app met ProfileScreen als thuisscherm
 
 class ProfileScreen extends StatefulWidget {
+  static final GlobalKey<_ProfileScreenState> profileScreenKey = GlobalKey<_ProfileScreenState>();
   // Definieert ProfileScreen widget die state ondersteunt
   const ProfileScreen({super.key}); // Constructor met optionele key parameter
 
@@ -24,6 +29,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final GlobalKey _avatarKey = GlobalKey();
+  final GlobalKey _statsKey = GlobalKey();
+  final GlobalKey _badgesKey = GlobalKey();
+  final GlobalKey _settingsKey = GlobalKey();
+
   // Implementatie van ProfileScreen state
   StreamSubscription<User?>?
   _authSub; // Subscription op Firebase authentication wijzigingen
@@ -46,6 +56,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Initialisatie lifecycle method
     super.initState(); // Roept parent initState aan
     _initFirebaseAndListen(); // Start Firebase listeners
+    startProfileScreenTutorial();
+  }
+
+  @override
+  void didUpdateWidget(ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    startProfileScreenTutorial();
+  }
+
+  void startProfileScreenTutorial({bool force = false}) async {
+    debugPrint("startProfileScreenTutorial called with force=$force");
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('tutorial_done_profile_screen') ?? false;
+    
+    if (done && !force) return;
+
+    _tryStart(prefs, force, 0);
+  }
+
+  void _tryStart(SharedPreferences prefs, bool force, int attempts) {
+    debugPrint("Profile _tryStart: attempts=$attempts, force=$force");
+    if (!mounted) {
+      debugPrint("Profile _tryStart: not mounted, aborting.");
+      return;
+    }
+    if (attempts > 10) {
+      debugPrint("Profile _tryStart: max attempts reached, aborting.");
+      return;
+    }
+
+    final isCurrentScreen = (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 4;
+    debugPrint("Profile _tryStart: isCurrentScreen=$isCurrentScreen");
+    if (!isCurrentScreen && !force) {
+      debugPrint("Profile _tryStart: Not current screen and not forced, aborting.");
+      return; 
+    }
+
+    final avatarCtx = _avatarKey.currentContext;
+    final statsCtx = _statsKey.currentContext;
+    final badgesCtx = _badgesKey.currentContext;
+    final settingsCtx = _settingsKey.currentContext;
+    
+    bool avatarReady = avatarCtx != null && avatarCtx.findRenderObject() != null;
+    bool statsReady = statsCtx != null && statsCtx.findRenderObject() != null;
+    bool badgesReady = badgesCtx != null && badgesCtx.findRenderObject() != null;
+    bool settingsReady = settingsCtx != null && settingsCtx.findRenderObject() != null;
+
+    debugPrint("Profile _tryStart: avatarReady=$avatarReady, statsReady=$statsReady, badgesReady=$badgesReady, settingsReady=$settingsReady");
+
+    if (!avatarReady || !statsReady || !badgesReady || !settingsReady) {
+      debugPrint("Profile _tryStart: waiting for UI elements, retrying...");
+      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      return;
+    }
+
+    final loc = AppLocalizations.of(context);
+    if (loc != null) {
+      debugPrint("Profile _tryStart: Elements ready, triggering tutorial.");
+      _showProfileTutorialTargets(loc, prefs, force);
+    }
+  }
+
+  void _showProfileTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force) {
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "profile-avatar",
+        key: _avatarKey,
+        text: loc.tutorialProfileAvatar,
+        align: ContentAlign.bottom,
+        shape: ShapeLightFocus.RRect,
+      ),
+      TutorialService.createTarget(
+        identify: "profile-stats",
+        key: _statsKey,
+        text: loc.tutorialProfileStats,
+        align: ContentAlign.bottom,
+      ),
+      TutorialService.createTarget(
+        identify: "profile-badges",
+        key: _badgesKey,
+        text: loc.tutorialProfileBadges,
+        align: ContentAlign.top,
+      ),
+      TutorialService.createTarget(
+        identify: "profile-settings",
+        key: _settingsKey,
+        text: loc.tutorialProfileSettings,
+        align: ContentAlign.top,
+      ),
+    ];
+
+    TutorialService.checkAndShowTutorial(
+      context,
+      tutorialKey: force ? 'force_profile_screen_tut' : 'profile_screen',
+      targets: targets,
+      onFinish: () async {
+        await prefs.setBool('tutorial_done_profile_screen', true);
+        debugPrint("Profile tutorial finished.");
+      },
+      onSkip: () async {
+        await prefs.setBool('tutorial_done_profile_screen', true);
+        debugPrint("Profile tutorial skipped.");
+      },
+    );
   }
 
   void _showEditNameDialog() {
@@ -664,6 +778,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     // Kinder widgets
                     Stack(
+                      key: _avatarKey,
                       // Layering widget
                       alignment:
                           Alignment.bottomRight, // Align edit knop rechts onder
@@ -835,6 +950,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     // Kinder widgets
                     Row(
+                      key: _statsKey,
                       // Rij layout
                       children: [
                         // Kinder widgets
@@ -877,6 +993,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 12), // Verticale spacer
                     SizedBox(
+                      key: _badgesKey,
                       // Sized container
                       height: 120, // Hoogte 120
                       child: ListView(
@@ -895,6 +1012,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Colors.greenAccent, // Kleur
                             count: _adventureCount, // Adventure teller
                             levelBase: 10, // Level basis
+                            description: AppLocalizations.of(context)!.badge_adventurer_desc, // Omschrijving
                           ),
                           _buildBadge(
                             // Roept badge builder aan
@@ -906,6 +1024,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Colors.purpleAccent, // Kleur
                             count: _horrorCount, // Horror teller
                             levelBase: 10, // Level basis
+                            description: AppLocalizations.of(context)!.badge_horror_desc, // Omschrijving
                           ),
                           _buildBadge(
                             // Roept badge builder aan
@@ -917,6 +1036,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Colors.orangeAccent, // Kleur
                             count: _bingeCount, // Binge teller
                             levelBase: 10, // Level basis
+                            description: AppLocalizations.of(context)!.badge_binge_desc, // Omschrijving
                           ),
                           _buildBadge(
                             // Roept badge builder aan
@@ -928,6 +1048,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Colors.yellowAccent, // Kleur
                             count: _earlyBirdCount, // Early bird teller
                             levelBase: 10, // Level basis
+                            description: AppLocalizations.of(context)!.badge_early_desc, // Omschrijving
                           ),
                         ],
                       ),
@@ -948,23 +1069,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 12), // Verticale spacer
-                    _buildMenuTile(
-                      // Roept menu builder aan
-                      context, // Context
-                      Icons.settings_outlined, // Settings icon
-                      AppLocalizations.of(context)!.settingsTitle, // Label
-                      cardColor, // Achtergrond kleur
-                      onTap: () {
-                        // Callback bij tik
-                        Navigator.of(context).push(
-                          // Push route
-                          MaterialPageRoute(
-                            // Materiaal route
-                            builder: (_) =>
-                                const SettingsScreen(), // Settings screen
-                          ),
-                        );
-                      },
+                    Container(
+                      key: _settingsKey,
+                      child: _buildMenuTile(
+                        // Roept menu builder aan
+                        context, // Context
+                        Icons.settings_outlined, // Settings icon
+                        AppLocalizations.of(context)!.settingsTitle, // Label
+                        cardColor, // Achtergrond kleur
+                        onTap: () {
+                          // Callback bij tik
+                          Navigator.of(context).push(
+                            // Push route
+                            MaterialPageRoute(
+                              // Materiaal route
+                              builder: (_) =>
+                                  const SettingsScreen(), // Settings screen
+                            ),
+                          );
+                        },
+                      ),
                     ),
                     if (_isLoggedIn) // Controleert login status
                       _buildMenuTile(
@@ -977,16 +1101,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () async {
                           // Async callback
                           await FirebaseAuth.instance.signOut(); // Logout
-                          if (!mounted)
-                            return; // Controleert widget mount status
-                          Navigator.of(context).pushReplacement(
-                            // Push replacement route
-                            MaterialPageRoute(
-                              // Materiaal route
-                              builder: (_) =>
-                                  const LoginScreen(), // Login screen
-                            ),
-                          );
                         },
                       )
                     else // User is niet ingelogd
@@ -1003,7 +1117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             MaterialPageRoute(
                               // Materiaal route
                               builder: (_) =>
-                                  const LoginScreen(), // Login screen
+                                  const LoginScreen(returnAfterLogin: true), // Login screen
                             ),
                           );
                         },
@@ -1609,6 +1723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     int? count, // Optionele teller voor badge-waarden.
     int levelBase = 10, // Basiswaarde per level.
     bool simpleCount = false, // Wanneer true toont alleen het aantal.
+    String? description, // Badge omschrijving
   }) {
     final isDark =
         Theme.of(context).brightness ==
@@ -1646,9 +1761,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     }
 
-    return Container(
-      // Hoofdcontainer voor de badge.
-      width: 120, // Vaste breedte 120.
+    return GestureDetector(
+      onTap: () {
+        if (description != null && description.isNotEmpty) {
+          showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(label),
+              content: Text(description),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(AppLocalizations.of(ctx)!.badge_dialog_close),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+      child: Container(
+        // Hoofdcontainer voor de badge.
+        width: 120, // Vaste breedte 120.
       margin: const EdgeInsets.only(right: 12), // Margin rechts 12.
       padding: const EdgeInsets.symmetric(
         horizontal: 8,
@@ -1785,7 +1918,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   // Menu Items: bouwt een tappable menu-rij met icon en titel.

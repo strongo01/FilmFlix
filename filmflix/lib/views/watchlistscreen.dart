@@ -8,8 +8,13 @@ import 'loginscreen.dart';
 import 'package:cinetrackr/l10n/app_localizations.dart';
 import 'package:cinetrackr/widgets/app_top_bar.dart';
 import 'package:cinetrackr/widgets/app_background.dart';
+import 'package:cinetrackr/main.dart'; // Importeert MainNavigation
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:cinetrackr/services/tutorial_service.dart';
 
 class WatchlistScreen extends StatefulWidget {
+  static final GlobalKey<_WatchlistScreenState> watchlistScreenKey = GlobalKey<_WatchlistScreenState>();
   const WatchlistScreen({super.key});
 
   @override
@@ -17,6 +22,116 @@ class WatchlistScreen extends StatefulWidget {
 }
 
 class _WatchlistScreenState extends State<WatchlistScreen> {
+  final GlobalKey _tabsKey = GlobalKey();
+  final GlobalKey _loginButtonKey = GlobalKey();
+  final GlobalKey _contentKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    startWatchlistScreenTutorial();
+  }
+
+  @override
+  void didUpdateWidget(WatchlistScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    startWatchlistScreenTutorial();
+  }
+
+  void startWatchlistScreenTutorial({bool force = false}) async {
+    debugPrint("startWatchlistScreenTutorial called with force=$force");
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('tutorial_done_watchlist_screen') ?? false;
+    
+    if (done && !force) return;
+
+    _tryStart(prefs, force, 0);
+  }
+
+  void _tryStart(SharedPreferences prefs, bool force, int attempts) {
+    debugPrint("Watchlist _tryStart: attempts=$attempts, force=$force");
+    if (!mounted) {
+      debugPrint("Watchlist _tryStart: not mounted, aborting.");
+      return;
+    }
+    if (attempts > 10) {
+      debugPrint("Watchlist _tryStart: max attempts reached, aborting.");
+      return;
+    }
+
+    final isCurrentScreen = (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 1;
+    if (!isCurrentScreen && !force) {
+      return; 
+    }
+
+    final loc = AppLocalizations.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    
+    // Determine which targets are needed based on login status
+    final tabsCtx = _tabsKey.currentContext;
+    final loginCtx = _loginButtonKey.currentContext;
+    final contentCtx = _contentKey.currentContext;
+    
+    bool tabsReady = tabsCtx != null && tabsCtx.findRenderObject() != null;
+    bool loginReady = user == null ? (loginCtx != null && loginCtx.findRenderObject() != null) : true;
+    bool contentReady = user != null ? (contentCtx != null && contentCtx.findRenderObject() != null) : true;
+
+    if (!tabsReady || !loginReady || !contentReady) {
+      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      return;
+    }
+
+    if (loc != null) {
+      _showWatchlistTutorialTargets(loc, prefs, force, user != null);
+    }
+  }
+
+  void _showWatchlistTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force, bool isLoggedIn) {
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "watchlist-tabs",
+        key: _tabsKey,
+        text: loc.tutorialWatchlistTabs,
+        align: ContentAlign.bottom,
+        shape: ShapeLightFocus.RRect,
+      ),
+    ];
+    
+    if (isLoggedIn) {
+      targets.add(
+        TutorialService.createTarget(
+          identify: "watchlist-content",
+          key: _contentKey,
+          text: loc.tutorialWatchlistContent,
+          align: ContentAlign.bottom,
+          shape: ShapeLightFocus.RRect,
+        ),
+      );
+    } else {
+      targets.add(
+        TutorialService.createTarget(
+          identify: "watchlist-login",
+          key: _loginButtonKey,
+          text: loc.tutorialWatchlistLogin,
+          align: ContentAlign.top,
+          shape: ShapeLightFocus.RRect,
+        ),
+      );
+    }
+
+    TutorialService.checkAndShowTutorial(
+      context,
+      tutorialKey: force ? 'force_watchlist_screen_tut' : 'watchlist_screen',
+      targets: targets,
+      onFinish: () async {
+        await prefs.setBool('tutorial_done_watchlist_screen', true);
+      },
+      onSkip: () async {
+        await prefs.setBool('tutorial_done_watchlist_screen', true);
+      },
+    );
+  }
+
   Future<void> _toggleEpisodeSeenForUser(
     String imdbId,
     String epKey,
@@ -756,6 +871,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   backgroundColor: Colors.transparent,
                 ),
                 Material(
+                  key: _tabsKey,
                   color: Colors.transparent,
                   child: TabBar(
                     tabs: [
@@ -776,10 +892,11 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: InkWell(
+                      key: _loginButtonKey,
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => const LoginScreen(),
+                            builder: (_) => const LoginScreen(returnAfterLogin: true),
                           ),
                         );
                       },
@@ -1430,6 +1547,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   }
 
                   return TabBarView(
+                    
                     children: [
                       // Opgeslagen
                       Column(
@@ -1440,6 +1558,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                               padding: const EdgeInsets.all(8),
                               children: [
                                 ExpansionTile(
+                                  key: _contentKey,
                                   initiallyExpanded: true,
                                   title: Text(
                                     AppLocalizations.of(ctx)!.label_series,
