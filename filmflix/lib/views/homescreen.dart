@@ -46,6 +46,8 @@ class HomeScreen extends StatefulWidget {
   // Statefulwidget voor het homescherm
   const HomeScreen({super.key});
 
+  static final GlobalKey<_HomeScreenState> homeKey = GlobalKey<_HomeScreenState>();
+
   @override
   State<HomeScreen> createState() => _HomeScreenState(); // Maak de staat voor het homescherm
 }
@@ -68,6 +70,14 @@ class _HomeScreenState extends State<HomeScreen> {
   _customerQuestionsSub; // Abonnement op klantenvragen
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>?
   _allCustomerQuestionsSub; // Abonnement op alle klantenvragen
+
+  @override
+  void didUpdateWidget(HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Dit wordt ook aangeroepen als de parent (MainNavigation) setState doet,
+    // wat gebeurt als je van tab wisselt in de IndexedStack.
+    _checkTutorialOnInit();
+  }
 
   @override
   void initState() {
@@ -589,9 +599,33 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDone = prefs.getBool('tutorial_done_home_screen') ?? false;
     if (isDone) return;
 
+    // Als de hoofd navigatie nog nooit is getoond, wachten we op die tutorial
+    // De hoofd navigatie tutorialKey is 'main_navigation'
+    final mainDone = prefs.getBool('tutorial_done_main_navigation') ?? false;
+    if (!mainDone) {
+      debugPrint("HomeScreen: Waiting for main navigation tutorial to finish...");
+      return;
+    }
+
     // Als hij nog niet gedaan is, wachten we even tot de UI er is en tonen hem dan
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _showHomeScreenTutorial();
+      });
+    });
+  }
+
+  void startHomeScreenTutorial() {
+    // We negeren hier de prefs-check omdat dit een handmatige trigger is (bijv. na reset of handover)
+    if (!mounted) return;
+    
+    // Forceer rebuild en start tutorial in de volgende frame
+    setState(() {});
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Een heel korte delay om de UI-thread een kans te geven de keys te vinden 
+      // zonder dat de gebruiker hoeft te interageren.
+      Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) _showHomeScreenTutorial();
       });
     });
@@ -605,17 +639,24 @@ class _HomeScreenState extends State<HomeScreen> {
       TutorialService.createTarget(
         identify: "movie-slider",
         key: _movieSliderKey,
-        text: l10n?.tutorialHomeExtra ?? "Swipe door de nieuwste films in de bioscoop!",
+        text: l10n!.tutorialHomeExtra,
         align: ContentAlign.bottom,
         shape: ShapeLightFocus.RRect,
         radius: 4,
       ),
     ];
 
-    TutorialService.checkAndShowTutorial(
+    TutorialService.showTutorial(
       context,
-      tutorialKey: 'home_screen',
-      targets: targets,
+      targets,
+      onFinish: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('tutorial_done_home_screen', true);
+      },
+      onSkip: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('tutorial_done_home_screen', true);
+      },
     );
   }
 

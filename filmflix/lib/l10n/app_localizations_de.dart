@@ -384,7 +384,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tutorialNavBar2 => 'Wenn du den Raum zwischen den Buttons gedrückt hältst, kannst du die Reihenfolge der Buttons ändern.';
 
   @override
-  String get tutorialHomeExtra => 'Auf dem Home-Bildschirm siehst du die neuesten Veröffentlichungen und Empfehlungen.';
+  String get tutorialHomeExtra => 'Auf diesem Bildschirm können Sie die Filme sehen, die kürzlich erst veröffentlicht wurden. Wenn Sie auf einen Film tippen, erhalten Sie weitere Informationen zu diesem Film.';
+
+  @override
+  String get tutorialMainNavigation => 'Hauptnavigation';
+
+  @override
+  String get tutorialMainNavigationDesc => 'Erklärung der Leiste und des Startbildschirms';
+
+  @override
+  String get tutorialHomeScreen => 'Startbildschirm';
+
+  @override
+  String get tutorialHomeScreenDesc => 'Erklärung des Hauptbildschirms';
+
+  @override
+  String get tutorialResetAll => 'Alles zurücksetzen';
 
   @override
   String get tutorialWatchlistExtra => 'In deiner Watchlist kannst du Filme entfernen oder für später speichern.';
@@ -1243,4 +1258,19 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get label_kinepolis => 'Kinepolis';
+
+  @override
+  String get tutorialSearchField => 'Geben Sie hier den Namen eines Films oder einer Serie ein, um zu suchen.';
+
+  @override
+  String get tutorialSearchFilter => 'Verwenden Sie diese Schaltfläche, um nach Genre, Jahr oder Bewertung zu filtern.';
+
+  @override
+  String get tutorialSearchTabs => 'Wechseln Sie hier zwischen am besten bewerteten und beliebten Titeln.';
+
+  @override
+  String get tutorialSearchScreenMain => 'Suchbildschirm';
+
+  @override
+  String get tutorialSearchScreenDesc => 'Erklärung des Suchbildschirms';
 }

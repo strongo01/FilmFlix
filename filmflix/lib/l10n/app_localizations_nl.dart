@@ -384,7 +384,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tutorialNavBar2 => 'Als je de ruimte tussen de knoppen ingedrukt houdt, kun je de volgorde van de knoppen veranderen.';
 
   @override
-  String get tutorialHomeExtra => 'Op het Home-scherm zie je de nieuwste releases en aanbevelingen.';
+  String get tutorialHomeExtra => 'In dit scherm kan je de films bekijken die net zijn uitgebracht. Door op een film te tikken, zie je meer informatie over deze film.';
+
+  @override
+  String get tutorialMainNavigation => 'Hoofd navigatie';
+
+  @override
+  String get tutorialMainNavigationDesc => 'Uitleg over de balk en startscherm';
+
+  @override
+  String get tutorialHomeScreen => 'In dit scherm kan je de films bekijken die net zijn uitgebracht. Door op een film te tikken, zie je meer informatie over deze film.';
+
+  @override
+  String get tutorialHomeScreenDesc => 'Uitleg over het hoofdscherm';
+
+  @override
+  String get tutorialResetAll => 'Alles resetten';
 
   @override
   String get tutorialWatchlistExtra => 'In je Watchlist kun je films verwijderen of later terugkijken.';
@@ -1243,4 +1258,19 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get label_kinepolis => 'Kinepolis';
+
+  @override
+  String get tutorialSearchField => 'Typ hier de naam van een film of serie om te zoeken.';
+
+  @override
+  String get tutorialSearchFilter => 'Gebruik deze knop om uitgebreid te filteren op genre, jaar of beoordeling.';
+
+  @override
+  String get tutorialSearchTabs => 'Schakel hier tussen de best beoordeelde en populairste titels.';
+
+  @override
+  String get tutorialSearchScreenMain => 'Zoek scherm';
+
+  @override
+  String get tutorialSearchScreenDesc => 'Uitleg over het zoekscherm';
 }

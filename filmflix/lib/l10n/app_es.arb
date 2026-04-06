@@ -118,7 +118,12 @@
   "tutorialProfile": "Gestiona aquí tu perfil y ajustes.",
   "tutorialNavBar": "¡Bienvenido! Aquí puedes cambiar la pantalla de inicio. Mantén pulsado un botón para establecer esa pantalla como tu pantalla de inicio.",
   "tutorialNavBar2": "Si mantienes presionado el espacio entre los botones, puedes cambiar el orden de los botones.",
-  "tutorialHomeExtra": "En la pantalla de inicio ves los últimos estrenos y recomendaciones.",
+  "tutorialHomeExtra": "En esta pantalla puedes ver las películas que acaban de ser estrenadas. Al pulsar en una película, verás más información sobre ella.",
+  "tutorialMainNavigation": "Navegación principal",
+  "tutorialMainNavigationDesc": "Explicación de la barra y pantalla de inicio",
+  "tutorialHomeScreen": "Pantalla de inicio",
+  "tutorialHomeScreenDesc": "Explicación de la pantalla principal",
+  "tutorialResetAll": "Restablecer todo",
   "tutorialWatchlistExtra": "En tu Watchlist puedes eliminar películas o guardarlas para ver más tarde.",
   "tutorialSearchExtra": "Usa la barra de búsqueda para encontrar títulos y actores rápidamente.",
   "tutorialFoodExtra": "Encuentra snacks y recetas que encajen con tu película.",
@@ -366,8 +371,7 @@
   "disclaimerHeading": "Servicios de terceros y fuentes de datos",
   "disclaimerText": "Esta aplicación utiliza datos de múltiples fuentes de terceros:\n\n* API por Brian Fritz (OMDb API)\n Licenciado bajo CC BY-NC 4.0\n Este servicio no está respaldado ni afiliado a IMDb.com\n\n* Esta aplicación utiliza TMDB y las API de TMDB, pero no está respaldada, certificada ni aprobada de ninguna manera por TMDB\n\n* Algunos datos provienen de IMDb\n\n* La disponibilidad de streaming y los servicios de traducción se proporcionan a través de RapidAPI\n\n* Los tráilers son proporcionados por YouTube\n\nDatos de mapas © colaboradores de OpenStreetMap\n\nTodas las marcas, logotipos y derechos de autor pertenecen a sus respectivos propietarios.",
   "playbackDisabledByVideoOwner": "Reproducción deshabilitada por el propietario del vídeo.",
-  "disclaimerNote": "Todas las marcas, logotipos y datos de terceros siguen siendo propiedad de sus respectivos propietarios; consulte sus términos y políticas de privacidad para más detalles."
-  ,
+  "disclaimerNote": "Todas las marcas, logotipos y datos de terceros siguen siendo propiedad de sus respectivos propietarios; consulte sus términos y políticas de privacidad para más detalles.",
   "add_series_button": "Agregar serie",
   "add_series_title": "Agregar serie",
   "add_series_use_dates": "Usar días recurrentes",
@@ -386,5 +390,10 @@
   "set_as_start_screen": "{label} establecido como pantalla de inicio",
   "save_failed": "Error al guardar",
   "label_biosagenda": "Biosagenda",
-  "label_kinepolis": "Kinepolis"
+  "label_kinepolis": "Kinepolis",
+  "tutorialSearchField": "Escriba aquí el nombre de una película o serie para buscar.",
+  "tutorialSearchFilter": "Utilice este botón para filtrar por género, año o calificación.",
+  "tutorialSearchTabs": "Cambie aquí entre títulos populares y mejor valorados.",
+  "tutorialSearchScreenMain": "Pantalla de búsqueda",
+  "tutorialSearchScreenDesc": "Explicación de la pantalla de búsqueda"
 }

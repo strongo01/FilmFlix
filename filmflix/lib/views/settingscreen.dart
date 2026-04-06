@@ -1,6 +1,7 @@
 import 'dart:async'; // Importeer async/await en Stream functionaliteiten
 
 import 'package:cinetrackr/utils/fcm_service.dart'; // Importeer FCM (Firebase Cloud Messaging) service
+import 'package:cinetrackr/views/homescreen.dart';
 import 'package:flutter/material.dart'; // Importeer Flutter Material Design
 import 'package:firebase_auth/firebase_auth.dart'; // Importeer Firebase authenticatie
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importeer Firestore database
@@ -144,17 +145,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final navState = MainNavigation.mainKey.currentState;
       if (navState != null) {
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
+        // Sluit dialog als die nog open staat
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
         }
-        try {
-          (navState as dynamic).startTutorial();
-        } catch (e) {
-          debugPrint('Failed to call startTutorial dynamically: $e');
-        }
+
+        // De startTutorial in MainNavigation zorgt al voor index = 0
+        (navState as dynamic).startTutorial();
       }
     } catch (e) {
       debugPrint('Failed to trigger tutorial: $e');
+    }
+  }
+
+  void _triggerHomeTutorial() {
+    try {
+      final navState = MainNavigation.mainKey.currentState;
+      if (navState != null) {
+        // Sluit dialog
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        // 1. Forceer switch naar Home tab
+        (navState as dynamic).startTutorial(); 
+
+        // 2. Roep de check methode aan op HomeScreen
+        // We gebruiken een kleine delay om te zorgen dat de tab wissel is verwerkt
+        Future.delayed(const Duration(milliseconds: 500), () {
+          HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to trigger home tutorial: $e');
+    }
+  }
+
+  void _triggerSearchTutorial() {
+    try {
+      final navState = MainNavigation.mainKey.currentState;
+      if (navState != null) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        (navState as dynamic).startSearchTutorial();
+      }
+    } catch (e) {
+      debugPrint('Failed to trigger search tutorial: $e');
     }
   }
 
@@ -406,7 +443,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     () async {
                       final l10n = L10n.of(context);
                       final prefs = await SharedPreferences.getInstance();
-                      
+
                       if (!mounted) return;
 
                       await showDialog(
@@ -414,42 +451,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         builder: (ctx) => AlertDialog(
                           backgroundColor: cardColor,
                           title: Text(
-                            l10n?.resetTutorial ?? 'Reset tutorial',
+                            l10n?.resetTutorial ?? 'Start tutorial opnieuw',
                             style: TextStyle(color: textColor),
                           ),
                           content: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               ListTile(
-                                leading: const Icon(Icons.navigation, color: Colors.blue),
-                                title: const Text('Hoofd navigatie'),
-                                subtitle: const Text('Uitleg over de balk en startscherm'),
+                                leading: const Icon(
+                                  Icons.navigation,
+                                  color: Colors.blue,
+                                ),
+                                title: Text(l10n?.tutorialMainNavigation ?? 'Hoofd navigatie'),
+                                subtitle: Text(
+                                  l10n?.tutorialMainNavigationDesc ?? 'Uitleg over de balk en startscherm',
+                                ),
                                 onTap: () async {
-                                  await prefs.setBool('tutorial_done_main_navigation', false);
+                                  await prefs.setBool(
+                                    'tutorial_done_main_navigation',
+                                    false,
+                                  );
                                   Navigator.pop(ctx);
                                   _triggerMainTutorial();
                                 },
                               ),
                               ListTile(
-                                leading: const Icon(Icons.home, color: Colors.green),
-                                title: const Text('Home scherm'),
-                                subtitle: const Text('Uitleg over de film slider'),
+                                leading: const Icon(
+                                  Icons.home,
+                                  color: Colors.green,
+                                ),
+                                title: Text(l10n?.tutorialHomeScreen ?? 'Home scherm'),
+                                subtitle: Text(
+                                  l10n?.tutorialHomeScreenDesc ?? 'Uitleg over het hoofdscherm',
+                                ),
                                 onTap: () async {
-                                  await prefs.setBool('tutorial_done_home_screen', false);
+                                  await prefs.setBool(
+                                    'tutorial_done_home_screen',
+                                    false,
+                                  );
                                   Navigator.pop(ctx);
-                                  _triggerMainTutorial(); // Terug naar home om het te zien
+                                  _triggerHomeTutorial(); // Gebruik de juiste methode
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.search,
+                                  color: Colors.purple,
+                                ),
+                                title: Text(l10n?.tutorialSearchScreenMain ?? 'Zoek scherm'),
+                                subtitle: Text(
+                                  l10n?.tutorialSearchScreenDesc ?? 'Uitleg over het zoekscherm',
+                                ),
+                                onTap: () async {
+                                  await prefs.setBool(
+                                    'tutorial_done_search_screen',
+                                    false,
+                                  );
+                                  Navigator.pop(ctx);
+                                  _triggerSearchTutorial(); 
                                 },
                               ),
                               const Divider(),
                               ListTile(
-                                leading: const Icon(Icons.refresh, color: Colors.orange),
-                                title: const Text('Alles resetten'),
+                                leading: const Icon(
+                                  Icons.refresh,
+                                  color: Colors.orange,
+                                ),
+                                title: Text(l10n?.tutorialResetAll ?? 'Alles resetten'),
                                 onTap: () async {
-                                  final allKeys = prefs.getKeys().where((k) => k.startsWith('tutorial_done'));
+                                  final allKeys = prefs.getKeys().where(
+                                    (k) => k.startsWith('tutorial_done'),
+                                  );
                                   for (final key in allKeys) {
                                     await prefs.setBool(key, false);
                                   }
-                                  await prefs.setBool('tutorial_done', false); // Oude key ook voor de zekerheid
+                                  await prefs.setBool(
+                                    'tutorial_done',
+                                    false,
+                                  ); // Oude key ook voor de zekerheid
                                   Navigator.pop(ctx);
                                   _triggerMainTutorial();
                                 },
@@ -622,7 +701,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Navigator.of(context).pushReplacement(
                           // Ga naar main navigation
                           MaterialPageRoute(
-                            builder: (_) => const MainNavigation(),
+                            builder: (_) => MainNavigation(key: MainNavigation.mainKey),
                           ),
                         );
                       },

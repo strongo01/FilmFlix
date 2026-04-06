@@ -12,6 +12,7 @@ class TutorialService {
     required String tutorialKey,
     required List<TargetFocus> targets,
     VoidCallback? onFinish,
+    VoidCallback? onSkip,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final isDone = prefs.getBool('tutorial_done_$tutorialKey') ?? false;
@@ -21,8 +22,7 @@ class TutorialService {
 
     // We wachten even tot de UI gerenderd is om zeker te weten dat de keys er zijn
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted(context)) return;
-      if (_isTutorialShowing) return;
+        if (!TutorialService.mounted(context)) return;
 
       // Controleer of de targets daadwerkelijk een context hebben
       bool allKeysValid = targets.every((t) {
@@ -47,13 +47,18 @@ class TutorialService {
           onSkip: () async {
             _isTutorialShowing = false;
             await prefs.setBool('tutorial_done_$tutorialKey', true);
-            if (onFinish != null) onFinish();
+            if (onSkip != null) {
+              onSkip();
+            } else if (onFinish != null) {
+              onFinish();
+            }
           },
         );
       }
     });
+      // Genereer expres een nieuw frame: zonder dit is het scherm volledig inactief en stil, waardoor addPostFrameCallback niets heeft om zich aan te binden tot er weer een animatie is of het beeldscherm wordt aangeraakt.
+      WidgetsBinding.instance.scheduleFrame();
   }
-
   static bool mounted(BuildContext context) {
     try {
       return (context as Element).mounted;
@@ -61,7 +66,6 @@ class TutorialService {
       return false;
     }
   }
-
   static void showTutorial(
     BuildContext context,
     List<TargetFocus> targets, {

@@ -796,8 +796,38 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialHomeExtra.
   ///
   /// In en, this message translates to:
-  /// **'On the Home screen you see latest releases and recommendations.'**
+  /// **'On this screen you can view the movies that have just been released. By tapping on a movie, you can see more information about it.'**
   String get tutorialHomeExtra;
+
+  /// No description provided for @tutorialMainNavigation.
+  ///
+  /// In en, this message translates to:
+  /// **'Main Navigation'**
+  String get tutorialMainNavigation;
+
+  /// No description provided for @tutorialMainNavigationDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the bar and start screen'**
+  String get tutorialMainNavigationDesc;
+
+  /// No description provided for @tutorialHomeScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Home Screen'**
+  String get tutorialHomeScreen;
+
+  /// No description provided for @tutorialHomeScreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the main screen'**
+  String get tutorialHomeScreenDesc;
+
+  /// No description provided for @tutorialResetAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all'**
+  String get tutorialResetAll;
 
   /// No description provided for @tutorialWatchlistExtra.
   ///
@@ -2418,6 +2448,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Kinepolis'**
   String get label_kinepolis;
+
+  /// No description provided for @tutorialSearchField.
+  ///
+  /// In en, this message translates to:
+  /// **'Type the name of a movie or series here to search.'**
+  String get tutorialSearchField;
+
+  /// No description provided for @tutorialSearchFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this button to filter by genre, year or rating.'**
+  String get tutorialSearchFilter;
+
+  /// No description provided for @tutorialSearchTabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between top rated and popular titles here.'**
+  String get tutorialSearchTabs;
+
+  /// No description provided for @tutorialSearchScreenMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Search screen'**
+  String get tutorialSearchScreenMain;
+
+  /// No description provided for @tutorialSearchScreenDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Explanation of the search screen'**
+  String get tutorialSearchScreenDesc;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

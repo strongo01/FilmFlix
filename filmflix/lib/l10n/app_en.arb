@@ -5,7 +5,7 @@
   "preferences": "Preferences",
   "notifications": "Notifications",
   "notifications_enabled": "Notifications enabled",
-  "notifications_check_system": "Check your system settings to allow notifications.",
+  "notifications_check_system": "Check System Settings to allow notifications.",
   "notifications_registration_failed": "Registering for notifications failed.",
   "language": "Language",
   "english": "English",
@@ -16,54 +16,47 @@
   "spanish": "Spanish",
   "close": "Close",
   "nameLabel": "Your name",
-  "nameValidation": "Please enter your name",
+  "nameValidation": "Enter your name",
   "cancel": "Cancel",
   "save": "Save",
   "mustBeLoggedIn": "You must be logged in to change your name",
   "profile_default_name": "Kevin le Goat",
   "profile_default_email": "kevinlegoat@example.com",
-  "filmsDone": "Films done",
+  "filmsDone": "Films watched",
   "watchlist_label": "Watchlist",
   "support": "Support",
   "customerService_title": "Customer Service",
   "aboutTitle": "About CineTrackr",
-  "aboutText": "CineTrackr\n\nWelcome to CineTrackr, your personal guide for films and cinema visits.\n\nWith CineTrackr you can easily browse film listings, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr, enjoy watching!",
+  "aboutText": "CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr, enjoy watching!",
   "privacyPolicy": "Privacy Policy",
   "logout": "Log out",
-  "loginIn": "Log in",
+  "loginIn": "Sign in",
   "nameUpdated": "Name updated",
   "nameUpdateFailed": "Update failed",
-  "@@locale": "en",
   "admin_title": "Admin",
   "tab_chats": "Chats",
   "tab_faqs": "FAQs",
-
   "not_logged_in_title": "Not logged in",
   "not_logged_in_message": "Please sign in as admin and try again.",
-  "close": "Close",
-
   "no_users_doc": "No users doc found.",
   "users_doc_role": "users/{uid} role = {role}",
   "users_doc_no_role": "users/{uid} exists but has no role field.",
   "users_doc_read_error": "Error reading users doc: {error}",
-"send_failed": "Send failed",
+  "send_failed": "Send failed",
   "check_permissions_title": "Check permissions",
   "possible_causes": "Possible causes and fixes:",
   "firestore_rules": "- Check Firestore rules: using custom claims (request.auth.token.role).",
   "custom_claims_hint": "- If using custom claims: set role/admin via Admin SDK and have admin re-login.",
   "rules_temp_change": "- Or temporarily change rules to read role from /users/{uid}.",
   "current_users_doc": "Current users doc:",
-
   "debug_info_title": "Debug info",
   "uid_label": "uid: {uid}",
   "idtoken_claims_label": "idToken claims: {claims}",
   "idtoken_error_label": "idToken error: {error}",
   "users_doc_label": "users doc: {doc}",
   "ok": "OK",
-
   "fetch_doc_title": "Fetch document by ID",
   "paste_doc_id": "Paste the document ID from customerquestions:",
-  "cancel": "Cancel",
   "fetch": "Fetch",
   "not_found_title": "Not found",
   "document_not_found": "Document {id} does not exist or is not readable.",
@@ -71,11 +64,9 @@
   "empty": "<empty>",
   "fetch_error_title": "Error",
   "fetch_error_message": "Error fetching: {error}",
-
   "cannot_load_chats": "Cannot load chats: {error}",
   "no_questions_found": "No questions found",
   "show_debug_info": "Show debug info",
-
   "delete_chat_title": "Delete chat",
   "delete_chat_confirm": "Are you sure you want to delete this chat? This cannot be undone.",
   "delete": "Delete",
@@ -83,39 +74,30 @@
   "delete_failed": "Delete failed",
   "marked_unread": "Marked as unread",
   "action_failed": "Action failed",
-
   "user_label_default": "User",
   "reply_hint": "Type a reply...",
   "send": "Send",
-
   "notify_title": "New message from admin",
   "notify_body": "{text}",
-
   "no_faq_items": "No FAQ items yet",
   "edit": "Edit",
   "remove": "Remove",
   "add_new_faq": "Add new FAQ",
-
   "new_faq_title": "New FAQ",
   "question_label": "Question/Comment",
   "answer_label": "Answer",
   "add": "Add",
   "faq_added": "FAQ added",
   "faq_add_failed": "Add failed",
-
   "edit_faq_title": "Edit FAQ",
-  "save": "Save",
   "faq_updated": "FAQ updated",
   "faq_update_failed": "Save failed",
-
   "delete_faq_title": "Delete FAQ",
   "delete_faq_confirm": "Are you sure you want to delete this FAQ?",
   "faq_deleted": "FAQ deleted",
   "faq_delete_failed": "Delete failed",
-
   "admins_label": "Admins: {names}",
   "chat_page_title_prefix": "Chat: {prefix}",
-
   "appTitle": "CineTrackr",
   "navHome": "Home",
   "navWatchlist": "Watchlist",
@@ -126,7 +108,6 @@
   "infoTooltip": "Info",
   "watchlistInfoTitle": "Info",
   "watchlistInfoContent": "The app cannot fetch data from streaming services. You can manually check off episodes you've watched.",
-
   "tutorialHome": "Here are the latest movies and series.",
   "tutorialWatchlist": "Save your favorite movies here for later.",
   "tutorialSearch": "Search for titles or genres.",
@@ -134,7 +115,12 @@
   "tutorialProfile": "Manage your profile and settings here.",
   "tutorialNavBar": "Welcome! Here you can change the start screen. Long-press a button to set that screen as your home screen.",
   "tutorialNavBar2": "If you hold down the space between the buttons, you can change the order of the buttons.",
-  "tutorialHomeExtra": "On the Home screen you see latest releases and recommendations.",
+  "tutorialHomeExtra": "On this screen you can view the movies that have just been released. By tapping on a movie, you can see more information about it.",
+  "tutorialMainNavigation": "Main Navigation",
+  "tutorialMainNavigationDesc": "Explanation of the bar and start screen",
+  "tutorialHomeScreen": "Home Screen",
+  "tutorialHomeScreenDesc": "Explanation of the main screen",
+  "tutorialResetAll": "Reset all",
   "tutorialWatchlistExtra": "In your Watchlist you can remove films or mark them to watch later.",
   "tutorialSearchExtra": "Use the search bar to quickly find titles and actors.",
   "tutorialFoodExtra": "Find snacks and recipes that match your movie choice.",
@@ -143,14 +129,24 @@
   "resetTutorial": "Reset tutorial",
   "tutorialResetMessage": "Tutorial reset, will restart",
   "map_all_cinemas_title": "Cinemas in the Netherlands",
-  "@map_all_cinemas_title": { "description": "AppBar title for the cinemas map" },
+  "@map_all_cinemas_title": {
+    "description": "AppBar title for the cinemas map"
+  },
   "map_load_error": "Error loading cinemas: {error}",
-  "@map_load_error": { "placeholders": { "error": {} } },
+  "@map_load_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "map_location_service_disabled": "Location services are disabled",
   "map_location_permission_denied": "Location access denied",
   "map_location_permission_denied_forever": "Location permissions permanently denied. Enable in settings.",
   "map_location_fetch_error": "Could not fetch location: {error}",
-  "@map_location_fetch_error": { "placeholders": { "error": {} } },
+  "@map_location_fetch_error": {
+    "placeholders": {
+      "error": {}
+    }
+  },
   "map_no_website_content": "No website available, Cinema found! 🎥",
   "unknown": "Unknown",
   "food_edit_favorite": "Edit favorite",
@@ -173,49 +169,46 @@
   "filter_gluten_free": "Gluten-free",
   "filter_halal": "Halal",
   "food_what_do_you_want": "What do you want to eat?",
-"tutorialSkip": "Skip",
+  "tutorialSkip": "Skip",
   "ellipsis": "...",
   "open": "Open",
-
-  "settingsTitle": "Settings",
-  "myDashboard": "My Dashboard",
-  "preferences": "Preferences",
-  "support": "Support",
-  "notifications": "Notifications",
-  "language": "Language",
-  "dutch": "Dutch",
-
-  "mustBeLoggedIn": "You must be logged in to change your name",
   "changeNameTitle": "Change your name",
-  "nameLabel": "Your name",
-  "nameValidation": "Enter your name",
-  "nameUpdated": "Name updated",
-  "updateFailed": "Update failed"
-  ,
-  "english": "English",
-  "@english": { "description": "Name of the English language option" },
-  "notifications_enabled": "Notifications enabled",
-  "@notifications_enabled": { "description": "Snackbar shown when notifications were enabled" },
-  "notifications_check_system": "Check System Settings to allow notifications.",
-  "@notifications_check_system": { "description": "Message instructing user to open system settings for notifications" },
-  "notifications_registration_failed": "Registering for notifications failed.",
-  "@notifications_registration_failed": { "description": "Snackbar shown when FCM registration failed" },
-  "aboutTitle": "About CineTrackr",
-  "@aboutTitle": { "description": "Title of the About screen" },
-  "aboutText": "CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr, enjoy watching!",
-  "@aboutText": { "description": "Long about text shown in the About screen" },
-  "privacyPolicy": "Privacy Policy",
-  "@privacyPolicy": { "description": "Label for the privacy policy link" },
-  "profile_default_email": "kevinlegoat@example.com",
-  "@profile_default_email": { "description": "Fallback example email shown in profile card" },
-  "filmsDone": "Films watched",
-  "@filmsDone": { "description": "Label for number of films watched" }
-  ,
+  "updateFailed": "Update failed",
+  "@english": {
+    "description": "Name of the English language option"
+  },
+  "@notifications_enabled": {
+    "description": "Snackbar shown when notifications were enabled"
+  },
+  "@notifications_check_system": {
+    "description": "Message instructing user to open system settings for notifications"
+  },
+  "@notifications_registration_failed": {
+    "description": "Snackbar shown when FCM registration failed"
+  },
+  "@aboutTitle": {
+    "description": "Title of the About screen"
+  },
+  "@aboutText": {
+    "description": "Long about text shown in the About screen"
+  },
+  "@privacyPolicy": {
+    "description": "Label for the privacy policy link"
+  },
+  "@profile_default_email": {
+    "description": "Fallback example email shown in profile card"
+  },
+  "@filmsDone": {
+    "description": "Label for number of films watched"
+  },
   "enter_name_description": "We use your name to make the app more personal, for example for greetings.",
-  "@enter_name_description": { "description": "Explainer shown when asking the user for their display name" },
+  "@enter_name_description": {
+    "description": "Explainer shown when asking the user for their display name"
+  },
   "save_and_continue": "Save and continue",
-  "@save_and_continue": { "description": "Button label to save name and continue" },
-  "customerService_title": "Customer Service",
+  "@save_and_continue": {
+    "description": "Button label to save name and continue"
+  },
   "contact_admin_title": "Contact admin",
   "emailLabel": "E-mail",
   "contactNameLabel": "Name",
@@ -243,7 +236,6 @@
   "message_sent": "Message sent",
   "followup_title": "Respond to your question",
   "enter_message_hint": "Type a message...",
-
   "faq_default_account_q": "How do I create an account?",
   "faq_default_account_a": "You can register via the profile icon at the top-right of the app. Follow the steps to create a new account.",
   "faq_default_watchlist_q": "How do I add a movie to my watchlist?",
@@ -253,22 +245,31 @@
   "faq_report_bug_q": "How can I report a bug in the app?",
   "faq_report_bug_a": "Use the \"Contact admin\" button below to send an email with a description and screenshots.",
   "faq_ai_q": "Can I ask questions to an AI?",
-  "faq_ai_a": "Yes, use the \"Ask AI\" button to ask a question. Note that answers are automatically generated."
-  ,
+  "faq_ai_a": "Yes, use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.",
   "admins_no_push": "Admins may not receive push notifications",
   "ai_cooldown_wait": "Wait {seconds} seconds before using the AI again.",
   "ai_input_hint": "Type your question about movies or series here...",
   "user_new_message_title": "New message from user",
   "nowPlayingTitle": "Now playing",
-  "@nowPlayingTitle": { "description": "Title for the Now Playing screen" },
+  "@nowPlayingTitle": {
+    "description": "Title for the Now Playing screen"
+  },
   "imdbIdUnavailable": "IMDb ID not available for this movie",
-  "@imdbIdUnavailable": { "description": "Snackbar when IMDb ID is not available" },
+  "@imdbIdUnavailable": {
+    "description": "Snackbar when IMDb ID is not available"
+  },
   "cannot_load_now_playing": "Could not load current films.",
-  "@cannot_load_now_playing": { "description": "Error message when now playing films failed to load" },
+  "@cannot_load_now_playing": {
+    "description": "Error message when now playing films failed to load"
+  },
   "retry": "Retry",
-  "@retry": { "description": "Retry button label" },
+  "@retry": {
+    "description": "Retry button label"
+  },
   "no_films_found": "No films found",
-  "@no_films_found": { "description": "Message when no films are found" },
+  "@no_films_found": {
+    "description": "Message when no films are found"
+  },
   "loginWelcome": "Welcome to CineTrackr",
   "loginCreateAccount": "Create an account",
   "loginName": "Name",
@@ -279,7 +280,6 @@
   "loginPassword": "Password",
   "loginPasswordRequired": "Enter your password",
   "loginPasswordTooShort": "Password must be at least 6 characters",
-  "loginIn": "Sign in",
   "loginRegister": "Register",
   "loginNoAccountRegister": "No account yet? Register",
   "loginHaveAccountLogin": "Already have an account? Sign in",
@@ -304,11 +304,8 @@
   "loginErrorWrongPassword": "Wrong password.",
   "loginErrorUserNotFound": "No user found with this email.",
   "loginErrorAccountExists": "An account already exists with the same email address but different sign-in credentials.",
-
   "details": "Details",
   "translate": "Translate",
-  "save": "Save",
-  "remove": "Remove",
   "seen": "Seen",
   "age_rating": "Age rating: {rated}",
   "producers_creators": "Producers / Creators",
@@ -339,8 +336,7 @@
   "yes": "Yes",
   "no": "No",
   "stars": "stars",
-  "appleSignInNoIdentityToken": "Apple Sign-In failed: no identity token returned"
-  ,
+  "appleSignInNoIdentityToken": "Apple Sign-In failed: no identity token returned",
   "googleSignInFailed": "Google sign-in failed",
   "loginErrorWeakPassword": "Password is too weak.",
   "loginErrorNetworkFailed": "Network error. Please check your connection.",
@@ -353,23 +349,19 @@
   "edit_avatar_title": "Edit profile picture",
   "choose_color": "Choose color",
   "choose_emoji_optional": "Choose emoji (optional)",
-  "profile_default_name": "Kevin le Goat",
   "your_badges": "YOUR BADGES",
   "account_section": "ACCOUNT",
   "edit_profile": "Edit profile",
-  "logout": "Log out",
   "films": "Films",
-  "watchlist_label": "Watchlist",
-  "badge_level_prefix": "Lv"
-  ,
+  "badge_level_prefix": "Lv",
   "badge_adventurer": "Avonturer",
   "badge_horror_king": "Horror King",
   "badge_binge_watcher": "Binge Watcher",
-  "badge_early_bird": "Early Bird"
-  ,
+  "badge_early_bird": "Early Bird",
   "appVersion": "CineTrackr v1.0.4",
-  "@appVersion": { "description": "App version label shown in profile footer" }
-  ,
+  "@appVersion": {
+    "description": "App version label shown in profile footer"
+  },
   "search_hint": "Search series/movie...",
   "clear_tooltip": "Clear",
   "filter_tooltip": "Filter",
@@ -385,18 +377,15 @@
   "filter_year_to_label": "YEAR (TO)",
   "filter_min_rating_label": "MINIMUM RATING (0-100)",
   "apply_filters": "Apply Filters",
-
   "tmdb_movie_fetch_failed": "Could not fetch movie details",
   "no_imdb_for_movie": "No IMDb ID found for this movie",
   "tmdb_movie_fetch_error": "Error fetching movie details",
   "tmdb_series_fetch_failed": "Could not fetch series details",
   "no_imdb_for_series": "No IMDb ID found for this series",
   "tmdb_series_fetch_error": "Error fetching series details",
-
   "load_more_results": "Load more results",
   "best_rated": "Best Rated",
-  "popular": "Popular"
-  ,
+  "popular": "Popular",
   "genre_action": "Action",
   "genre_adventure": "Adventure",
   "genre_animation": "Animation",
@@ -417,8 +406,7 @@
   "genre_talk": "Talk Show",
   "genre_thriller": "Thriller",
   "genre_war": "War",
-  "genre_western": "Western"
-  ,
+  "genre_western": "Western",
   "login_progress_save_snack": "Log in to save progress",
   "progress_update_failed": "Could not update progress",
   "open_details": "Open details",
@@ -438,19 +426,22 @@
   "no_items": "No items",
   "season_label": "Season {number}",
   "season_short": "S{num}",
-  "@season_short": { "description": "Short season label", "placeholders": { "num": {} } },
+  "@season_short": {
+    "description": "Short season label",
+    "placeholders": {
+      "num": {}
+    }
+  },
   "seen_x_of_y": "{seen}/{total} seen",
   "title_wait": "{title}: please wait...",
   "no_progress_for_films": "No progress for films yet",
   "episode": "Episode",
-  "seen_episodes_label": "Seen episodes: {count}"
-  ,
+  "seen_episodes_label": "Seen episodes: {count}",
   "disclaimerTitle": "Disclaimer",
   "disclaimerHeading": "Third parties & APIs",
   "disclaimerText": "This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.",
   "playbackDisabledByVideoOwner": "Playback disabled by video owner.",
-  "disclaimerNote": "Use and display of content is subject to the terms and licenses of the services listed above."
-  ,
+  "disclaimerNote": "Use and display of content is subject to the terms and licenses of the services listed above.",
   "add_series_button": "Add series",
   "add_series_title": "Add series",
   "add_series_use_dates": "Use recurring days",
@@ -469,5 +460,10 @@
   "set_as_start_screen": "{label} set as start screen",
   "save_failed": "Save failed",
   "label_biosagenda": "Biosagenda",
-  "label_kinepolis": "Kinepolis"
+  "label_kinepolis": "Kinepolis",
+  "tutorialSearchField": "Type the name of a movie or series here to search.",
+  "tutorialSearchFilter": "Use this button to filter by genre, year or rating.",
+  "tutorialSearchTabs": "Switch between top rated and popular titles here.",
+  "tutorialSearchScreenMain": "Search screen",
+  "tutorialSearchScreenDesc": "Explanation of the search screen"
 }

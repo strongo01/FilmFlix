@@ -384,10 +384,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tutorialNavBar2 => 'Düğmeler arasındaki boşluğu basılı tutarsanız, düğmelerin sırasını değiştirebilirsiniz.';
 
   @override
-  String get tutorialHomeExtra => 'Ana ekranda en yeni yayınları ve önerileri görürsün.';
+  String get tutorialHomeExtra => 'Bu ekranda yeni çıkan filmleri görebilirsin. Bir filme dokunarak o film hakkında daha fazla bilgi alabilirsin.';
 
   @override
-  String get tutorialWatchlistExtra => 'İzleme listende filmleri kaldırabilir veya daha sonra izlemek üzere kaydedebilirsin.';
+  String get tutorialMainNavigation => 'Ana gezinme';
+
+  @override
+  String get tutorialMainNavigationDesc => 'Gezinti çubuğu ve başlangıç ekranı açıklaması';
+
+  @override
+  String get tutorialHomeScreen => 'Ana ekran';
+
+  @override
+  String get tutorialHomeScreenDesc => 'Ana ekran açıklaması';
+
+  @override
+  String get tutorialResetAll => 'Hepsini sıfırla';
+
+  @override
+  String get tutorialWatchlistExtra => 'İzleme listende filmleri kaldırabilir of daha sonra izlemek üzere kaydedebilirsin.';
 
   @override
   String get tutorialSearchExtra => 'Başlıkları ve oyuncuları hızlıca bulmak için arama çubuğunu kullan.';
@@ -1243,4 +1258,19 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get label_kinepolis => 'Kinepolis';
+
+  @override
+  String get tutorialSearchField => 'Aramak için buraya bir film veya dizi adı yazın.';
+
+  @override
+  String get tutorialSearchFilter => 'Tür, yıl veya puana göre detaylı filtrelemek için bu düğmeyi kullanın.';
+
+  @override
+  String get tutorialSearchTabs => 'En iyi puan alan ve popüler başlıklar arasında buradan geçiş yapın.';
+
+  @override
+  String get tutorialSearchScreenMain => 'Arama ekranı';
+
+  @override
+  String get tutorialSearchScreenDesc => 'Arama ekranının açıklaması';
 }

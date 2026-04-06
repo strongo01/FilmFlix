@@ -1,5 +1,10 @@
 import 'dart:convert'; // Voor JSON encode/decode
 
+import 'package:cinetrackr/main.dart';
+import 'package:cinetrackr/services/tutorial_service.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:cinetrackr/models/movie_models.dart'; // Modeldefinities voor films
 import 'package:cinetrackr/services/movie_api.dart'; // Lage-niveau API-aanroepen
 import 'package:cinetrackr/services/movie_repository.dart'; // Repository-laag voor zoekopdrachten
@@ -17,18 +22,125 @@ import 'package:http/http.dart' as http; // HTTP client voor netwerkverzoeken
 import 'dart:math' as math; // Wiskundefuncties (max etc.)
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({
-    super.key,
-  }); // super.key betekent dat we de key parameter doorgeven aan de constructor van de parent class (StatefulWidget). Dit is belangrijk voor het correct functioneren van de widget in de widget tree van Flutter, vooral als we later willen optimaliseren of bepaalde widgets willen identificeren. Door super.key te gebruiken, zorgen we ervoor dat de SearchScreen widget correct kan worden herbouwd en beheerd door Flutter's widget systeem.
+  const SearchScreen({super.key});
+
+  static final GlobalKey<_SearchScreenState> searchScreenKey = GlobalKey<_SearchScreenState>();
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  final GlobalKey _searchFieldKey = GlobalKey();
+  final GlobalKey _filterButtonKey = GlobalKey();
+  final GlobalKey _tabsKey = GlobalKey();
+
   final controller =
       TextEditingController(); // Controller voor het zoekveld, houdt tekst en cursor bij
   List<MovieSearchItem> results = []; // Huidige zoekresultaten
+
+  void startSearchScreenTutorial({bool force = false}) async {
+    debugPrint("startSearchScreenTutorial called with force=$force");
+    final prefs = await SharedPreferences.getInstance();
+    final done = prefs.getBool('tutorial_done_search_screen') ?? false;
+    
+    if (done && !force) return;
+
+    _tryStart(prefs, force, 0);
+  }
+
+  void _tryStart(SharedPreferences prefs, bool force, int attempts) {
+    debugPrint("Search _tryStart: attempts=$attempts, force=$force");
+    if (!mounted) {
+      debugPrint("Search _tryStart: not mounted, aborting.");
+      return;
+    }
+    if (attempts > 10) {
+      debugPrint("Search _tryStart: max attempts reached, aborting.");
+      return;
+    }
+
+    final isCurrentScreen = (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 2;
+    debugPrint("Search _tryStart: isCurrentScreen=$isCurrentScreen");
+    if (!isCurrentScreen && !force) {
+      // If we switched away or not yet switched, stop retrying unless force
+      debugPrint("Search _tryStart: Not current screen and not forced, aborting.");
+      return; 
+    }
+
+    // Check if the essential targets have a context and render box. 
+    // They might not if IndexedStack is still animating/rendering.
+    final searchCtx = _searchFieldKey.currentContext;
+    final filterCtx = _filterButtonKey.currentContext;
+    final tabsCtx = _tabsKey.currentContext;
+    
+    // Check individually for better debug logs
+    bool searchReady = searchCtx != null && searchCtx.findRenderObject() != null;
+    bool filterReady = filterCtx != null && filterCtx.findRenderObject() != null;
+    bool tabsReady = tabsCtx != null && tabsCtx.findRenderObject() != null;
+
+    debugPrint("Search _tryStart: searchReady=$searchReady, filterReady=$filterReady, tabsReady=$tabsReady, textEmpty=${controller.text.trim().isEmpty}, resultsEmpty=${results.isEmpty}");
+
+    if (!searchReady || !filterReady || ((results.isEmpty && controller.text.trim().isEmpty) && !tabsReady)) {
+      debugPrint("Search _tryStart: waiting for UI elements, retrying...");
+      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      return;
+    }
+
+    final loc = AppLocalizations.of(context);
+    debugPrint("Search _tryStart: Elements ready, triggering tutorial.");
+
+    // Ensure the tabs are visible by clearing the search if we are pushing the tutorial
+    if (force && results.isNotEmpty) {
+       setState(() {
+         controller.clear();
+         results = [];
+       });
+       
+       // wait for layout
+       Future.delayed(const Duration(milliseconds: 200), () => _showSearchTutorialTargets(loc, prefs, force));
+    } else {
+       _showSearchTutorialTargets(loc, prefs, force);
+    }
+  }
+
+  void _showSearchTutorialTargets(AppLocalizations? loc, SharedPreferences prefs, bool force) {
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "search-field",
+        key: _searchFieldKey,
+        text: loc?.tutorialSearchField ?? 'Typ hier de naam van een film of serie om te zoeken.',
+        align: ContentAlign.bottom,
+        shape: ShapeLightFocus.RRect,
+      ),
+      TutorialService.createTarget(
+        identify: "filter-button",
+        key: _filterButtonKey,
+        text: loc?.tutorialSearchFilter ?? 'Gebruik deze knop om uitgebreid te filteren op genre, jaar of beoordeling.',
+        align: ContentAlign.bottom,
+      ),
+      if (_tabsKey.currentContext != null)
+        TutorialService.createTarget(
+          identify: "search-tabs",
+          key: _tabsKey,
+          text: loc?.tutorialSearchTabs ?? 'Schakel hier tussen de best beoordeelde en populairste titels.',
+          align: ContentAlign.bottom,
+          shape: ShapeLightFocus.RRect,
+        ),
+    ];
+
+    TutorialService.checkAndShowTutorial(
+      context,
+      tutorialKey: force ? 'force_search_screen_tut' : 'search_screen',
+      targets: targets,
+      onFinish: () async {
+        await prefs.setBool('tutorial_done_search_screen', true);
+      },
+      onSkip: () async {
+        await prefs.setBool('tutorial_done_search_screen', true);
+      },
+    );
+  }
   bool loading = false; // Of er een zoek- of filteractie loopt
   String? _nextCursor; // Cursor voor paginering
   bool _hasMore = false; // Of er meer resultaten beschikbaar zijn
@@ -76,8 +188,15 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   @override
+  void didUpdateWidget(SearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    startSearchScreenTutorial();
+  }
+
+  @override
   void initState() {
     super.initState();
+    startSearchScreenTutorial();
     controller.addListener(() {
       setState(() {}); // Herbouw UI wanneer zoekveld verandert
     });
@@ -1147,6 +1266,7 @@ class _SearchScreenState extends State<SearchScreen> {
               Padding(
                 padding: const EdgeInsets.all(12),
                 child: TextField(
+                  key: _searchFieldKey,
                   controller: controller,
                   // controller voor zoekinput
                   textInputAction: TextInputAction.search,
@@ -1190,6 +1310,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
+                          key: _filterButtonKey,
                           icon: Icon(
                             Icons.filter_list,
                             color: isDark ? Colors.white54 : Colors.black54,
@@ -1312,6 +1433,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Column(
                       children: [
                         TabBar(
+                          key: _tabsKey,
                           tabs: [
                             Tab(text: AppLocalizations.of(context)!.best_rated),
                             Tab(text: AppLocalizations.of(context)!.popular),

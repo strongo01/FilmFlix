@@ -106,9 +106,10 @@
   "navWatchlist": "Listem",
   "navSearch": "Ara",
   "navFood": "Yemek",
-  "navFood": "Yemek",
   "navigationReorder": "Gezinmeyi yeniden sırala",
-  "@navigationReorder": { "description": "Dialog title for reordering the bottom navigation" },
+  "@navigationReorder": {
+    "description": "Dialog title for reordering the bottom navigation"
+  },
   "navProfile": "Profil",
   "infoTooltip": "Bilgi",
   "watchlistInfoTitle": "Bilgi",
@@ -120,8 +121,13 @@
   "tutorialProfile": "Profilinizi ve ayarlarınızı buradan yönetin.",
   "tutorialNavBar": "Hoş geldiniz! Buradan başlangıç ekranını değiştirebilirsiniz. Bir ekranı başlangıç ekranınız yapmak için o düğmeye uzun basın.",
   "tutorialNavBar2": "Düğmeler arasındaki boşluğu basılı tutarsanız, düğmelerin sırasını değiştirebilirsiniz.",
-  "tutorialHomeExtra": "Ana ekranda en yeni yayınları ve önerileri görürsün.",
-  "tutorialWatchlistExtra": "İzleme listende filmleri kaldırabilir veya daha sonra izlemek üzere kaydedebilirsin.",
+  "tutorialHomeExtra": "Bu ekranda yeni çıkan filmleri görebilirsin. Bir filme dokunarak o film hakkında daha fazla bilgi alabilirsin.",
+  "tutorialMainNavigation": "Ana gezinme",
+  "tutorialMainNavigationDesc": "Gezinti çubuğu ve başlangıç ekranı açıklaması",
+  "tutorialHomeScreen": "Ana ekran",
+  "tutorialHomeScreenDesc": "Ana ekran açıklaması",
+  "tutorialResetAll": "Hepsini sıfırla",
+  "tutorialWatchlistExtra": "İzleme listende filmleri kaldırabilir of daha sonra izlemek üzere kaydedebilirsin.",
   "tutorialSearchExtra": "Başlıkları ve oyuncuları hızlıca bulmak için arama çubuğunu kullan.",
   "tutorialFoodExtra": "Film tercihine uygun atıştırmalıkları ve tarifleri bul.",
   "tutorialProfileExtra": "Profilinde ayarları, tercihleri ve hesap bilgilerini yönet.",
@@ -368,8 +374,7 @@
   "disclaimerHeading": "Üçüncü taraf hizmetleri ve veri kaynakları",
   "disclaimerText": "Bu uygulama birden fazla üçüncü taraf kaynaktan veri kullanır:\n\n* Brian Fritz tarafından sağlanan API (OMDb API)\n CC BY-NC 4.0 lisansı altında lisanslanmıştır\n Bu hizmet IMDb.com tarafından onaylanmamış veya onunla bağlantılı değildir\n\n* Bu uygulama TMDB ve TMDB API’lerini kullanır ancak TMDB tarafından onaylanmamış, sertifikalandırılmamış veya başka bir şekilde desteklenmemektedir\n\n* Bazı veriler IMDb’den alınmıştır\n\n* Yayın (streaming) bilgileri ve çeviri hizmetleri RapidAPI üzerinden sağlanmaktadır\n\n* Fragmanlar YouTube tarafından sağlanmaktadır\n\nHarita verileri © OpenStreetMap katkıda bulunanlar\n\nTüm ticari markalar, logolar ve telif hakları ilgili sahiplerine aittir.",
   "playbackDisabledByVideoOwner": "Oynatma, videonun sahibi tarafından devre dışı bırakıldı.",
-  "disclaimerNote": "Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin."
-  ,
+  "disclaimerNote": "Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin.",
   "add_series_button": "Dizi ekle",
   "add_series_title": "Dizi ekle",
   "add_series_use_dates": "Yinelenen günleri kullan",
@@ -388,5 +393,10 @@
   "set_as_start_screen": "{label} başlangıç ekranı olarak ayarlandı",
   "save_failed": "Kaydetme başarısız",
   "label_biosagenda": "Biosagenda",
-  "label_kinepolis": "Kinepolis"
+  "label_kinepolis": "Kinepolis",
+  "tutorialSearchField": "Aramak için buraya bir film veya dizi adı yazın.",
+  "tutorialSearchFilter": "Tür, yıl veya puana göre detaylı filtrelemek için bu düğmeyi kullanın.",
+  "tutorialSearchTabs": "En iyi puan alan ve popüler başlıklar arasında buradan geçiş yapın.",
+  "tutorialSearchScreenMain": "Arama ekranı",
+  "tutorialSearchScreenDesc": "Arama ekranının açıklaması"
 }

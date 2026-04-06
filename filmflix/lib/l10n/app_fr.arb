@@ -118,7 +118,12 @@
   "tutorialProfile": "Gérez ici votre profil et vos paramètres.",
   "tutorialNavBar": "Bienvenue ! Ici, vous pouvez changer l'écran de démarrage. Appuyez longuement sur un bouton pour définir cet écran comme écran d'accueil.",
   "tutorialNavBar2": "Si vous maintenez l'espace entre les boutons, vous pouvez changer l'ordre des boutons.",
-  "tutorialHomeExtra": "Sur l'écran d'accueil, vous voyez les dernières sorties et recommandations.",
+  "tutorialHomeExtra": "Sur cet écran, vous pouvez voir les films qui viennent de sortir. En appuyant op un film, vous verrez plus d'informations sur ce film.",
+  "tutorialMainNavigation": "Navigation principale",
+  "tutorialMainNavigationDesc": "Explication de la barre et de l'écran de démarrage",
+  "tutorialHomeScreen": "Écran d'accueil",
+  "tutorialHomeScreenDesc": "Explication de l'écran principal",
+  "tutorialResetAll": "Tout réinitialiser",
   "tutorialWatchlistExtra": "Dans votre Watchlist, vous pouvez supprimer des films ou les sauvegarder pour plus tard.",
   "tutorialSearchExtra": "Utilisez la barre de recherche pour trouver rapidement titres et acteurs.",
   "tutorialFoodExtra": "Trouvez des snacks et recettes adaptés à votre film.",
@@ -366,8 +371,7 @@
   "disclaimerHeading": "Services tiers et sources de données",
   "disclaimerText": "Cette application utilise des données provenant de plusieurs sources tierces :\n\n* API par Brian Fritz (OMDb API)\n Sous licence CC BY-NC 4.0\n Ce service n’est ni approuvé ni affilié à IMDb.com\n\n* Cette application utilise TMDB et les API TMDB mais n’est pas approuvée, certifiée ou autrement validée par TMDB\n\n* Certaines données proviennent d’IMDb\n\n* La disponibilité en streaming et les services de traduction sont fournis via RapidAPI\n\n* Les bandes-annonces sont fournies par YouTube\n\nDonnées cartographiques © contributeurs OpenStreetMap\n\nToutes les marques, logos et droits d’auteur appartiennent à leurs propriétaires respectifs.",
   "playbackDisabledByVideoOwner": "Lecture désactivée par le propriétaire de la vidéo.",
-  "disclaimerNote": "Toutes les marques, logos et données de tiers restent la propriété de leurs détenteurs respectifs ; veuillez consulter leurs conditions d'utilisation et leurs politiques de confidentialité pour plus d'informations."
-  ,
+  "disclaimerNote": "Toutes les marques, logos et données de tiers restent la propriété de leurs détenteurs respectifs ; veuillez consulter leurs conditions d'utilisation et leurs politiques de confidentialité pour plus d'informations.",
   "add_series_button": "Ajouter une série",
   "add_series_title": "Ajouter une série",
   "add_series_use_dates": "Utiliser des jours récurrents",
@@ -386,5 +390,10 @@
   "set_as_start_screen": "{label} défini comme écran de démarrage",
   "save_failed": "Échec de l'enregistrement",
   "label_biosagenda": "Biosagenda",
-  "label_kinepolis": "Kinepolis"
+  "label_kinepolis": "Kinepolis",
+  "tutorialSearchField": "Tapez le nom d'un film ou d'une série ici pour rechercher.",
+  "tutorialSearchFilter": "Utilisez ce bouton pour filtrer par genre, année ou note.",
+  "tutorialSearchTabs": "Basculez ici entre les titres les mieux notés et populaires.",
+  "tutorialSearchScreenMain": "Écran de recherche",
+  "tutorialSearchScreenDesc": "Explication de l'écran de recherche"
 }

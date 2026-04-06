@@ -201,9 +201,9 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // Alle schermen die je in de balk wilt kunnen aanklikken
   final List<Widget> _screens = [
-    const HomeScreen(), // Index 0
+    HomeScreen(key: HomeScreen.homeKey), // Index 0
     const WatchlistScreen(), // Index 1
-    const SearchScreen(), // Index 2
+    SearchScreen(key: SearchScreen.searchScreenKey), // Index 2
     const FoodScreen(), // Index 3
     const ProfileScreen(), // Index 4
   ];
@@ -212,6 +212,10 @@ class _MainNavigationState extends State<MainNavigation> {
   // Default is [0,1,2,3,4]. Persisted in SharedPreferences as strings.
   List<int> _navOrder = [0, 1, 2, 3, 4];
   bool _reorderMode = false; // When true, user can drag to reorder items
+
+  int get currentScreenId => (_selectedIndex >= 0 && _selectedIndex < _navOrder.length)
+        ? _navOrder[_selectedIndex]
+        : _navOrder.first;
 
   // Map screen id -> GlobalKey used for tutorial targeting (keep existing keys)
   late final Map<int, GlobalKey> _navKeys = {
@@ -362,19 +366,37 @@ class _MainNavigationState extends State<MainNavigation> {
         break;
     }*/
 
+    // Voor de hoofdnavigatie (initieel) gebruiken we de check.
+    // Maar als onFinish wordt aangeroepen, doen we dat ook via de prefs.
     TutorialService.checkAndShowTutorial(
       context,
       tutorialKey: 'main_navigation',
       targets: targets,
-      onFinish: () {
-        debugPrint("Main tutorial finished, triggering home tutorial");
-        // We delay slightly to let the UI settle before checking for the Home key
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (MainNavigation.mainKey.currentState is _MainNavigationState) {
-            final state =
-                MainNavigation.mainKey.currentState as _MainNavigationState;
-            if (state._selectedIndex == 0) {
-            }
+      onFinish: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('tutorial_done_main_navigation', true);
+        debugPrint("Main navigation tutorial complete, starting Home tutorial...");
+        
+        // We gebruiken een setState om de UI te forceren te verversen 
+        if (mounted) setState(() {});
+
+        // Directe aanroep zonder lange delay om de UI thread "wakker" te houden
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_selectedIndex == 0) {
+            HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
+          }
+        });
+      },
+      onSkip: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('tutorial_done_main_navigation', true);
+        debugPrint("Main navigation tutorial skipped, starting Home tutorial...");
+        
+        if (mounted) setState(() {});
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_selectedIndex == 0) {
+            HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
           }
         });
       },
@@ -626,7 +648,15 @@ class _MainNavigationState extends State<MainNavigation> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: GestureDetector(
-          onTap: () => setState(() => _selectedIndex = position),
+          onTap: () {
+            setState(() => _selectedIndex = position);
+            if (screenId == 2) {
+               // When switching to search tab, try starting the search tutorial
+               WidgetsBinding.instance.addPostFrameCallback((_) {
+                 SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial();
+               });
+            }
+          },
           onLongPress: () async {
             // A plain long press (without drag) sets this screen as the start screen.
             final prefs = await SharedPreferences.getInstance();
@@ -748,7 +778,23 @@ class _MainNavigationState extends State<MainNavigation> {
 
   // Public helper to allow external callers to retrigger the tutorial.
   void startTutorial() {
-    _checkAndStartTutorial();
+    setState(() {
+      _selectedIndex = 0; // Forceer terug naar home
+    });
+    // Wacht even tot de Tab is gewisseld voordat de tutorial start
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _showTutorial(); // Direct de tutorial tonen zonder status-checks
+    });
+  }
+
+  void startSearchTutorial() {
+    final pos = _navOrder.indexOf(2);
+    if (pos != -1) {
+      setState(() => _selectedIndex = pos);
+      Future.delayed(const Duration(milliseconds: 300), () {
+        SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial(force: true);
+      });
+    }
   }
 
   @override

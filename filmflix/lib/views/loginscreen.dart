@@ -65,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.of(context).pushReplacement(
             // Vervang huidiig scherm
             MaterialPageRoute(
-              builder: (_) => const MainNavigation(),
+              builder: (_) => MainNavigation(key: MainNavigation.mainKey),
             ), // Met home scherm
           );
         }
@@ -123,7 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Niet teruggaan
         Navigator.of(context).pushReplacement(
           // Ga naar home
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
+          MaterialPageRoute(builder: (_) => MainNavigation(key: MainNavigation.mainKey)),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -350,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> {
           } else {
             // Anders ga naar home
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const MainNavigation()),
+              MaterialPageRoute(builder: (_) => MainNavigation(key: MainNavigation.mainKey)),
             );
           }
         }
@@ -436,7 +436,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           // Anders ga naar home
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainNavigation()),
+            MaterialPageRoute(builder: (_) => MainNavigation(key: MainNavigation.mainKey)),
           );
         }
       }
@@ -838,7 +838,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
                                             builder: (_) =>
-                                                const MainNavigation(),
+                                                MainNavigation(key: MainNavigation.mainKey),
                                           ),
                                         );
                                       }

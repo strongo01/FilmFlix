@@ -384,7 +384,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialNavBar2 => 'If you hold down the space between the buttons, you can change the order of the buttons.';
 
   @override
-  String get tutorialHomeExtra => 'On the Home screen you see latest releases and recommendations.';
+  String get tutorialHomeExtra => 'On this screen you can view the movies that have just been released. By tapping on a movie, you can see more information about it.';
+
+  @override
+  String get tutorialMainNavigation => 'Main Navigation';
+
+  @override
+  String get tutorialMainNavigationDesc => 'Explanation of the bar and start screen';
+
+  @override
+  String get tutorialHomeScreen => 'Home Screen';
+
+  @override
+  String get tutorialHomeScreenDesc => 'Explanation of the main screen';
+
+  @override
+  String get tutorialResetAll => 'Reset all';
 
   @override
   String get tutorialWatchlistExtra => 'In your Watchlist you can remove films or mark them to watch later.';
@@ -1243,4 +1258,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get label_kinepolis => 'Kinepolis';
+
+  @override
+  String get tutorialSearchField => 'Type the name of a movie or series here to search.';
+
+  @override
+  String get tutorialSearchFilter => 'Use this button to filter by genre, year or rating.';
+
+  @override
+  String get tutorialSearchTabs => 'Switch between top rated and popular titles here.';
+
+  @override
+  String get tutorialSearchScreenMain => 'Search screen';
+
+  @override
+  String get tutorialSearchScreenDesc => 'Explanation of the search screen';
 }
