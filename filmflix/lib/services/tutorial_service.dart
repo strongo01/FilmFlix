@@ -38,6 +38,60 @@ class TutorialService {
     required String text,
     ContentAlign align = ContentAlign.bottom,
   }) {
+    if (identify == 'nav-bar') {
+      return TargetFocus(
+        identify: identify,
+        keyTarget: key,
+        alignSkip: Alignment.topRight,
+        // rounded-rectangle for nav bar
+        shape: ShapeLightFocus.RRect,
+        radius: 8,
+        contents: [
+          TargetContent(
+            align: align,
+            builder: (context, controller) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      image: const DecorationImage(
+                        image: AssetImage('assets/images/Kevin.png'),
+                        fit: BoxFit.cover,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        BubbleSpecialThree(
+                          text: text,
+                          color: const Color(0xFFD4AF37),
+                          tail: true,
+                          textStyle: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          isSender: false,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      );
+    }
+
     return TargetFocus(
       identify: identify,
       keyTarget: key,

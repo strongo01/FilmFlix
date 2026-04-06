@@ -11,15 +11,15 @@ bool _tokenListenerAttached = false;
 Future<bool> registerFcmTokenForUser(User? user) async {
   if (user == null) return false;
   try {
-    // Request FCM permissions on platforms that require it.
+    // Vraag FCM-permissies op voor platforms die dat vereisen.
     try {
       await FirebaseMessaging.instance.requestPermission();
     } catch (e) {
       debugPrint('FCM: requestPermission failed: $e');
     }
 
-    // On iOS we need to ensure the APNs token has been received by the OS
-    // before calling getToken(). If not present, wait briefly for token refresh.
+    // Op iOS moeten we zeker weten dat het APNs-token door het OS is ontvangen
+    // voordat we getToken() aanroepen. Als het nog ontbreekt, wacht kort op refresh.
     if (Platform.isIOS) {
       try {
         final apns = await FirebaseMessaging.instance.getAPNSToken();
@@ -61,12 +61,17 @@ Future<bool> registerFcmTokenForUser(User? user) async {
       FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
         try {
           final u = FirebaseAuth.instance.currentUser;
-          debugPrint('FCM: onTokenRefresh newToken=$newToken for uid=${u?.uid}');
+          debugPrint(
+            'FCM: onTokenRefresh newToken=$newToken for uid=${u?.uid}',
+          );
           if (u != null && newToken != null) {
-            await FirebaseFirestore.instance.collection('users').doc(u.uid).set({
-              'fcmToken': newToken,
-              'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(u.uid)
+                .set({
+                  'fcmToken': newToken,
+                  'fcmTokenUpdatedAt': FieldValue.serverTimestamp(),
+                }, SetOptions(merge: true));
             debugPrint('FCM: refreshed token written to users/${u.uid}');
           }
         } catch (e) {
@@ -83,11 +88,12 @@ Future<bool> registerFcmTokenForUser(User? user) async {
   }
 }
 
-/// Remove the stored FCM token for the given user.
+/// Verwijder het opgeslagen FCM-token voor de gegeven gebruiker.
 Future<bool> unregisterFcmTokenForUser(User? user) async {
   if (user == null) return false;
   try {
-    // We explicitly delete the token from the Firebase Messaging instance instance so it stops receiving messages now.
+    // We verwijderen het token expliciet uit de Firebase Messaging-instantie zodat
+    // deze onmiddellijk stopt met het ontvangen van berichten.
     await FirebaseMessaging.instance.deleteToken();
     debugPrint('FCM: FirebaseMessaging token deleted locally.');
 

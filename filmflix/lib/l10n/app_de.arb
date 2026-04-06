@@ -71,6 +71,8 @@
   "delete": "Löschen",
   "chat_deleted": "Chat gelöscht",
   "delete_failed": "Löschen fehlgeschlagen",
+  "marked_unread": "Als ungelesen markiert",
+  "action_failed": "Aktion fehlgeschlagen",
   "user_label_default": "Benutzer",
   "reply_hint": "Antwort schreiben...",
   "send": "Senden",
@@ -81,7 +83,7 @@
   "remove": "Entfernen",
   "add_new_faq": "Neues FAQ hinzufügen",
   "new_faq_title": "Neues FAQ",
-  "question_label": "Frage",
+  "question_label": "Frage/Kommentar",
   "answer_label": "Antwort",
   "add": "Hinzufügen",
   "faq_added": "FAQ hinzugefügt",
@@ -122,7 +124,12 @@
   "@navFood": {
     "description": "Bottom navigation: Food"
   },
+  "navigationReorder": "Navigation neu anordnen",
+  "@navigationReorder": { "description": "Dialog title for reordering the bottom navigation" },
   "navProfile": "Profil",
+  "infoTooltip": "Info",
+  "watchlistInfoTitle": "Info",
+  "watchlistInfoContent": "Die App kann leider keine Daten von Streaming-Diensten abrufen. Du kannst manuell die Episoden abhaken, die du gesehen hast.",
   "@navProfile": {
     "description": "Bottom navigation: Profile"
   },
@@ -146,11 +153,17 @@
   "@tutorialProfile": {
     "description": "Tutorial text for profile"
   },
+  "tutorialNavBar": "Hier kannst du zwischen Bildschirmen wechseln. Halte einen Button lange gedrückt, um die Reihenfolge zu ändern.",
+  "tutorialHomeExtra": "Auf dem Home-Bildschirm siehst du die neuesten Veröffentlichungen und Empfehlungen.",
+  "tutorialWatchlistExtra": "In deiner Watchlist kannst du Filme entfernen oder für später speichern.",
+  "tutorialSearchExtra": "Verwende die Suche, um schnell Titel und Schauspieler zu finden.",
+  "tutorialFoodExtra": "Finde Snacks und Rezepte, die zu deinem Film passen.",
+  "tutorialProfileExtra": "Verwalte Einstellungen, Präferenzen und Kontodaten in deinem Profil.",
   "tutorialMap": "Hier können Sie die Karte ansehen, um Kinos in Ihrer Nähe zu finden!",
   "@tutorialMap": {
     "description": "Tutorial text for map"
   },
-  "map_all_cinemas_title": "Alle Kinos in den Niederlanden",
+  "map_all_cinemas_title": "Kinos in den Niederlanden",
   "@map_all_cinemas_title": {
     "description": "AppBar title for the cinemas map"
   },
@@ -355,6 +368,17 @@
   "loginGithubFailed": "GitHub-Login fehlgeschlagen",
   "googleIdTokenError": "Fehler beim Abrufen des Google ID-Tokens",
   "googleSignInCancelled": "Google-Anmeldung abgebrochen",
+  "googleSignInFailed": "Google-Anmeldung fehlgeschlagen",
+  "loginErrorWeakPassword": "Das Passwort ist zu schwach.",
+  "loginErrorNetworkFailed": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+  "loginErrorRequiresRecentLogin": "Bitte melden Sie sich erneut an, um fortzufahren (kürzliche Authentifizierung erforderlich).",
+  "loginErrorCredentialMalformed": "Die angegebenen Anmeldedaten sind ungültig oder abgelaufen.",
+  "loginErrorUserDisabled": "Dieses Benutzerkonto wurde deaktiviert.",
+  "loginErrorTooManyRequests": "Wir haben alle Anfragen von diesem Gerät aufgrund ungewöhnlicher Aktivitäten blockiert. Versuchen Sie es später erneut.",
+  "loginErrorInvalidEmail": "Die E-Mail-Adresse ist falsch formatiert.",
+  "loginErrorWrongPassword": "Falsches Passwort.",
+  "loginErrorUserNotFound": "Kein Benutzer mit dieser E-Mail gefunden.",
+  "loginErrorAccountExists": "Es existiert bereits ein Konto mit derselben E-Mail-Adresse, aber anderen Anmeldedaten.",
   "details": "Details",
   "translate": "Übersetzen",
   "seen": "Gesehen",
@@ -483,5 +507,26 @@
   "genre_talk": "Talkshow",
   "genre_thriller": "Thriller",
   "genre_war": "Krieg",
-  "genre_western": "Western"
+  "genre_western": "Western",
+  "disclaimerTitle": "Haftungsausschluss",
+  "disclaimerHeading": "Dienste von Drittanbietern und Datenquellen",
+  "disclaimerText": "Diese App verwendet Daten aus mehreren Drittanbieterquellen:\n\n* API von Brian Fritz (OMDb API)\n Lizenziert unter CC BY-NC 4.0\n Dieser Dienst wird nicht von IMDb.com unterstützt oder mit ihr in Verbindung gebracht\n\n* Diese Anwendung verwendet TMDB und die TMDB-APIs, ist jedoch nicht von TMDB unterstützt, zertifiziert oder anderweitig genehmigt\n\n* Einige Daten stammen von IMDb\n\n* Streaming-Verfügbarkeit und Übersetzungsdienste werden über RapidAPI bereitgestellt\n\n* Trailer werden von YouTube bereitgestellt\n\nKartendaten © OpenStreetMap-Mitwirkende\n\nAlle Marken, Logos und Urheberrechte gehören ihren jeweiligen Eigentümern.",
+  "playbackDisabledByVideoOwner": "Wiedergabe vom Videoeigentümer deaktiviert.",
+  "disclaimerNote": "Alle Marken, Logos und Daten Dritter bleiben Eigentum ihrer jeweiligen Inhaber; bitte konsultieren Sie deren Nutzungsbedingungen und Datenschutzrichtlinien für Details."
+  ,
+  "add_series_button": "Serie hinzufügen",
+  "add_series_title": "Serie hinzufügen",
+  "add_series_use_dates": "Wiederkehrende Tage verwenden",
+  "add_series_until_date": "Bis Datum",
+  "until_label": "Bis",
+  "select": "Auswählen",
+  "imdb_id_label": "ID (z. B. tt1234567)",
+  "title_label": "Titel",
+  "number_of_seasons": "Anzahl Staffeln",
+  "number_of_episodes": "Anzahl Episoden",
+  "episodes_in_season": "Episoden in Staffel {season}",
+  "episodes_per_season_hint": "Episoden pro Staffel (kommagetrennt, z. B. 10,8,12)",
+  "invalid_series_input": "Ungültige Eingabe",
+  "series_added": "Serie hinzugefügt",
+  "add_series_failed": "Hinzufügen der Serie fehlgeschlagen"
 }
