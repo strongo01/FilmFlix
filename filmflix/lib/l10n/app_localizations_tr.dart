@@ -90,7 +90,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get aboutTitle => 'CineTrackr Hakkında';
 
   @override
-  String get aboutText => 'CineTrackr\n\nFilmler ve sinema ziyaretleri için kişisel rehberiniz CineTrackr\'a hoş geldiniz.\n\nCineTrackr ile film programlarını kolayca görüntüleyebilir, kendi izleme listenizi tutabilir, sinema konumlarına ve müşteri hizmetlerine hızlıca ulaşabilirsiniz.\n\nCineTrackr\'ı kullandığınız için teşekkürler — iyi seyirler!';
+  String get aboutText => 'CineTrackr\n\nFilmler ve sinema ziyaretleri için kişisel rehberiniz CineTrackr\'a hoş geldiniz.\n\nCineTrackr ile film programlarını kolayca görüntüleyebilir, kendi izleme listenizi tutabilir, sinema konumlarına ve müşteri hizmetlerine hızlıca ulaşabilirsiniz.\n\nCineTrackr\'ı kullandığınız için teşekkürler, iyi seyirler!';
 
   @override
   String get privacyPolicy => 'Gizlilik Politikası';
@@ -363,7 +363,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get watchlistInfoContent => 'Uygulama ne yazık ki yayın hizmetlerinden veri çekemiyor. İzlediğiniz bölümleri kendiniz işaretleyebilirsiniz.';
 
   @override
-  String get tutorialHome => 'Hoş geldiniz! Burada en yeni film ve dizileri bulabilirsiniz.';
+  String get tutorialHome => 'Burada en yeni film ve dizileri bulabilirsiniz.';
 
   @override
   String get tutorialWatchlist => 'Favori filmlerinizi daha sonra izlemek için buraya kaydedin.';
@@ -378,7 +378,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tutorialProfile => 'Profilinizi ve ayarlarınızı buradan yönetin.';
 
   @override
-  String get tutorialNavBar => 'Buradan ekranlar arasında geçiş yapabilirsin. Sayfaların sırasını değiştirmek için bir düğmeye uzun bas.';
+  String get tutorialNavBar => 'Hoş geldiniz! Buradan başlangıç ekranını değiştirebilirsiniz. Bir ekranı başlangıç ekranınız yapmak için o düğmeye uzun basın.';
+
+  @override
+  String get tutorialNavBar2 => 'Düğmeler arasındaki boşluğu basılı tutarsanız, düğmelerin sırasını değiştirebilirsiniz.';
 
   @override
   String get tutorialHomeExtra => 'Ana ekranda en yeni yayınları ve önerileri görürsün.';
@@ -397,6 +400,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tutorialMap => 'Yakındaki sinemaları bulmak için haritaya bakabilirsiniz!';
+
+  @override
+  String get resetTutorial => 'Eğitimi sıfırla';
+
+  @override
+  String get tutorialResetMessage => 'Eğitim sıfırlandı, yeniden başlatılacak';
 
   @override
   String get map_all_cinemas_title => 'Hollanda\'daki sinemalar';
@@ -421,7 +430,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get map_no_website_content => 'Web sitesi mevcut değil — Sinema bulundu! 🎥';
+  String get map_no_website_content => 'Web sitesi mevcut değil, Sinema bulundu! 🎥';
 
   @override
   String get unknown => 'Bilinmiyor';
@@ -622,7 +631,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get faq_ai_q => 'Yapay zekaya soru sorabilir miyim?';
 
   @override
-  String get faq_ai_a => 'Evet — soru sormak için \"YZ\'ye Sor\" düğmesini kullanın. Yanıtların otomatik olarak oluşturulduğunu lütfen unutmayın.';
+  String get faq_ai_a => 'Evet, soru sormak için \"YZ\'ye Sor\" düğmesini kullanın. Yanıtların otomatik olarak oluşturulduğunu lütfen unutmayın.';
 
   @override
   String get admins_no_push => 'Adminler bildirim almayabilir';
@@ -1220,4 +1229,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get add_series_failed => 'Dizi eklenemedi';
+
+  @override
+  String set_as_start_screen(Object label) {
+    return '$label başlangıç ekranı olarak ayarlandı';
+  }
+
+  @override
+  String get save_failed => 'Kaydetme başarısız';
+
+  @override
+  String get label_biosagenda => 'Biosagenda';
+
+  @override
+  String get label_kinepolis => 'Kinepolis';
 }

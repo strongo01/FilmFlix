@@ -493,6 +493,7 @@ class _FoodScreenState extends State<FoodScreen> {
                   // Zoek invoerveld
                   controller: _foodController,
                   style: TextStyle(color: textColor),
+                  onSubmitted: (_) => _orderFood(),
                   decoration: InputDecoration(
                     // Stijl zoek veld
                     filled: true,
@@ -513,10 +514,11 @@ class _FoodScreenState extends State<FoodScreen> {
                       borderSide: BorderSide(color: movieBlue, width: 2),
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    suffixIcon: Icon(
-                      Icons.search,
-                      color: movieBlue,
-                    ), // Zoek icoon
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.search, color: movieBlue),
+                      onPressed: () => _orderFood(),
+                      tooltip: AppLocalizations.of(context)!.food_search_button,
+                    ), // Zoek icoon (klikbaar)
                   ),
                 ),
                 const SizedBox(height: 25), // Spacer

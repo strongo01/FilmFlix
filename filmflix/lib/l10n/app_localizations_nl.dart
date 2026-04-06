@@ -90,7 +90,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get aboutTitle => 'Over CineTrackr';
 
   @override
-  String get aboutText => 'CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma\'s bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr — veel kijkplezier!';
+  String get aboutText => 'CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma\'s bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr, veel kijkplezier!';
 
   @override
   String get privacyPolicy => 'Privacybeleid';
@@ -363,7 +363,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get watchlistInfoContent => 'De app kan helaas geen gegevens ophalen uit streamingdiensten. Je kunt handmatig afleveringen aanvinken die je hebt gekeken.';
 
   @override
-  String get tutorialHome => 'Welkom! Hier vind je de nieuwste films en series.';
+  String get tutorialHome => 'Hier vind je de nieuwste films en series.';
 
   @override
   String get tutorialWatchlist => 'Sla hier je favoriete films op voor later.';
@@ -378,7 +378,10 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tutorialProfile => 'Beheer hier je profiel en instellingen.';
 
   @override
-  String get tutorialNavBar => 'Hier kan je van scherm wisselen. Houd een knop lang ingedrukt om de volgorde van de pagina\'s aan te passen.';
+  String get tutorialNavBar => 'Welkom! Hier kan je het startscherm veranderen. Houd een knop lang ingedrukt om dat scherm je startscherm te maken.';
+
+  @override
+  String get tutorialNavBar2 => 'Als je de ruimte tussen de knoppen ingedrukt houdt, kun je de volgorde van de knoppen veranderen.';
 
   @override
   String get tutorialHomeExtra => 'Op het Home-scherm zie je de nieuwste releases en aanbevelingen.';
@@ -397,6 +400,12 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get tutorialMap => 'Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!';
+
+  @override
+  String get resetTutorial => 'Tutorial resetten';
+
+  @override
+  String get tutorialResetMessage => 'Tutorial gereset, wordt opnieuw gestart';
 
   @override
   String get map_all_cinemas_title => 'Bioscopen in Nederland';
@@ -421,7 +430,7 @@ class AppLocalizationsNl extends AppLocalizations {
   }
 
   @override
-  String get map_no_website_content => 'Geen website beschikbaar — Bioscoop gevonden! 🎥';
+  String get map_no_website_content => 'Geen website beschikbaar, Bioscoop gevonden! 🎥';
 
   @override
   String get unknown => 'Onbekend';
@@ -622,7 +631,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get faq_ai_q => 'Kan ik vragen aan een AI stellen?';
 
   @override
-  String get faq_ai_a => 'Ja — gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.';
+  String get faq_ai_a => 'Ja, gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.';
 
   @override
   String get admins_no_push => 'Beheerders ontvangen mogelijk geen pushmeldingen';
@@ -1220,4 +1229,18 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get add_series_failed => 'Toevoegen mislukt';
+
+  @override
+  String set_as_start_screen(Object label) {
+    return '$label ingesteld als startscherm';
+  }
+
+  @override
+  String get save_failed => 'Opslaan mislukt';
+
+  @override
+  String get label_biosagenda => 'Biosagenda';
+
+  @override
+  String get label_kinepolis => 'Kinepolis';
 }

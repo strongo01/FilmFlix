@@ -2,6 +2,7 @@ import 'dart:convert'; // Importeer het convert-pakket voor JSON-decodering
 import 'dart:async'; // Importeer async-pakket voor Stream en Future functies
 import 'dart:math' as Math; // Importeer math-pakket voor wiskundige bewerkingen
 
+import 'package:cinetrackr/l10n/l10n.dart';
 import 'package:cinetrackr/views/adminscreen.dart'; // Importeer het adminscherm
 import 'package:cinetrackr/views/customer_service.dart'; // Importeer klantenservice-scherm
 import 'package:cinetrackr/views/filmsnowscreen.dart'; // Importeer films-nu-scherm
@@ -19,6 +20,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Importeer Firestore-da
 import 'package:cinetrackr/views/movie_detail_screen.dart'; // Importeer filmdetailscherm
 import 'package:cinetrackr/services/tutorial_service.dart'; // Importeer tutorialservice
 import 'package:cinetrackr/main.dart'; // Importeer hoofdapp-bestand
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart'; // Importeer tutorial-gids-pakket
 import 'package:cinetrackr/l10n/app_localizations.dart'; // Importeer lokalisatiebestand
 
@@ -71,6 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     // Initialisatie van de widget
     super.initState();
+
+    // Check direct of de tutorial getoond moet worden
+    _checkTutorialOnInit();
+
     // Start de initiële laden- en controleprocessen
     _initialLoads = (() async {
       final loadNow = _loadNowPlaying(); // Laad hudig speelende films
@@ -576,6 +582,43 @@ class _HomeScreenState extends State<HomeScreen> {
         'admin'; // Controleer rol
   }
 
+  final GlobalKey _movieSliderKey = GlobalKey();
+
+  void _checkTutorialOnInit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDone = prefs.getBool('tutorial_done_home_screen') ?? false;
+    if (isDone) return;
+
+    // Als hij nog niet gedaan is, wachten we even tot de UI er is en tonen hem dan
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _showHomeScreenTutorial();
+      });
+    });
+  }
+
+  void _showHomeScreenTutorial() {
+    if (!mounted) return;
+    
+    final l10n = L10n.of(context);
+    List<TargetFocus> targets = [
+      TutorialService.createTarget(
+        identify: "movie-slider",
+        key: _movieSliderKey,
+        text: l10n?.tutorialHomeExtra ?? "Swipe door de nieuwste films in de bioscoop!",
+        align: ContentAlign.bottom,
+        shape: ShapeLightFocus.RRect,
+        radius: 4,
+      ),
+    ];
+
+    TutorialService.checkAndShowTutorial(
+      context,
+      tutorialKey: 'home_screen',
+      targets: targets,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Controleer of het apparaat in donkere modus is
@@ -767,6 +810,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 20),
               // Toon de sectietitel "Nu in bioscoop"
               Text(
+                key: _movieSliderKey,
                 AppLocalizations.of(context)!.nowPlayingTitle,
                 style: TextStyle(
                   color: textColor,
@@ -880,23 +924,49 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewPadding.bottom + 30,
                 ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    // Genereer een punt voor elke film
-                    children: List.generate(
-                      films.length,
-                      (i) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        // Maak het geselecteerde punt groter
-                        width: i == currentIndex ? 12 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          // Maak het geselecteerde punt blauw en andere grijs
-                          color: i == currentIndex
-                              ? Colors.blue
-                              : Colors.grey.withOpacity(0.5),
-                          borderRadius: BorderRadius.circular(4),
+                child: GestureDetector(
+                  onHorizontalDragUpdate: (details) {
+                    // Bereken welke stip we aanraken op basis van de scroll-positie
+                    final RenderBox box = context.findRenderObject() as RenderBox;
+                    final localOffset = box.globalToLocal(details.globalPosition);
+                    final double x = localOffset.dx;
+                    final double screenWidth = MediaQuery.of(context).size.width;
+                    
+                    // We schalen de drag over de breedte van het scherm naar de lijst met films
+                    final double relativePos = (x / screenWidth).clamp(0.0, 1.0);
+                    final int targetIndex = (relativePos * (films.length - 1)).round();
+                    
+                    if (targetIndex != currentIndex) {
+                      _pageController.jumpToPage(targetIndex);
+                    }
+                  },
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      // Genereer een punt voor elke film
+                      children: List.generate(
+                        films.length,
+                        (i) => GestureDetector(
+                          onTap: () {
+                            _pageController.animateToPage(
+                              i,
+                              duration: const Duration(milliseconds: 400),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            // Maak het geselecteerde punt groter
+                            width: i == currentIndex ? 12 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              // Maak het geselecteerde punt blauw en andere grijs
+                              color: i == currentIndex
+                                  ? Colors.blue
+                                  : Colors.grey.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                         ),
                       ),
                     ),

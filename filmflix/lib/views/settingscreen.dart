@@ -140,6 +140,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose(); // Roep parent dispose aan
   }
 
+  void _triggerMainTutorial() {
+    try {
+      final navState = MainNavigation.mainKey.currentState;
+      if (navState != null) {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        try {
+          (navState as dynamic).startTutorial();
+        } catch (e) {
+          debugPrint('Failed to call startTutorial dynamically: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to trigger tutorial: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Build methode
@@ -376,6 +394,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           choice,
                         ); // Update global notifier
                       }
+                    },
+                  ),
+                  _buildDivider(isDark),
+                  _buildSimpleTile(
+                    // Reset tutorial tile
+                    Icons.school,
+                    L10n.of(context)?.resetTutorial ?? 'Reset tutorial',
+                    '',
+                    textColor,
+                    () async {
+                      final l10n = L10n.of(context);
+                      final prefs = await SharedPreferences.getInstance();
+                      
+                      if (!mounted) return;
+
+                      await showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: cardColor,
+                          title: Text(
+                            l10n?.resetTutorial ?? 'Reset tutorial',
+                            style: TextStyle(color: textColor),
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.navigation, color: Colors.blue),
+                                title: const Text('Hoofd navigatie'),
+                                subtitle: const Text('Uitleg over de balk en startscherm'),
+                                onTap: () async {
+                                  await prefs.setBool('tutorial_done_main_navigation', false);
+                                  Navigator.pop(ctx);
+                                  _triggerMainTutorial();
+                                },
+                              ),
+                              ListTile(
+                                leading: const Icon(Icons.home, color: Colors.green),
+                                title: const Text('Home scherm'),
+                                subtitle: const Text('Uitleg over de film slider'),
+                                onTap: () async {
+                                  await prefs.setBool('tutorial_done_home_screen', false);
+                                  Navigator.pop(ctx);
+                                  _triggerMainTutorial(); // Terug naar home om het te zien
+                                },
+                              ),
+                              const Divider(),
+                              ListTile(
+                                leading: const Icon(Icons.refresh, color: Colors.orange),
+                                title: const Text('Alles resetten'),
+                                onTap: () async {
+                                  final allKeys = prefs.getKeys().where((k) => k.startsWith('tutorial_done'));
+                                  for (final key in allKeys) {
+                                    await prefs.setBool(key, false);
+                                  }
+                                  await prefs.setBool('tutorial_done', false); // Oude key ook voor de zekerheid
+                                  Navigator.pop(ctx);
+                                  _triggerMainTutorial();
+                                },
+                              ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(l10n?.close ?? 'Sluiten'),
+                            ),
+                          ],
+                        ),
+                      );
                     },
                   ),
                 ],

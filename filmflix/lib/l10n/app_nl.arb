@@ -27,7 +27,7 @@
   "support": "Ondersteuning",
   "customerService_title": "Klantenservice",
   "aboutTitle": "Over CineTrackr",
-  "aboutText": "CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma's bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr — veel kijkplezier!",
+  "aboutText": "CineTrackr\n\nWelkom bij CineTrackr, jouw persoonlijke gids voor films en bioscoopbezoek.\n\nMet CineTrackr kun je eenvoudig filmprogramma's bekijken, je eigen watchlist bijhouden en snel toegang krijgen tot bioscooplocaties en klantenservice.\n\nBedankt voor het gebruiken van CineTrackr, veel kijkplezier!",
   "privacyPolicy": "Privacybeleid",
   "logout": "Uitloggen",
   "loginIn": "Inloggen",
@@ -111,25 +111,28 @@
   "infoTooltip": "Info",
   "watchlistInfoTitle": "Info",
   "watchlistInfoContent": "De app kan helaas geen gegevens ophalen uit streamingdiensten. Je kunt handmatig afleveringen aanvinken die je hebt gekeken.",
-  "tutorialHome": "Welkom! Hier vind je de nieuwste films en series.",
+  "tutorialHome": "Hier vind je de nieuwste films en series.",
   "tutorialWatchlist": "Sla hier je favoriete films op voor later.",
   "tutorialSearch": "Zoek naar specifieke titels of genres.",
   "tutorialFood": "Bekijk bijpassende snacks voor je filmavond!",
   "tutorialProfile": "Beheer hier je profiel en instellingen.",
-  "tutorialNavBar": "Hier kan je van scherm wisselen. Houd een knop lang ingedrukt om de volgorde van de pagina's aan te passen.",
+  "tutorialNavBar": "Welkom! Hier kan je het startscherm veranderen. Houd een knop lang ingedrukt om dat scherm je startscherm te maken.",
+  "tutorialNavBar2": "Als je de ruimte tussen de knoppen ingedrukt houdt, kun je de volgorde van de knoppen veranderen.",
   "tutorialHomeExtra": "Op het Home-scherm zie je de nieuwste releases en aanbevelingen.",
   "tutorialWatchlistExtra": "In je Watchlist kun je films verwijderen of later terugkijken.",
   "tutorialSearchExtra": "Gebruik de zoekbalk om snel titels en acteurs te vinden.",
   "tutorialFoodExtra": "Bekijk snacks en recepten die passen bij je filmkeuze.",
   "tutorialProfileExtra": "Beheer instellingen, voorkeuren en accountgegevens in je profiel.",
   "tutorialMap": "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
+  "resetTutorial": "Tutorial resetten",
+  "tutorialResetMessage": "Tutorial gereset, wordt opnieuw gestart",
   "map_all_cinemas_title": "Bioscopen in Nederland",
   "map_load_error": "Fout bij laden bioscopen: {error}",
   "map_location_service_disabled": "Locatiedienst is uitgeschakeld",
   "map_location_permission_denied": "Locatietoegang geweigerd",
   "map_location_permission_denied_forever": "Locatiepermissies permanent geweigerd. Schakel dit in bij de instellingen.",
   "map_location_fetch_error": "Kon locatie niet ophalen: {error}",
-  "map_no_website_content": "Geen website beschikbaar — Bioscoop gevonden! 🎥",
+  "map_no_website_content": "Geen website beschikbaar, Bioscoop gevonden! 🎥",
   "unknown": "Onbekend",
   "food_edit_favorite": "Favoriet aanpassen",
   "food_name_label": "Naam",
@@ -191,7 +194,7 @@
   "faq_report_bug_q": "Hoe kan ik een fout in de app melden?",
   "faq_report_bug_a": "Gebruik de knop \"Contact beheerder\" hieronder om een e-mail te sturen met een beschrijving en eventueel screenshots.",
   "faq_ai_q": "Kan ik vragen aan een AI stellen?",
-  "faq_ai_a": "Ja — gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.",
+  "faq_ai_a": "Ja, gebruik de knop \"Vraag AI\" om een vraag te stellen. Houd er rekening mee dat antwoorden automatisch gegenereerd zijn.",
   "admins_no_push": "Beheerders ontvangen mogelijk geen pushmeldingen",
   "ai_cooldown_wait": "Wacht nog {seconds} seconden voordat je opnieuw de AI kunt gebruiken.",
   "ai_input_hint": "Typ hier je vraag over films of series...",
@@ -380,5 +383,17 @@
   "episodes_per_season_hint": "Afleveringen per seizoen (komma-gescheiden, bv. 10,8,12)",
   "invalid_series_input": "Ongeldige invoer",
   "series_added": "Serie toegevoegd",
-  "add_series_failed": "Toevoegen mislukt"
+  "add_series_failed": "Toevoegen mislukt",
+  "set_as_start_screen": "{label} ingesteld als startscherm",
+  "@set_as_start_screen": {
+    "description": "Bericht als een scherm is ingesteld als startscherm",
+    "placeholders": {
+      "label": {
+        "type": "Object"
+      }
+    }
+  },
+  "save_failed": "Opslaan mislukt",
+  "label_biosagenda": "Biosagenda",
+  "label_kinepolis": "Kinepolis"
 }

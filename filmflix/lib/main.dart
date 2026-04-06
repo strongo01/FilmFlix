@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:cinetrackr/services/tutorial_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,6 +22,8 @@ import 'package:cinetrackr/services/tutorial_service.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:cinetrackr/l10n/l10n.dart';
+
+import 'services/tutorial_service.dart';
 
 // dit zorgt voor dat we de gekozen taal kunnen opslaan en teruglezen, zodat de app in de juiste taal start bij volgende keren openen.
 final ValueNotifier<Locale?> localeNotifier = ValueNotifier<Locale?>(null);
@@ -152,7 +155,9 @@ class CineTrackrApp extends StatelessWidget {
               // if (snapshot.hasData) {
               // Hier kun je nog steeds forceren voor testen als je wilt:
               // return const MovieDetailScreen(imdbId: "tt1632701");
-              return const MainNavigation(); // Als de gebruiker is ingelogd, ga dan naar het hoofdscherm van de app (MainNavigation) waar de belangrijkste functies beschikbaar zijn.
+              return MainNavigation(
+                key: MainNavigation.mainKey,
+              ); // Als de gebruiker is ingelogd, ga dan naar het hoofdscherm van de app (MainNavigation) waar de belangrijkste functies beschikbaar zijn.
               //}
               //return const LoginScreen();
             },
@@ -160,7 +165,7 @@ class CineTrackrApp extends StatelessWidget {
           routes: {
             // Definieer de routes voor navigatie binnen de app, zodat we gemakkelijk kunnen navigeren tussen verschillende schermen.
             '/login': (context) => const LoginScreen(),
-            '/home': (context) => const MainNavigation(),
+            '/home': (context) => MainNavigation(key: MainNavigation.mainKey),
           },
         );
       },
@@ -172,7 +177,9 @@ class MainNavigation extends StatefulWidget {
   // Het hoofdscherm van de app met een bottom navigation bar om te navigeren tussen verschillende secties zoals Home, Watchlist, Search, Food en Profile.
   //statefulwidget is nodig omdat we de geselecteerde index van de navigatiebalk moeten bijhouden en mogelijk ook andere state zoals of de tutorial al is getoond.
   const MainNavigation({super.key});
-
+  // Global key to access the state from other widgets (e.g. to retrigger tutorial)
+  // Use an untyped GlobalKey to avoid exposing the private state type across libraries.
+  static final GlobalKey mainKey = GlobalKey();
   static final GlobalKey kaartKey =
       GlobalKey(); // Een globale key die we kunnen gebruiken om de kaart in de tutorial te targeten, zodat we gebruikers kunnen laten zien waar ze de kaart kunnen vinden in de app.
 
@@ -226,23 +233,30 @@ class _MainNavigationState extends State<MainNavigation> {
 
     final l10n = L10n.of(context);
     List<TargetFocus> targets = [
-      // Whole navigation bar target
+      // Definieer de targets voor de tutorial, waarbij we elke belangrijke functie in de navigatiebalk targeten met een beschrijving van wat het doet, zodat nieuwe gebruikers snel kunnen leren hoe ze de app kunnen gebruiken.
       TutorialService.createTarget(
         identify: "nav-bar",
         key: _navBarKey,
         text:
             l10n?.tutorialNavBar ??
-            "Hier kan je veranderen van scherm. Als je een knop langindrukt houdt, kan je de volgorde van de pagina's aanpassen.",
+            "Welkom! Hier kan je het startscherm veranderen. Houd een knop lang ingedrukt om dat scherm je startscherm te maken.",
         align: ContentAlign.top,
       ),
-      // Definieer de targets voor de tutorial, waarbij we elke belangrijke functie in de navigatiebalk targeten met een beschrijving van wat het doet, zodat nieuwe gebruikers snel kunnen leren hoe ze de app kunnen gebruiken.
+      TutorialService.createTarget(
+        identify: "nav-bar",
+        key: _navBarKey,
+        text:
+            l10n?.tutorialNavBar2 ??
+            "Als je de ruimte tussen de knoppen ingedrukt houdt, kun je de volgorde van de knoppen veranderen.",
+        align: ContentAlign.top,
+      ),
       TutorialService.createTarget(
         // Target voor de Home-knop in de navigatiebalk.
         identify: "home",
         key: _homeKey,
         text:
             l10n?.tutorialHome ??
-            "Welkom! Hier vind je de nieuwste films en series.",
+            "Hier vind je de nieuwste films en series.",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
@@ -348,18 +362,22 @@ class _MainNavigationState extends State<MainNavigation> {
         break;
     }*/
 
-    void markTutorialAsDone() async {
-      // Functie om aan te geven dat de tutorial is voltooid, zodat we deze niet opnieuw hoeven te tonen bij volgende app-starts.
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('tutorial_done', true);
-      debugPrint("Tutorial: Marked as done in SharedPreferences.");
-    }
-
-    TutorialService.showTutorial(
+    TutorialService.checkAndShowTutorial(
       context,
-      targets,
-      onFinish: markTutorialAsDone,
-      onSkip: markTutorialAsDone,
+      tutorialKey: 'main_navigation',
+      targets: targets,
+      onFinish: () {
+        debugPrint("Main tutorial finished, triggering home tutorial");
+        // We delay slightly to let the UI settle before checking for the Home key
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (MainNavigation.mainKey.currentState is _MainNavigationState) {
+            final state =
+                MainNavigation.mainKey.currentState as _MainNavigationState;
+            if (state._selectedIndex == 0) {
+            }
+          }
+        });
+      },
     );
   }
 
@@ -387,7 +405,7 @@ class _MainNavigationState extends State<MainNavigation> {
               top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
             ),
           ),
-          padding: const EdgeInsets.only(top: 8, bottom: 24),
+          padding: const EdgeInsets.only(top: 14, bottom: 32),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(_navOrder.length, (pos) {
@@ -543,9 +561,12 @@ class _MainNavigationState extends State<MainNavigation> {
                         // allow tapping to set as start screen
                         final prefs = await SharedPreferences.getInstance();
                         await prefs.setInt('start_screen_id', screenId);
+                        final message =
+                            l10n?.set_as_start_screen(label) ??
+                            '${label} ingesteld als startscherm';
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${label} ingesteld als startscherm'),
+                            content: Text(message),
                             duration: const Duration(seconds: 1),
                           ),
                         );
@@ -599,34 +620,43 @@ class _MainNavigationState extends State<MainNavigation> {
   ) {
     final isSelected = _selectedIndex == position;
     final color = isSelected ? const Color(0xFFD4AF37) : Colors.grey;
+    final l10n = L10n.of(context);
 
-    return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = position),
-      onLongPress: () async {
-        // A plain long press (without drag) sets this screen as the start screen.
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('start_screen_id', screenId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${label} ingesteld als startscherm'),
-            duration: const Duration(seconds: 1),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: GestureDetector(
+          onTap: () => setState(() => _selectedIndex = position),
+          onLongPress: () async {
+            // A plain long press (without drag) sets this screen as the start screen.
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('start_screen_id', screenId);
+            final message =
+                l10n?.set_as_start_screen(label) ??
+                '${label} ingesteld als startscherm';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(message),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (key != null)
+                Icon(isSelected ? activeIcon : icon, key: key, color: color)
+              else
+                Icon(isSelected ? activeIcon : icon, color: color),
+              const SizedBox(height: 4),
+              Text(label, style: TextStyle(color: color, fontSize: 10)),
+              if (_reorderMode) const SizedBox(height: 4),
+              if (_reorderMode)
+                Icon(Icons.drag_indicator_rounded, size: 12, color: color),
+            ],
           ),
-        );
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (key != null)
-            Icon(isSelected ? activeIcon : icon, key: key, color: color)
-          else
-            Icon(isSelected ? activeIcon : icon, color: color),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: color, fontSize: 10)),
-          if (_reorderMode) const SizedBox(height: 4),
-          if (_reorderMode)
-            Icon(Icons.drag_indicator_rounded, size: 12, color: color),
-        ],
+        ),
       ),
     );
   }
@@ -695,30 +725,30 @@ class _MainNavigationState extends State<MainNavigation> {
 
   int _tutorialRetryCount = 0;
   void _checkAndStartTutorial() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool isDone = prefs.getBool('tutorial_done') ?? false;
-
-    // Om de tutorial WEL elke keer te tonen (voor testen), comment de 'if (isDone) return;' hieronder uit:
-    //TUTORIAL UIT/AAN
-    if (isDone) return;
-
-    Future.delayed(const Duration(milliseconds: 500), () {
+    // Om de tutorial WEL elke keer te tonen (voor testen), kun je de check in TutorialService tijdelijk skippen.
+    
+    Future.delayed(const Duration(milliseconds: 100), () {
       //dit stukje doet een check na een korte vertraging om te zien of de home key beschikbar is
       if (!mounted) return;
 
       if (_homeKey.currentContext != null) {
         debugPrint("Tutorial: Home key valid, starting...");
-        _showTutorial(); // Als de home key beschikbaar is, start dan de tutorial zodat we gebruikers kunnen laten zien hoe ze de app kunnen gebruiken.
-      } else if (_tutorialRetryCount < 5) {
+        _showTutorial(); // De logic zit nu in _showTutorial via TutorialService.checkAndShowTutorial
+      } else if (_tutorialRetryCount < 10) {
         _tutorialRetryCount++;
         debugPrint(
           "Tutorial: Home key not found, retry $_tutorialRetryCount...",
         );
         _checkAndStartTutorial();
       } else {
-        debugPrint("Tutorial: Gave up after 5 retries.");
+        debugPrint("Tutorial: Gave up after 10 retries.");
       }
     });
+  }
+
+  // Public helper to allow external callers to retrigger the tutorial.
+  void startTutorial() {
+    _checkAndStartTutorial();
   }
 
   @override

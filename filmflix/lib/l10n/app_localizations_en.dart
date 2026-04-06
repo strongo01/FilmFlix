@@ -90,7 +90,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutTitle => 'About CineTrackr';
 
   @override
-  String get aboutText => 'CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr — enjoy watching!';
+  String get aboutText => 'CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr, enjoy watching!';
 
   @override
   String get privacyPolicy => 'Privacy Policy';
@@ -363,7 +363,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchlistInfoContent => 'The app cannot fetch data from streaming services. You can manually check off episodes you\'ve watched.';
 
   @override
-  String get tutorialHome => 'Welcome! Here are the latest movies and series.';
+  String get tutorialHome => 'Here are the latest movies and series.';
 
   @override
   String get tutorialWatchlist => 'Save your favorite movies here for later.';
@@ -378,7 +378,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialProfile => 'Manage your profile and settings here.';
 
   @override
-  String get tutorialNavBar => 'Here you can switch screens. Long-press a button to reorder pages.';
+  String get tutorialNavBar => 'Welcome! Here you can change the start screen. Long-press a button to set that screen as your home screen.';
+
+  @override
+  String get tutorialNavBar2 => 'If you hold down the space between the buttons, you can change the order of the buttons.';
 
   @override
   String get tutorialHomeExtra => 'On the Home screen you see latest releases and recommendations.';
@@ -397,6 +400,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tutorialMap => 'View the map to find nearby cinemas!';
+
+  @override
+  String get resetTutorial => 'Reset tutorial';
+
+  @override
+  String get tutorialResetMessage => 'Tutorial reset, will restart';
 
   @override
   String get map_all_cinemas_title => 'Cinemas in the Netherlands';
@@ -421,7 +430,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get map_no_website_content => 'No website available — Cinema found! 🎥';
+  String get map_no_website_content => 'No website available, Cinema found! 🎥';
 
   @override
   String get unknown => 'Unknown';
@@ -622,7 +631,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get faq_ai_q => 'Can I ask questions to an AI?';
 
   @override
-  String get faq_ai_a => 'Yes — use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.';
+  String get faq_ai_a => 'Yes, use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.';
 
   @override
   String get admins_no_push => 'Admins may not receive push notifications';
@@ -1220,4 +1229,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get add_series_failed => 'Failed to add series';
+
+  @override
+  String set_as_start_screen(Object label) {
+    return '$label set as start screen';
+  }
+
+  @override
+  String get save_failed => 'Save failed';
+
+  @override
+  String get label_biosagenda => 'Biosagenda';
+
+  @override
+  String get label_kinepolis => 'Kinepolis';
 }

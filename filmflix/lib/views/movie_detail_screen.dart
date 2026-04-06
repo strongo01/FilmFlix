@@ -1506,6 +1506,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
     if (isMovieResponse) {
       // Als het een film is, voeg bioscoop links toe.
+      final l10n = AppLocalizations.of(context);
       final biosLink = // Bouwt de Biosagenda zoeklink met de filmtitel.
           'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
       final kinepolisLink = // Bouwt de Kinepolis zoeklink met de filmtitel.
@@ -1514,8 +1515,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         // Voegt 'Bioscoop' groep toe met beide links.
         'Bioscoop',
         () => [
-          {'type': 'biosagenda', 'link': biosLink, 'label': 'Biosagenda'},
-          {'type': 'kinepolis', 'link': kinepolisLink, 'label': 'Kinepolis'},
+          {
+            'type': 'biosagenda',
+            'link': biosLink,
+            'label': l10n?.label_biosagenda ?? 'Biosagenda',
+          },
+          {
+            'type': 'kinepolis',
+            'link': kinepolisLink,
+            'label': l10n?.label_kinepolis ?? 'Kinepolis',
+          },
         ],
       );
     }

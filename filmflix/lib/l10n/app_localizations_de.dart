@@ -90,7 +90,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutTitle => 'Über CineTrackr';
 
   @override
-  String get aboutText => 'CineTrackr\n\nWillkommen bei CineTrackr, Ihrem persönlichen Guide für Filme und Kinobesuche.\n\nMit CineTrackr können Sie ganz einfach Kinoprogramme einsehen, Ihre eigene Watchlist führen und schnell auf Kinostandorte sowie den Kundenservice zugreifen.\n\nVielen Dank, dass Sie CineTrackr nutzen — viel Spaß beim Schauen!';
+  String get aboutText => 'CineTrackr\n\nWillkommen bei CineTrackr, Ihrem persönlichen Guide für Filme und Kinobesuche.\n\nMit CineTrackr können Sie ganz einfach Kinoprogramme einsehen, Ihre eigene Watchlist führen und schnell auf Kinostandorte sowie den Kundenservice zugreifen.\n\nVielen Dank, dass Sie CineTrackr nutzen, viel Spaß beim Schauen!';
 
   @override
   String get privacyPolicy => 'Datenschutzbestimmungen';
@@ -363,7 +363,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get watchlistInfoContent => 'Die App kann leider keine Daten von Streaming-Diensten abrufen. Du kannst manuell die Episoden abhaken, die du gesehen hast.';
 
   @override
-  String get tutorialHome => 'Willkommen! Hier finden Sie die neuesten Filme und Serien.';
+  String get tutorialHome => 'Hier finden Sie die neuesten Filme und Serien.';
 
   @override
   String get tutorialWatchlist => 'Speichern Sie hier Ihre Lieblingsfilme für später.';
@@ -378,7 +378,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tutorialProfile => 'Verwalten Sie hier Ihr Profil und Ihre Einstellungen.';
 
   @override
-  String get tutorialNavBar => 'Hier kannst du zwischen Bildschirmen wechseln. Halte einen Button lange gedrückt, um die Reihenfolge zu ändern.';
+  String get tutorialNavBar => 'Willkommen! Hier kannst du den Startbildschirm ändern. Halte einen Button lange gedrückt, um diesen Bildschirm als Startbildschirm festzulegen.';
+
+  @override
+  String get tutorialNavBar2 => 'Wenn du den Raum zwischen den Buttons gedrückt hältst, kannst du die Reihenfolge der Buttons ändern.';
 
   @override
   String get tutorialHomeExtra => 'Auf dem Home-Bildschirm siehst du die neuesten Veröffentlichungen und Empfehlungen.';
@@ -397,6 +400,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get tutorialMap => 'Hier können Sie die Karte ansehen, um Kinos in Ihrer Nähe zu finden!';
+
+  @override
+  String get resetTutorial => 'Tutorial zurücksetzen';
+
+  @override
+  String get tutorialResetMessage => 'Tutorial zurückgesetzt, wird neu gestartet';
 
   @override
   String get map_all_cinemas_title => 'Kinos in den Niederlanden';
@@ -421,7 +430,7 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get map_no_website_content => 'Keine Website verfügbar — Kino gefunden! 🎥';
+  String get map_no_website_content => 'Keine Website verfügbar, Kino gefunden! 🎥';
 
   @override
   String get unknown => 'Unbekannt';
@@ -622,7 +631,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get faq_ai_q => 'Kann ich Fragen an eine KI stellen?';
 
   @override
-  String get faq_ai_a => 'Ja — nutzen Sie die Schaltfläche \"KI fragen\", um eine Frage zu stellen. Bitte beachten Sie, dass Antworten automatisch generiert werden.';
+  String get faq_ai_a => 'Ja, nutzen Sie die Schaltfläche \"KI fragen\", um eine Frage zu stellen. Bitte beachten Sie, dass Antworten automatisch generiert werden.';
 
   @override
   String get admins_no_push => 'Admins erhalten möglicherweise keine Push-Benachrichtigungen';
@@ -1220,4 +1229,18 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get add_series_failed => 'Hinzufügen der Serie fehlgeschlagen';
+
+  @override
+  String set_as_start_screen(Object label) {
+    return '$label als Startbildschirm festgelegt';
+  }
+
+  @override
+  String get save_failed => 'Speichern fehlgeschlagen';
+
+  @override
+  String get label_biosagenda => 'Biosagenda';
+
+  @override
+  String get label_kinepolis => 'Kinepolis';
 }

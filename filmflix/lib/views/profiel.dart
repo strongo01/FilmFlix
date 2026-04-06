@@ -115,10 +115,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 } catch (e) {
                   // Error handler
+                  final l10n = AppLocalizations.of(parentContext);
                   ScaffoldMessenger.of(parentContext).showSnackBar(
                     // Toont foutmelding
-                    const SnackBar(
-                      content: Text('Opslaan mislukt'),
+                    SnackBar(
+                      content: Text(
+                        l10n?.save_failed ?? 'Opslaan mislukt',
+                      ),
                     ), // Foutbericht
                   );
                 }

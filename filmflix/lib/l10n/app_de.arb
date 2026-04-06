@@ -27,7 +27,7 @@
   "support": "Support",
   "customerService_title": "Kundenservice",
   "aboutTitle": "Über CineTrackr",
-  "aboutText": "CineTrackr\n\nWillkommen bei CineTrackr, Ihrem persönlichen Guide für Filme und Kinobesuche.\n\nMit CineTrackr können Sie ganz einfach Kinoprogramme einsehen, Ihre eigene Watchlist führen und schnell auf Kinostandorte sowie den Kundenservice zugreifen.\n\nVielen Dank, dass Sie CineTrackr nutzen — viel Spaß beim Schauen!",
+  "aboutText": "CineTrackr\n\nWillkommen bei CineTrackr, Ihrem persönlichen Guide für Filme und Kinobesuche.\n\nMit CineTrackr können Sie ganz einfach Kinoprogramme einsehen, Ihre eigene Watchlist führen und schnell auf Kinostandorte sowie den Kundenservice zugreifen.\n\nVielen Dank, dass Sie CineTrackr nutzen, viel Spaß beim Schauen!",
   "privacyPolicy": "Datenschutzbestimmungen",
   "logout": "Abmelden",
   "loginIn": "Anmelden",
@@ -133,7 +133,7 @@
   "@navProfile": {
     "description": "Bottom navigation: Profile"
   },
-  "tutorialHome": "Willkommen! Hier finden Sie die neuesten Filme und Serien.",
+  "tutorialHome": "Hier finden Sie die neuesten Filme und Serien.",
   "@tutorialHome": {
     "description": "Tutorial text for home"
   },
@@ -153,7 +153,8 @@
   "@tutorialProfile": {
     "description": "Tutorial text for profile"
   },
-  "tutorialNavBar": "Hier kannst du zwischen Bildschirmen wechseln. Halte einen Button lange gedrückt, um die Reihenfolge zu ändern.",
+  "tutorialNavBar": "Willkommen! Hier kannst du den Startbildschirm ändern. Halte einen Button lange gedrückt, um diesen Bildschirm als Startbildschirm festzulegen.",
+  "tutorialNavBar2": "Wenn du den Raum zwischen den Buttons gedrückt hältst, kannst du die Reihenfolge der Buttons ändern.",
   "tutorialHomeExtra": "Auf dem Home-Bildschirm siehst du die neuesten Veröffentlichungen und Empfehlungen.",
   "tutorialWatchlistExtra": "In deiner Watchlist kannst du Filme entfernen oder für später speichern.",
   "tutorialSearchExtra": "Verwende die Suche, um schnell Titel und Schauspieler zu finden.",
@@ -163,6 +164,8 @@
   "@tutorialMap": {
     "description": "Tutorial text for map"
   },
+  "resetTutorial": "Tutorial zurücksetzen",
+  "tutorialResetMessage": "Tutorial zurückgesetzt, wird neu gestartet",
   "map_all_cinemas_title": "Kinos in den Niederlanden",
   "@map_all_cinemas_title": {
     "description": "AppBar title for the cinemas map"
@@ -182,7 +185,7 @@
       "error": {}
     }
   },
-  "map_no_website_content": "Keine Website verfügbar — Kino gefunden! 🎥",
+  "map_no_website_content": "Keine Website verfügbar, Kino gefunden! 🎥",
   "unknown": "Unbekannt",
   "food_edit_favorite": "Favorit anpassen",
   "food_name_label": "Name",
@@ -316,7 +319,7 @@
   "faq_report_bug_q": "Wie kann ich einen Fehler in der App melden?",
   "faq_report_bug_a": "Nutzen Sie die Schaltfläche \"Admin kontaktieren\" unten, um eine E-Mail mit einer Beschreibung und Screenshots zu senden.",
   "faq_ai_q": "Kann ich Fragen an eine KI stellen?",
-  "faq_ai_a": "Ja — nutzen Sie die Schaltfläche \"KI fragen\", um eine Frage zu stellen. Bitte beachten Sie, dass Antworten automatisch generiert werden.",
+  "faq_ai_a": "Ja, nutzen Sie die Schaltfläche \"KI fragen\", um eine Frage zu stellen. Bitte beachten Sie, dass Antworten automatisch generiert werden.",
   "admins_no_push": "Admins erhalten möglicherweise keine Push-Benachrichtigungen",
   "ai_cooldown_wait": "Bitte warten Sie noch {seconds} Sekunden, bevor Sie die KI erneut nutzen.",
   "ai_input_hint": "Geben Sie hier Ihre Frage zu Filmen oder Serien ein...",
@@ -528,5 +531,9 @@
   "episodes_per_season_hint": "Episoden pro Staffel (kommagetrennt, z. B. 10,8,12)",
   "invalid_series_input": "Ungültige Eingabe",
   "series_added": "Serie hinzugefügt",
-  "add_series_failed": "Hinzufügen der Serie fehlgeschlagen"
+  "add_series_failed": "Hinzufügen der Serie fehlgeschlagen",
+  "set_as_start_screen": "{label} als Startbildschirm festgelegt",
+  "save_failed": "Speichern fehlgeschlagen",
+  "label_biosagenda": "Biosagenda",
+  "label_kinepolis": "Kinepolis"
 }

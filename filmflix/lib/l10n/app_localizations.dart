@@ -268,7 +268,7 @@ abstract class AppLocalizations {
   /// Long about text shown in the About screen
   ///
   /// In en, this message translates to:
-  /// **'CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr — enjoy watching!'**
+  /// **'CineTrackr\n\nWelcome to CineTrackr, your personal guide for movies and cinema visits.\n\nWith CineTrackr you can easily view movie schedules, keep your own watchlist and quickly access cinema locations and customer service.\n\nThanks for using CineTrackr, enjoy watching!'**
   String get aboutText;
 
   /// Label for the privacy policy link
@@ -754,7 +754,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialHome.
   ///
   /// In en, this message translates to:
-  /// **'Welcome! Here are the latest movies and series.'**
+  /// **'Here are the latest movies and series.'**
   String get tutorialHome;
 
   /// No description provided for @tutorialWatchlist.
@@ -784,8 +784,14 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialNavBar.
   ///
   /// In en, this message translates to:
-  /// **'Here you can switch screens. Long-press a button to reorder pages.'**
+  /// **'Welcome! Here you can change the start screen. Long-press a button to set that screen as your home screen.'**
   String get tutorialNavBar;
+
+  /// No description provided for @tutorialNavBar2.
+  ///
+  /// In en, this message translates to:
+  /// **'If you hold down the space between the buttons, you can change the order of the buttons.'**
+  String get tutorialNavBar2;
 
   /// No description provided for @tutorialHomeExtra.
   ///
@@ -822,6 +828,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View the map to find nearby cinemas!'**
   String get tutorialMap;
+
+  /// No description provided for @resetTutorial.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset tutorial'**
+  String get resetTutorial;
+
+  /// No description provided for @tutorialResetMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutorial reset, will restart'**
+  String get tutorialResetMessage;
 
   /// AppBar title for the cinemas map
   ///
@@ -862,7 +880,7 @@ abstract class AppLocalizations {
   /// No description provided for @map_no_website_content.
   ///
   /// In en, this message translates to:
-  /// **'No website available — Cinema found! 🎥'**
+  /// **'No website available, Cinema found! 🎥'**
   String get map_no_website_content;
 
   /// No description provided for @unknown.
@@ -1252,7 +1270,7 @@ abstract class AppLocalizations {
   /// No description provided for @faq_ai_a.
   ///
   /// In en, this message translates to:
-  /// **'Yes — use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.'**
+  /// **'Yes, use the \"Ask AI\" button to ask a question. Note that answers are automatically generated.'**
   String get faq_ai_a;
 
   /// No description provided for @admins_no_push.
@@ -2376,6 +2394,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to add series'**
   String get add_series_failed;
+
+  /// No description provided for @set_as_start_screen.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} set as start screen'**
+  String set_as_start_screen(Object label);
+
+  /// No description provided for @save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save failed'**
+  String get save_failed;
+
+  /// No description provided for @label_biosagenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Biosagenda'**
+  String get label_biosagenda;
+
+  /// No description provided for @label_kinepolis.
+  ///
+  /// In en, this message translates to:
+  /// **'Kinepolis'**
+  String get label_kinepolis;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
