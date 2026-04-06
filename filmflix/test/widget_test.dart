@@ -1,9 +1,9 @@
-// This is a basic Flutter widget test.
+// Dit is een basale Flutter widget-test.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Om interacties met een widget in je test uit te voeren, gebruik je de WidgetTester
+// utility uit het flutter_test package. Je kunt bijvoorbeeld tik- en scroll-gestures
+// simuleren. Gebruik WidgetTester ook om child-widgets in de widget-tree te vinden,
+// tekst uit te lezen en te verifiëren dat widget-eigenschappen de verwachte waarden hebben.
 /*
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,18 +12,18 @@ import 'package:cinetrackr/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+    // Bouw onze app en trigger een frame.
     await tester.pumpWidget(const CineTrackrApp());
 
-    // Verify that our counter starts at 0.
+    // Controleer dat onze teller bij 0 begint.
     expect(find.text('0'), findsOneWidget);
     expect(find.text('1'), findsNothing);
 
-    // Tap the '+' icon and trigger a frame.
+    // Tik op het '+'-icoon en trigger een frame.
     await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
-    // Verify that our counter has incremented.
+    // Controleer dat onze teller is verhoogd.
     expect(find.text('0'), findsNothing);
     expect(find.text('1'), findsOneWidget);
   });

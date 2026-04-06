@@ -249,6 +249,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get delete_failed => 'Delete failed';
 
   @override
+  String get marked_unread => 'Marked as unread';
+
+  @override
+  String get action_failed => 'Action failed';
+
+  @override
   String get user_label_default => 'User';
 
   @override
@@ -281,7 +287,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get new_faq_title => 'New FAQ';
 
   @override
-  String get question_label => 'Question';
+  String get question_label => 'Question/Comment';
 
   @override
   String get answer_label => 'Answer';
@@ -342,7 +348,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navFood => 'Food';
 
   @override
+  String get navigationReorder => 'Reorder navigation';
+
+  @override
   String get navProfile => 'Profile';
+
+  @override
+  String get infoTooltip => 'Info';
+
+  @override
+  String get watchlistInfoTitle => 'Info';
+
+  @override
+  String get watchlistInfoContent => 'The app cannot fetch data from streaming services. You can manually check off episodes you\'ve watched.';
 
   @override
   String get tutorialHome => 'Welcome! Here are the latest movies and series.';
@@ -360,10 +378,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialProfile => 'Manage your profile and settings here.';
 
   @override
+  String get tutorialNavBar => 'Here you can switch screens. Long-press a button to reorder pages.';
+
+  @override
+  String get tutorialHomeExtra => 'On the Home screen you see latest releases and recommendations.';
+
+  @override
+  String get tutorialWatchlistExtra => 'In your Watchlist you can remove films or mark them to watch later.';
+
+  @override
+  String get tutorialSearchExtra => 'Use the search bar to quickly find titles and actors.';
+
+  @override
+  String get tutorialFoodExtra => 'Find snacks and recipes that match your movie choice.';
+
+  @override
+  String get tutorialProfileExtra => 'Manage settings, preferences and account details in your profile.';
+
+  @override
   String get tutorialMap => 'View the map to find nearby cinemas!';
 
   @override
-  String get map_all_cinemas_title => 'All cinemas in the Netherlands';
+  String get map_all_cinemas_title => 'Cinemas in the Netherlands';
 
   @override
   String map_load_error(Object error) {
@@ -430,10 +466,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get food_search_button => 'SEARCH ON THUISBEZORGD';
 
   @override
-  String get food_postcode_label => 'Postcode (4 digits)';
+  String get food_postcode_label => 'ZIP code (4 digits)';
 
   @override
-  String get food_zip_required => 'Enter 4 digits of your postcode first!';
+  String get food_zip_required => 'Enter 4 digits of your ZIP code first!';
 
   @override
   String get filter_vegetarian => 'Vegetarian';
@@ -699,6 +735,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get googleSignInCancelled => 'Google sign-in cancelled';
 
   @override
+  String get loginErrorCredentialMalformed => 'The supplied credential is malformed or has expired.';
+
+  @override
+  String get loginErrorUserDisabled => 'This user account has been disabled.';
+
+  @override
+  String get loginErrorTooManyRequests => 'We have blocked all requests from this device due to unusual activity. Try again later.';
+
+  @override
+  String get loginErrorInvalidEmail => 'The email address is badly formatted.';
+
+  @override
+  String get loginErrorWrongPassword => 'Wrong password.';
+
+  @override
+  String get loginErrorUserNotFound => 'No user found with this email.';
+
+  @override
+  String get loginErrorAccountExists => 'An account already exists with the same email address but different sign-in credentials.';
+
+  @override
   String get details => 'Details';
 
   @override
@@ -814,6 +871,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Apple Sign-In failed: no identity token returned';
+
+  @override
+  String get googleSignInFailed => 'Google sign-in failed';
+
+  @override
+  String get loginErrorWeakPassword => 'Password is too weak.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Network error. Please check your connection.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Please sign in again to continue (recent authentication required).';
 
   @override
   String get avatar_login_prompt => 'Log in to change your profile picture';
@@ -1089,4 +1158,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'Seen episodes: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Disclaimer';
+
+  @override
+  String get disclaimerHeading => 'Third parties & APIs';
+
+  @override
+  String get disclaimerText => 'This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Playback disabled by video owner.';
+
+  @override
+  String get disclaimerNote => 'Use and display of content is subject to the terms and licenses of the services listed above.';
+
+  @override
+  String get add_series_button => 'Add series';
+
+  @override
+  String get add_series_title => 'Add series';
+
+  @override
+  String get add_series_use_dates => 'Use recurring days';
+
+  @override
+  String get add_series_until_date => 'Until date';
+
+  @override
+  String get until_label => 'Until';
+
+  @override
+  String get select => 'Select';
+
+  @override
+  String get imdb_id_label => 'ID (e.g. tt1234567)';
+
+  @override
+  String get title_label => 'Title';
+
+  @override
+  String get number_of_seasons => 'Number of seasons';
+
+  @override
+  String get number_of_episodes => 'Number of episodes';
+
+  @override
+  String episodes_in_season(Object season) {
+    return 'Episodes in season $season';
+  }
+
+  @override
+  String get episodes_per_season_hint => 'Episodes per season (comma separated, e.g. 10,8,12)';
+
+  @override
+  String get invalid_series_input => 'Invalid input';
+
+  @override
+  String get series_added => 'Series added';
+
+  @override
+  String get add_series_failed => 'Failed to add series';
 }
