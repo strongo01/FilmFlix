@@ -16,7 +16,7 @@ class MovieApi {
       (key, value) => value == null || value.toString().isEmpty,
     );
 
-    // Handle cursor separately to avoid double-encoding
+    // Behandel cursor apart om dubbele encoding te voorkomen
     String? cursor;
     if (cleanParams.containsKey('cursor')) {
       cursor = cleanParams.remove('cursor');
@@ -43,7 +43,7 @@ class MovieApi {
     }
 
     final response = await http.get(uri, headers: headers);
-    // Uncomment the following lines to debug the response if needed
+    // Haal de volgende regels uit commentaar om de response te debuggen indien nodig
     // final response = await http.get(uri);
     debugPrint('API Response status: ${response.statusCode}');
     //debugPrint('API Response body: ${response.body}');
@@ -93,7 +93,7 @@ class MovieApi {
     }
   }
 
-  //  SEARCH (RapidAPI)
+  //  ZOEKEN (RapidAPI)
   static Future<Map<String, dynamic>> search({
     required String title,
     String country = 'nl',
@@ -150,7 +150,7 @@ class MovieApi {
     });
   }
 
-  // Advanced filter wrapper that exposes more of the Rapid filters
+  // Geavanceerde filter-wrapper die meer Rapid-filters beschikbaar maakt
   static Future<Map<String, dynamic>> filterAdvanced({
     String country = 'nl',
     String? seriesGranularity,

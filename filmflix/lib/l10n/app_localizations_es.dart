@@ -249,6 +249,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get delete_failed => 'Error al eliminar';
 
   @override
+  String get marked_unread => 'Marcado como no leído';
+
+  @override
+  String get action_failed => 'Acción fallida';
+
+  @override
   String get user_label_default => 'Usuario';
 
   @override
@@ -281,7 +287,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get new_faq_title => 'Nueva pregunta frecuente';
 
   @override
-  String get question_label => 'Pregunta';
+  String get question_label => 'Pregunta/Comentario';
 
   @override
   String get answer_label => 'Respuesta';
@@ -342,7 +348,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get navFood => 'Comida';
 
   @override
+  String get navigationReorder => 'Reordenar navegación';
+
+  @override
   String get navProfile => 'Perfil';
+
+  @override
+  String get infoTooltip => 'Info';
+
+  @override
+  String get watchlistInfoTitle => 'Info';
+
+  @override
+  String get watchlistInfoContent => 'La aplicación no puede obtener datos de los servicios de streaming. Puedes marcar manualmente los episodios que has visto.';
 
   @override
   String get tutorialHome => '¡Bienvenido! Aquí encontrarás las últimas películas y series.';
@@ -360,10 +378,28 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tutorialProfile => 'Gestiona aquí tu perfil y ajustes.';
 
   @override
+  String get tutorialNavBar => 'Aquí puedes cambiar de pantalla. Mantén pulsado un botón para reordenar las páginas.';
+
+  @override
+  String get tutorialHomeExtra => 'En la pantalla de inicio ves los últimos estrenos y recomendaciones.';
+
+  @override
+  String get tutorialWatchlistExtra => 'En tu Watchlist puedes eliminar películas o guardarlas para ver más tarde.';
+
+  @override
+  String get tutorialSearchExtra => 'Usa la barra de búsqueda para encontrar títulos y actores rápidamente.';
+
+  @override
+  String get tutorialFoodExtra => 'Encuentra snacks y recetas que encajen con tu película.';
+
+  @override
+  String get tutorialProfileExtra => 'Gestiona ajustes, preferencias y datos de cuenta en tu perfil.';
+
+  @override
   String get tutorialMap => '¡Aquí puedes ver el mapa para encontrar cines cercanos!';
 
   @override
-  String get map_all_cinemas_title => 'Todos los cines en los Países Bajos';
+  String get map_all_cinemas_title => 'Cines en los Países Bajos';
 
   @override
   String map_load_error(Object error) {
@@ -699,6 +735,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get googleSignInCancelled => 'Inicio de sesión con Google cancelado';
 
   @override
+  String get loginErrorCredentialMalformed => 'La credencial suministrada no es válida o ha caducado.';
+
+  @override
+  String get loginErrorUserDisabled => 'Esta cuenta de usuario ha sido inhabilitada.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Hemos bloqueado todas las solicitudes de este dispositivo debido a una actividad inusual. Inténtalo de nuevo más tarde.';
+
+  @override
+  String get loginErrorInvalidEmail => 'La dirección de correo electrónico no es válida.';
+
+  @override
+  String get loginErrorWrongPassword => 'Contraseña incorrecta.';
+
+  @override
+  String get loginErrorUserNotFound => 'No se encontró ningún usuario con este correo electrónico.';
+
+  @override
+  String get loginErrorAccountExists => 'Ya existe una cuenta con la misma dirección de correo electrónico pero con diferentes credenciales de inicio de sesión.';
+
+  @override
   String get details => 'Detalles';
 
   @override
@@ -814,6 +871,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Fallo al iniciar sesión con Apple: no se recibió token de identidad';
+
+  @override
+  String get googleSignInFailed => 'Error al iniciar sesión con Google';
+
+  @override
+  String get loginErrorWeakPassword => 'La contraseña es demasiado débil.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Error de red. Por favor verifica tu conexión.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Vuelve a iniciar sesión para continuar (se requiere autenticación reciente).';
 
   @override
   String get avatar_login_prompt => 'Inicia sesión para personalizar tu foto de perfil';
@@ -1089,4 +1158,66 @@ class AppLocalizationsEs extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'Episodios vistos: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Aviso legal';
+
+  @override
+  String get disclaimerHeading => 'Servicios de terceros y fuentes de datos';
+
+  @override
+  String get disclaimerText => 'Esta aplicación utiliza datos de múltiples fuentes de terceros:\n\n* API por Brian Fritz (OMDb API)\n Licenciado bajo CC BY-NC 4.0\n Este servicio no está respaldado ni afiliado a IMDb.com\n\n* Esta aplicación utiliza TMDB y las API de TMDB, pero no está respaldada, certificada ni aprobada de ninguna manera por TMDB\n\n* Algunos datos provienen de IMDb\n\n* La disponibilidad de streaming y los servicios de traducción se proporcionan a través de RapidAPI\n\n* Los tráilers son proporcionados por YouTube\n\nDatos de mapas © colaboradores de OpenStreetMap\n\nTodas las marcas, logotipos y derechos de autor pertenecen a sus respectivos propietarios.';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Reproducción deshabilitada por el propietario del vídeo.';
+
+  @override
+  String get disclaimerNote => 'Todas las marcas, logotipos y datos de terceros siguen siendo propiedad de sus respectivos propietarios; consulte sus términos y políticas de privacidad para más detalles.';
+
+  @override
+  String get add_series_button => 'Agregar serie';
+
+  @override
+  String get add_series_title => 'Agregar serie';
+
+  @override
+  String get add_series_use_dates => 'Usar días recurrentes';
+
+  @override
+  String get add_series_until_date => 'Hasta la fecha';
+
+  @override
+  String get until_label => 'Hasta';
+
+  @override
+  String get select => 'Seleccionar';
+
+  @override
+  String get imdb_id_label => 'ID (p.ej. tt1234567)';
+
+  @override
+  String get title_label => 'Título';
+
+  @override
+  String get number_of_seasons => 'Número de temporadas';
+
+  @override
+  String get number_of_episodes => 'Número de episodios';
+
+  @override
+  String episodes_in_season(Object season) {
+    return 'Episodios en la temporada $season';
+  }
+
+  @override
+  String get episodes_per_season_hint => 'Episodios por temporada (separados por comas, p.ej. 10,8,12)';
+
+  @override
+  String get invalid_series_input => 'Entrada no válida';
+
+  @override
+  String get series_added => 'Serie agregada';
+
+  @override
+  String get add_series_failed => 'No se pudo agregar la serie';
 }

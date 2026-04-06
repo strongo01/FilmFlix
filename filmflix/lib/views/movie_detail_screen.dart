@@ -1,166 +1,221 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:cinetrackr/widgets/app_top_bar.dart'; // Importeert de custom top bar widget
+import 'package:cinetrackr/widgets/app_background.dart'; // Importeert de background widget
+import 'dart:async'; // Importeert async/Future functionaliteiten
+import 'dart:convert'; // Importeert JSON encoding/decoding functies
+import 'dart:typed_data'; // Importeert typed data zoals Uint8List
+import 'package:flutter/services.dart'
+    show rootBundle; // Importeert rootBundle voor asset bestanden
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cinetrackr/views/loginscreen.dart';
-import 'package:cinetrackr/l10n/app_localizations.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:marquee/marquee.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:cinetrackr/widgets/youtube_player.dart';
-import 'package:cinetrackr/services/movie_repository.dart';
-import 'package:cinetrackr/services/movie_api.dart';
-import 'package:http/http.dart' as http;
-// youtube player removed for web compatibility; fallback to opening embed in WebView
+import 'package:cloud_firestore/cloud_firestore.dart'; // Importeert Firestore database
+import 'package:cinetrackr/views/loginscreen.dart'; // Importeert login scherm
+import 'package:cinetrackr/l10n/app_localizations.dart'; // Importeert localisatie/taalbestanden
+import 'package:firebase_auth/firebase_auth.dart'; // Importeert Firebase authenticatie
+import 'package:flutter/foundation.dart'; // Importeert Flutter foundation utilities
+import 'package:flutter/material.dart'; // Importeert Material Design widgets
+import 'package:marquee/marquee.dart'; // Importeert scrolling marquee effect
+import 'package:url_launcher/url_launcher.dart'; // Importeert URL launcher
+import 'package:cinetrackr/widgets/youtube_player.dart'; // Importeert YouTube player widget
+import 'package:cinetrackr/services/movie_repository.dart'; // Importeert movie data repository
+import 'package:cinetrackr/services/movie_api.dart'; // Importeert movie API service
+import 'package:http/http.dart'
+    as http; // Importeert HTTP client voor API requests
 
 class MovieDetailScreen extends StatefulWidget {
-  // Deze screen toont de details van een specifieke film. We verwachten een imdbId als parameter, die we gebruiken om de details van de film op te halen via onze MovieRepository. In deze screen tonen we informatie zoals de poster, titel, overzicht, genres, cast, en streaming opties. We hebben ook functionaliteit voor gebruikers om films aan hun watchlist toe te voegen en om te markeren welke afleveringen ze hebben gezien (voor series). We gebruiken Firebase Authentication om gebruikers te identificeren, en Firestore om hun watchlist en seen episodes op te slaan.
-  final String imdbId;
-
-  const MovieDetailScreen({super.key, required this.imdbId});
+  // Definieert stateful widget voor filmdetail scherm
+  final String imdbId; // IMDb identificatie nummer van de film
+  const MovieDetailScreen({
+    super.key,
+    required this.imdbId,
+  }); // Constructor met required imdbId parameter
 
   @override
-  State<MovieDetailScreen> createState() => _MovieDetailScreenState();
+  State<MovieDetailScreen> createState() => _MovieDetailScreenState(); // Maakt state instance voor widget
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
-  String? _xAppApiKey;
-  final Map<String, Uint8List> _imageCache = {};
-  String? _rating;
-  List<String> _genres = [];
-  List<String> _creators = [];
-  List<String> _cast = [];
-  List<dynamic> _seasons = [];
-  List<dynamic> _streaming = [];
-  bool _loadingMovie = true;
-  String? _error;
-  String? _rated;
+  // Definieert state class voor filmdetail scherm
+  String? _xAppApiKey; // String variabele voor API key
+  final Map<String, Uint8List> _imageCache =
+      {}; // Cache voor gedownloade afbeeldingen
+  String? _rating; // Film rating waarde
+  List<String> _genres = []; // Lijst met genre strings
+  List<String> _creators = []; // Lijst met creator/producer namen
+  List<String> _cast = []; // Lijst met actor namen
+  List<dynamic> _seasons = []; // Lijst met seizoen data
+  List<dynamic> _streaming = []; // Lijst met streaming service opties
+  bool _loadingMovie = true; // Status voor het laden van film data
+  String? _error; // Fout message wenn laden mislukt
+  String? _rated; // Ouderlijkse waarschuwing/rating (PG, 12+, etc)
 
   String _formatRating(String? rating) {
-    if (rating == null || rating.isEmpty || rating == '-') return rating ?? '';
-        final loc = AppLocalizations.of(context)!;
-    // Some ratings come as "73." or "73" (out of 100)
-    // or "7.3" (out of 10). Let's clean and parse.
-    String cleanRating = rating.replaceAll(',', '.');
+    // Functie om rating format proper op te maken
+    if (rating == null || rating.isEmpty || rating == '-')
+      return rating ?? ''; // Return rating ongewijzigd als null/leeg/'-'
+    final loc = AppLocalizations.of(context)!; // Haalt localisatie context op
+    String cleanRating = rating.replaceAll(
+      ',',
+      '.',
+    ); // Vervangt comma's door punten
     if (cleanRating.endsWith('.')) {
-      cleanRating = cleanRating.substring(0, cleanRating.length - 1);
+      // Check of rating eindigt met punt
+      cleanRating = cleanRating.substring(
+        0,
+        cleanRating.length - 1,
+      ); // Verwijdert eindpunt
     }
-
-    final doubleRating = double.tryParse(cleanRating);
+    final doubleRating = double.tryParse(
+      cleanRating,
+    ); // Parseert string naar double
     if (doubleRating != null) {
-      if (doubleRating == 0) return '-';
+      // Check of parsing succesvol was
+      if (doubleRating == 0) return '-'; // Return '-' voor 0 rating
       if (doubleRating > 10 && doubleRating <= 100) {
-        return '${(doubleRating / 10).toStringAsFixed(1)}/10 ${loc.stars}';
+        // Check of rating op schaal 100 is
+        return '${(doubleRating / 10).toStringAsFixed(1)}/10 ${loc.stars}'; // Converteert naar /10 schaal
       } else if (doubleRating <= 10) {
-        return '${doubleRating.toStringAsFixed(1)}/10 ${loc.stars}';
+        // Check of rating al op /10 schaal is
+        return '${doubleRating.toStringAsFixed(1)}/10 ${loc.stars}'; // Formatteert rating met /10
       }
     }
-    
-    return rating;
+    return rating; // Return originele rating als parsing mislukt
   }
 
   Future<void> _loadVideos() async {
+    // Async functie om video/trailer data op te halen
     try {
-      setState(() => _loadingTrailer = true);
-
-      final tmdbIdRaw = _rapidData?['tmdbId']?.toString() ?? '';
+      // Start try block voor error handling
+      setState(() => _loadingTrailer = true); // Zet loading status aan
+      final tmdbIdRaw =
+          _rapidData?['tmdbId']?.toString() ??
+          ''; // Haalt TMDb ID op uit rapid data
       if (tmdbIdRaw.isEmpty) {
-        setState(() => _loadingTrailer = false);
-        return;
+        // Check of TMDb ID leeg is
+        setState(() => _loadingTrailer = false); // Zet loading status uit
+        return; // Exit functie
       }
-
-      final parts = tmdbIdRaw.split('/');
-      final id = parts.isNotEmpty ? parts.last : tmdbIdRaw;
-
-      final isMovie = _isResponseMovie(_omdbData?['Type']?.toString()) ||
+      final parts = tmdbIdRaw.split(
+        '/',
+      ); // Split TMDb ID op slash (movie/123 of tv/456)
+      final id = parts.isNotEmpty
+          ? parts.last
+          : tmdbIdRaw; // Haalt laatst deel van path (nummer)
+      final isMovie =
+          _isResponseMovie(_omdbData?['Type']?.toString()) ||
           _isResponseMovie(_rapidData?['itemType']?.toString()) ||
           _isResponseMovie(_rapidData?['type']?.toString()) ||
           _isResponseMovie(_rapidData?['showType']?.toString()) ||
-          _isResponseMovie(_rapidData?['titleType']?.toString());
-
-      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies').replace(
-        queryParameters: isMovie
-            ? {'type': 'tmdbmovievideos', 'movie_id': id, 'language': 'en-US'}
-            : {'type': 'tmdbserievideos', 'tv_id': id, 'language': 'en-US'},
-      );
-
-      await _ensureEnvLoaded();
-      final headers = <String, String>{};
-      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) headers['x-app-api-key'] = _xAppApiKey!;
-      final resp = await http.get(uri, headers: headers);
+          _isResponseMovie(
+            _rapidData?['titleType']?.toString(),
+          ); // Bepaalt of dit een film of serie is
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          .replace(
+            queryParameters: isMovie
+                ? {
+                    'type': 'tmdbmovievideos',
+                    'movie_id': id,
+                    'language': 'en-US',
+                  }
+                : {'type': 'tmdbserievideos', 'tv_id': id, 'language': 'en-US'},
+          ); // Bouwt API URL met juiste parameters
+      await _ensureEnvLoaded(); // Laadt environment variables (API key)
+      final headers = <String, String>{}; // Initialiseert lege headers map
+      if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
+        headers['x-app-api-key'] =
+            _xAppApiKey!; // Voegt API key toe aan headers
+      final resp = await http.get(
+        uri,
+        headers: headers,
+      ); // Stuurt HTTP GET request
       if (resp.statusCode != 200) {
-        setState(() => _loadingTrailer = false);
-        return;
+        // Check of response code niet OK is
+        setState(() => _loadingTrailer = false); // Zet loading status uit
+        return; // Exit functie
       }
-
-      final jsonData = jsonDecode(resp.body) as Map<String, dynamic>?;
+      final jsonData =
+          jsonDecode(resp.body)
+              as Map<String, dynamic>?; // Decodeert JSON response
       if (jsonData == null) {
-        setState(() => _loadingTrailer = false);
-        return;
+        // Check of JSON null is
+        setState(() => _loadingTrailer = false); // Zet loading status uit
+        return; // Exit functie
       }
-
-      final results = (jsonData['results'] is List) ? jsonData['results'] as List : [];
-
-      final List<Map<String, dynamic>> youtubeVideos = [];
+      final results = (jsonData['results'] is List)
+          ? jsonData['results'] as List
+          : []; // Haalt results array op of leeg array
+      final List<Map<String, dynamic>> youtubeVideos =
+          []; // Initialiseert YouTube videos lijst
       for (final r in results) {
-        final m = Map<String, dynamic>.from(r as Map);
-        final site = (m['site'] ?? '').toString().toLowerCase();
+        // Loop door elke result
+        final m = Map<String, dynamic>.from(
+          r as Map,
+        ); // Converteert result naar map
+        final site = (m['site'] ?? '')
+            .toString()
+            .toLowerCase(); // Haalt site op (lowercase)
         if (site == 'youtube') {
-          youtubeVideos.add(m);
+          // Check of site YouTube is
+          youtubeVideos.add(m); // Voegt aan YouTube videos lijst
         }
       }
-
-      // Sort: Trailers first
       youtubeVideos.sort((a, b) {
-        final aType = (a['type'] ?? '').toString().toLowerCase();
-        final bType = (b['type'] ?? '').toString().toLowerCase();
-        if (aType == 'trailer' && bType != 'trailer') return -1;
-        if (aType != 'trailer' && bType == 'trailer') return 1;
-        return 0;
+        // Sorteert YouTube videos
+        final aType = (a['type'] ?? '')
+            .toString()
+            .toLowerCase(); // Haalt type van a op
+        final bType = (b['type'] ?? '')
+            .toString()
+            .toLowerCase(); // Haalt type van b op
+        if (aType == 'trailer' && bType != 'trailer')
+          return -1; // Trailers eerst
+        if (aType != 'trailer' && bType == 'trailer')
+          return 1; // Andere types na trailers
+        return 0; // Behoud originele volgorde
       });
-
       if (youtubeVideos.isNotEmpty) {
-        final rawKey = youtubeVideos[0]['key']?.toString();
-        final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
-        debugPrint('Selected trailer raw key: $rawKey, normalized: $normKey, site: ${youtubeVideos[0]['site']}');
+        // Check of YouTube videos beschikbaar zijn
+        final rawKey = youtubeVideos[0]['key']
+            ?.toString(); // Haalt video key op
+        final normKey =
+            _normalizeYoutubeId(rawKey) ?? rawKey; // Normaliseert YouTube ID
+        debugPrint(
+          'Selected trailer raw key: $rawKey, normalized: $normKey, site: ${youtubeVideos[0]['site']}',
+        ); // Debug output voor trailer selectie
         setState(() {
-          _allVideos = youtubeVideos;
-          _currentVideoIndex = 0;
-          _trailerKey = normKey;
-          _trailerSite = youtubeVideos[0]['site']?.toString();
-        });
-      }
+          // Start state update
+          _allVideos = youtubeVideos; // Zet alle videos
+          _currentVideoIndex = 0; // Reset video index naar 0
+          _trailerKey = normKey; // Zet genormaliseerde video key
+          _trailerSite = youtubeVideos[0]['site']?.toString(); // Zet video site
+        }); // Einde state update
+      } // Einde if youtubeVideos not empty
     } catch (e) {
-      debugPrint('Error loading videos: $e');
+      // Catch any errors
+      debugPrint('Error loading videos: $e'); // Debug print error
     } finally {
-      setState(() => _loadingTrailer = false);
-    }
-  }
+      // Always execute
+      setState(() => _loadingTrailer = false); // Zet loading status uit
+    } // Einde try-catch-finally
+  } // Einde _loadVideos functie
 
-  Map<String, String> _translatedTexts = {};
-  Map<String, bool> _isTranslating = {};
-
-  User? _user;
-  StreamSubscription<User?>? _authSub;
-  bool _isInWatchlist = false;
-  final Set<String> _seenSet = {};
-  bool _loadingUserData = false;
-  Map<String, dynamic>? _rapidData;
-  Map<String, dynamic>? _omdbData;
-  String? _poster;
-  String? _title;
-  String? _overview;
-  // trailer
-  List<Map<String, dynamic>> _allVideos = [];
-  int _currentVideoIndex = 0;
-  String? _trailerKey;
-  String? _trailerSite;
-  bool _loadingTrailer = false;
+  Map<String, String> _translatedTexts = {}; // Map voor vertaalde teksten
+  Map<String, bool> _isTranslating = {}; // Map voor translation status per key
+  User? _user; // Huidige ingelogde gebruiker
+  StreamSubscription<User?>? _authSub; // Subscription op auth state changes
+  bool _isInWatchlist = false; // Status of film in watchlist zit
+  final Set<String> _seenSet = {}; // Set van geziene aflevering keys
+  bool _loadingUserData = false; // Status voor het laden van user data
+  Map<String, dynamic>? _rapidData; // RapidAPI response data
+  Map<String, dynamic>? _omdbData; // OMDb API response data
+  String? _poster; // Poster URL
+  String? _title; // Film titel
+  String? _overview; // Film overzicht/beschrijving
+  List<Map<String, dynamic>> _allVideos = []; // Lijst met alle video data
+  int _currentVideoIndex = 0; // Huidendige video index
+  String? _trailerKey; // YouTube video ID
+  String? _trailerSite; // Video site (YouTube)
+  bool _loadingTrailer = false; // Status voor trailer laden
   static const Map<String, String> _serviceAssetMap = {
+    // Map van service namen naar asset bestandsnamen
     'Netflix': 'netflix',
     'Amazon Prime Video': 'prime_video',
     'Prime Video': 'prime_video',
@@ -176,432 +231,547 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     'MUBI': 'mubi',
     'SkyShowtime': 'skyshowtime',
     'Zee5': 'zee5',
-  };
+  }; // Einde service asset map
 
-  String _formatStreamingType(BuildContext context, Map<String, dynamic> option) {
-    // Deze functie neemt een streaming optie (zoals die we van de API krijgen) en formatteert het type van de optie in een leesbaar formaat. We kijken naar het 'type' veld van de optie, en afhankelijk van of het een abonnement, koopoptie, of huur optie is, formatteren we het label dienovereenkomstig. Voor koop- en huur opties voegen we ook de prijs toe als deze beschikbaar is. Dit maakt het duidelijker voor de gebruiker wat voor soort streaming optie het is en wat de kosten zijn.
-    final type = option['type']?.toString();
-
-    final loc = AppLocalizations.of(context)!;
+  String _formatStreamingType(
+    BuildContext context,
+    Map<String, dynamic> option,
+  ) {
+    // Functie om streaming type te formatteren
+    final type = option['type']?.toString(); // Haalt streaming type op
+    final loc = AppLocalizations.of(context)!; // Haalt localisatie context op
     switch (type) {
-      case 'subscription':
-        return loc.included_with_subscription;
-      case 'buy':
-        final price = option['price']?['formatted'];
-        return price != null ? loc.buy_with_price(price.toString()) : loc.buy;
-      case 'rent':
-        final price = option['price']?['formatted'];
-        return price != null ? loc.rent_with_price(price.toString()) : loc.rent;
-      case 'addon':
-        final price = option['price']?['formatted'];
-        return price != null ? loc.addon_with_price(price.toString()) : loc.addon;
-      default:
-        return type ?? '';
-    }
-  }
+      // Switch op streaming type
+      case 'subscription': // Als subscription
+        return loc.included_with_subscription; // Returneer subscription label
+      case 'buy': // Als koop optie
+        final price = option['price']?['formatted']; // Haalt prijs op
+        return price != null
+            ? loc.buy_with_price(price.toString())
+            : loc.buy; // Returneer buy label met/zonder prijs
+      case 'rent': // Als huur optie
+        final price = option['price']?['formatted']; // Haalt prijs op
+        return price != null
+            ? loc.rent_with_price(price.toString())
+            : loc.rent; // Returneer rent label met/zonder prijs
+      case 'addon': // Als add-on optie
+        final price = option['price']?['formatted']; // Haalt prijs op
+        return price != null
+            ? loc.addon_with_price(price.toString())
+            : loc.addon; // Returneer addon label met/zonder prijs
+      default: // Voor alle andere types
+        return type ?? ''; // Returneer type of lege string
+    } // Einde switch
+  } // Einde _formatStreamingType functie
 
-  // Sorteer volgorde
   int _typePriority(String? type) {
-    // Deze functie geeft een prioriteitswaarde terug voor een gegeven streaming type. We gebruiken deze prioriteit om de streaming opties te sorteren, zodat abonnementen bovenaan staan, gevolgd door koopopties, huur opties, en dan andere types. Dit zorgt ervoor dat de meest aantrekkelijke opties (zoals abonnementen) eerst worden getoond aan de gebruiker.
+    // Functie om prioriteit van streaming type te bepalen
     switch (type) {
-      case 'subscription':
-        return 0;
-      case 'rent':
-        return 1;
-      case 'buy':
-        return 2;
-      default:
-        return 3;
-    }
-  }
+      // Switch op streaming type
+      case 'subscription': // Als subscription
+        return 0; // Hoogste prioriteit
+      case 'rent': // Als huur
+        return 1; // Middelste prioriteit
+      case 'buy': // Als koop
+        return 2; // Lage prioriteit
+      default: // Voor alle andere types
+        return 3; // Laagste prioriteit
+    } // Einde switch
+  } // Einde _typePriority functie
 
   bool _isResponseMovie(String? type) {
-    final t = type?.toString().toLowerCase() ?? '';
-    if (t.isEmpty) return false;
-    // Accept common variants: 'movie', 'film', or phrases containing 'film' or 'movie'
+    // Functie om te checken of type een film is
+    final t = type?.toString().toLowerCase() ?? ''; // Zet type naar lowercase
+    if (t.isEmpty) return false; // Return false als leeg
     return t == 'movie' ||
         t == 'film' ||
         t.contains('film') ||
         t.contains('movie') ||
-        t.contains('feature');
-  }
+        t.contains('feature'); // Check of text movie/film bevat
+  } // Einde _isResponseMovie functie
 
   String _detectMediaType() {
-    // Prefer RapidAPI fields when available
+    // Functie om media type (film/serie) te detecteren
     final candidates = [
       _rapidData?['itemType'],
       _rapidData?['type'],
       _rapidData?['showType'],
       _rapidData?['titleType'],
       _omdbData?['Type'],
-    ];
-
-    var sawSeries = false;
+    ]; // Verzamelt mogelijke type velden
+    var sawSeries = false; // Boolean voor serie detectie
     for (final c in candidates) {
-      if (c == null) continue;
-      final s = c.toString().toLowerCase();
+      // Loop door candidates
+      if (c == null) continue; // Skip null values
+      final s = c.toString().toLowerCase(); // Zet naar lowercase
       if (s.contains('movie') || s.contains('film') || s.contains('feature'))
-        return 'movie';
-      if (s.contains('series') || s.contains('tv')) sawSeries = true;
-    }
+        return 'movie'; // Return 'movie' als film type
+      if (s.contains('series') || s.contains('tv'))
+        sawSeries = true; // Set sawSeries flag
+    } // Einde loop
+    if (sawSeries) return 'series'; // Return 'series' als serie gevonden
+    return 'unknown'; // Return 'unknown' als geen match
+  } // Einde _detectMediaType functie
 
-    if (sawSeries) return 'series';
-    return 'unknown';
-  }
-
-  // Badge met kleur
   Widget _buildTypeChip(BuildContext context, Map<String, dynamic> option) {
-    final type = option['type']?.toString();
-    final price = option['price']?['formatted'];
-
-    Color bg;
-    String label;
-
-    final loc = AppLocalizations.of(context)!;
+    // Functie om streaming type chip te bouwen
+    final type = option['type']?.toString(); // Haalt streaming type op
+    final price = option['price']?['formatted']; // Haalt prijs op
+    Color bg; // Variabele voor background kleur
+    String label; // Variabele voor chip label
+    final loc = AppLocalizations.of(context)!; // Haalt localisatie context op
     switch (type) {
-      case 'subscription':
-        bg = Colors.green.shade100;
-        label = loc.included_with_subscription;
-        break;
-      case 'rent':
-        bg = Colors.blue.shade100;
-        label = price != null ? loc.rent_with_price(price.toString()) : loc.rent;
-        break;
-      case 'buy':
-        bg = Colors.orange.shade100;
-        label = price != null ? loc.buy_with_price(price.toString()) : loc.buy;
-        break;
-      case 'addon':
-        bg = Colors.grey.shade100;
-        label = price != null ? loc.addon_with_price(price.toString()) : loc.addon;
-        break;
-      default:
-        bg = Colors.grey.shade200;
-        label = type ?? '';
-    }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+      // Switch op streaming type
+      case 'subscription': // Als subscription
+        bg = Colors.green.shade100; // Groene achtergrond
+        label = loc.included_with_subscription; // Label voor subscription
+        break; // Einde case
+      case 'rent': // Als huur
+        bg = Colors.blue.shade100; // Blauwe achtergrond
+        label = price != null
+            ? loc.rent_with_price(price.toString())
+            : loc.rent; // Label voor huur met/zonder prijs
+        break; // Einde case
+      case 'buy': // Als koop
+        bg = Colors.orange.shade100; // Oranje achtergrond
+        label = price != null
+            ? loc.buy_with_price(price.toString())
+            : loc.buy; // Label voor koop met/zonder prijs
+        break; // Einde case
+      case 'addon': // Als add-on
+        bg = Colors.grey.shade100; // Grijze achtergrond
+        label = price != null
+            ? loc.addon_with_price(price.toString())
+            : loc.addon; // Label voor addon met/zonder prijs
+        break; // Einde case
+      default: // Voor alle andere types
+        bg = Colors.grey.shade200; // Grijze achtergrond
+        label = type ?? ''; // Label is type of leeg
+    } // Einde switch
+    final isDark =
+        Theme.of(context).brightness ==
+        Brightness.dark; // Check of dark mode actief is
     return Chip(
       label: Text(
         label,
         style: TextStyle(color: isDark ? Colors.black : Colors.black),
       ),
       backgroundColor: bg,
-    );
-  }
+    ); // Return Chip widget
+  } // Einde _buildTypeChip functie
 
   Future<void> _openLink(String? url) async {
-    if (url == null) return;
-    final uri = Uri.tryParse(url);
-    if (uri == null) return;
+    // Async functie om link te openen
+    if (url == null) return; // Return als url null is
+    final uri = Uri.tryParse(url); // Parse URL naar Uri
+    if (uri == null) return; // Return als parsing mislukt
     if (await canLaunchUrl(uri)) {
+      // Check of URL kan worden geopend
       await launchUrl(
         uri,
         mode: LaunchMode.externalApplication,
-      ); // Deze functie probeert een URL te openen in de externe browser van het apparaat. We controleren eerst of de URL geldig is en of we deze kunnen openen. Als dat het geval is, gebruiken we launchUrl met de mode set op externalApplication, zodat de link buiten onze app wordt geopend. Dit is handig voor streaming links die vaak in een webbrowser moeten worden geopend.
+      ); // Open URL in externe app
     } else {
-      debugPrint('Cannot launch url: $url');
-    }
-  }
+      // Anders
+      debugPrint('Cannot launch url: $url'); // Print debug message
+    } // Einde if-else
+  } // Einde _openLink functie
 
   List<dynamic> _toList(dynamic maybeListOrMap) {
-    // Deze helperfunctie neemt een dynamisch object dat ofwel een lijst of een map kan zijn, en zet het om in een lijst. Sommige API responses kunnen soms een lijst teruggeven, maar als er maar één item is, kunnen ze ook een map teruggeven. Deze functie zorgt ervoor dat we altijd een lijst hebben om mee te werken, ongeacht het oorspronkelijke formaat van de data. Als het object null is, geven we een lege lijst terug. Als het al een lijst is, geven we het direct terug. Als het een map is, nemen we de waarden van de map en zetten die om in een lijst.
-    if (maybeListOrMap == null) return [];
-    if (maybeListOrMap is List) return maybeListOrMap;
+    // Functie om lijst of map om te zetten naar lijst
+    if (maybeListOrMap == null) return []; // Return lege lijst als null
+    if (maybeListOrMap is List)
+      return maybeListOrMap; // Return direct als al lijst
     if (maybeListOrMap is Map) {
       return maybeListOrMap.entries.map((e) => e.value).toList();
-    }
-    return [];
-  }
+    } // Zet map values om naar lijst
+    return []; // Return lege lijst voor andere types
+  } // Einde _toList functie
 
   String? _normalizeYoutubeId(String? raw) {
-    if (raw == null) return null;
-    final r = raw.trim();
-    // If it already looks like an id, return it
-    final idPattern = RegExp(r'^[a-zA-Z0-9_-]{11,}$');
+    // Functie om YouTube ID te normaliseren
+    if (raw == null) return null; // Return null als input null
+    final r = raw.trim(); // Verwijdert whitespace
+    final idPattern = RegExp(
+      r'^[a-zA-Z0-9_-]{11,}$',
+    ); // Regex pattern voor YouTube ID
     if (idPattern.hasMatch(r) && !r.contains('http') && !r.contains('/')) {
       return r;
-    }
-
+    } // Return ID als al geformatteerd
     try {
-      final uri = Uri.tryParse(r);
+      // Start try block
+      final uri = Uri.tryParse(r); // Parse als URL
       if (uri != null) {
-        final v = uri.queryParameters['v'];
-        if (v != null && v.isNotEmpty) return v;
-        final host = uri.host.toLowerCase();
+        // Check of URI parsed is
+        final v = uri.queryParameters['v']; // Haalt 'v' parameter op
+        if (v != null && v.isNotEmpty) return v; // Return 'v' parameter
+        final host = uri.host.toLowerCase(); // Haalt host op (lowercase)
         if (host.contains('youtu.be')) {
-          final segs = uri.pathSegments;
-          if (segs.isNotEmpty) return segs.last;
-        }
-        // embed path e.g. /embed/VIDEOID
-        final embedIndex = uri.pathSegments.indexWhere((s) => s == 'embed');
-        if (embedIndex >= 0 && uri.pathSegments.length > embedIndex + 1) return uri.pathSegments[embedIndex + 1];
-      }
-    } catch (_) {}
-
-    // Fallback: try to extract id like v=... or youtu.be/...
-    final vidMatch = RegExp(r'(?:v=|youtu\.be/|embed/)([A-Za-z0-9_-]{6,})').firstMatch(r);
-    if (vidMatch != null) return vidMatch.group(1);
-    return r;
-  }
+          // Check of youtu.be domain
+          final segs = uri.pathSegments; // Haalt path segments op
+          if (segs.isNotEmpty) return segs.last; // Return laatst segment
+        } // Einde youtu.be check
+        final embedIndex = uri.pathSegments.indexWhere(
+          (s) => s == 'embed',
+        ); // Zoekt 'embed' in path
+        if (embedIndex >= 0 && uri.pathSegments.length > embedIndex + 1)
+          return uri.pathSegments[embedIndex + 1]; // Return ID na 'embed'
+      } // Einde uri null check
+    } catch (_) {} // Catch en ignore errors
+    final vidMatch = RegExp(
+      r'(?:v=|youtu\.be/|embed/)([A-Za-z0-9_-]{6,})',
+    ).firstMatch(r); // Regex match voor YouTube ID
+    if (vidMatch != null) return vidMatch.group(1); // Return matched ID
+    return r; // Return origineel als fallback
+  } // Einde _normalizeYoutubeId functie
 
   Widget _buildServiceIconAsset(
-    // Deze functie bouwt een widget die het logo van een streaming service toont op basis van de service naam. We gebruiken de _serviceAssetMap om de juiste asset bestandsnaam te vinden voor de gegeven service naam. We detecteren ook of de app in dark mode is, zodat we het juiste logo kunnen tonen (sommige logo's hebben een donkere en lichte versie). Als we geen match vinden voor de service naam, tonen we een standaard tv-icoon. Dit zorgt
     String? serviceName, {
     double height = 28,
     required BuildContext context,
   }) {
-    if (serviceName == null) return const Icon(Icons.tv);
-
+    // Functie om service icon te bouwen
+    if (serviceName == null)
+      return const Icon(Icons.tv); // Return TV icoon als serviceName null
     final key = _serviceAssetMap.entries
         .firstWhere(
-          // We zoeken in de _serviceAssetMap naar een entry waarbij de key overeenkomt met de serviceName (case-insensitive). Als we een match vinden, gebruiken we de bijbehorende value als het bestandsnaam van het logo. Als we geen match vinden, geven we een lege string terug.
           (entry) => entry.key.toLowerCase() == serviceName.toLowerCase(),
           orElse: () => const MapEntry('', ''),
         )
-        .value;
-
+        .value; // Zoekt service in map
     if (key.isEmpty)
-      return const Icon(
-        Icons.tv,
-      ); // Als we geen match hebben gevonden in de map, tonen we een standaard tv-icoon.
-
-    // Detecteer of de app dark mode gebruikt
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+      return const Icon(Icons.tv); // Return TV icoon als niet gevonden
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark; // Check of dark mode
     final folder = isDark
         ? 'dark'
-        : 'light'; // Sommige logo's hebben een donkere en lichte versie, dus we bepalen welke map we moeten gebruiken op basis van de huidige thema-instelling van de app.
-
-    final path = 'assets/logos/$folder/$key.png';
-    return Image.asset(path, height: height);
-  }
+        : 'light'; // Selecteert folder op basis van theme
+    final path = 'assets/logos/$folder/$key.png'; // Bouwt asset path
+    return Image.asset(path, height: height); // Return afbeelding asset
+  } // Einde _buildServiceIconAsset functie
 
   Future<String?> _fetchTmdbPosterFromRapid(Map<String, dynamic> rapid) async {
+    // Async functie om TMDb poster te fetchen
     try {
-      final tmdbIdRaw = rapid['tmdbId']
-          ?.toString(); // We halen de tmdbId op uit de rapid data. Deze tmdbId is meestal in het formaat "movie/123456" of "tv/654321". We hebben deze ID nodig om onze backend te vragen naar de bijbehorende TMDb afbeeldingen. Als er geen tmdbId aanwezig is, kunnen we geen fallback poster ophalen, dus we loggen dit en returnen null.
+      // Start try block
+      final tmdbIdRaw = rapid['tmdbId']?.toString(); // Haalt tmdbId op
       if (tmdbIdRaw == null || tmdbIdRaw.isEmpty) {
-        debugPrint('No tmdbId present in rapid data');
-        return null;
-      }
-
-      // tmdbId is like "movie/1321624" or "tv/XXXX" — we want only the numeric id
-      final parts = tmdbIdRaw.split('/');
-      final movieId = parts.length > 1 ? parts.last : tmdbIdRaw;
-
-      // call your backend endpoint
-      final uri = Uri.parse(
-        'https://film-flix-olive.vercel.app/apiv2/movies',
-      ).replace(queryParameters: {'type': 'tmdb-images', 'movie_id': movieId});
-
-      debugPrint('Fetching TMDb images from backend: $uri');
-      await _ensureEnvLoaded();
-      final headers = <String, String>{};
+        // Check of tmdbId leeg is
+        debugPrint('No tmdbId present in rapid data'); // Debug message
+        return null; // Return null
+      } // Einde tmdbId check
+      final parts = tmdbIdRaw.split('/'); // Split op slash
+      final movieId = parts.length > 1
+          ? parts.last
+          : tmdbIdRaw; // Haalt nummer deel
+      final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          .replace(
+            queryParameters: {'type': 'tmdb-images', 'movie_id': movieId},
+          ); // Bouwt API URL
+      debugPrint('Fetching TMDb images from backend: $uri'); // Debug message
+      await _ensureEnvLoaded(); // Laadt environment variables
+      final headers = <String, String>{}; // Initialiseert headers
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
-        headers['x-app-api-key'] = _xAppApiKey!;
-      final resp = await http.get(uri, headers: headers);
-
+        headers['x-app-api-key'] = _xAppApiKey!; // Voegt API key toe
+      final resp = await http.get(
+        uri,
+        headers: headers,
+      ); // Stuurt HTTP GET request
       if (resp.statusCode != 200) {
-        debugPrint('tmdb-images request failed: ${resp.statusCode}');
-        return null;
-      }
-
+        // Check of response OK
+        debugPrint(
+          'tmdb-images request failed: ${resp.statusCode}',
+        ); // Debug message
+        return null; // Return null
+      } // Einde statusCode check
       final json =
-          jsonDecode(resp.body)
-              as Map<
-                String,
-                dynamic
-              >?; // We verwachten dat onze backend een JSON object teruggeeft met een 'posters' veld dat een lijst van poster informatie bevat. Als het antwoord niet het verwachte formaat heeft, loggen we dit en returnen we null.
-
-      if (json == null) return null; // extra null check
-
-      // posters array
-      final postersRaw = json['posters'];
-      final postersList = _toList(postersRaw).cast<Map<String, dynamic>>();
-
-      // We proberen eerst een poster te vinden die specifiek voor de US markt is (iso_3166_1 == 'US'), omdat deze vaak de meest relevante is. Als we geen US poster vinden, nemen we gewoon de eerste poster in de lijst. We halen vervolgens het file_path veld op van de gekozen poster, en bouwen daarmee de volledige URL naar de afbeelding op TMDb. Deze URL kunnen we dan gebruiken om de poster te tonen in onze app.
-      Map<String, dynamic>? chosen;
+          jsonDecode(resp.body) as Map<String, dynamic>?; // Decodeert JSON
+      if (json == null) return null; // Return null als json null
+      final postersRaw = json['posters']; // Haalt posters array op
+      final postersList = _toList(
+        postersRaw,
+      ).cast<Map<String, dynamic>>(); // Zet naar list van maps
+      Map<String, dynamic>? chosen; // Variabele voor gekozen poster
       for (final p in postersList) {
-        final country = (p['iso_3166_1'] ?? '').toString();
+        // Loop door posters
+        final country = (p['iso_3166_1'] ?? '').toString(); // Haalt land op
         if (country.toUpperCase() == 'US') {
-          chosen = p;
-          break;
-        }
-      }
-      // Als we geen US poster hebben gevonden, nemen we de eerste poster in de lijst (als die er is)
-      chosen ??= postersList.isNotEmpty ? postersList.first : null;
-
+          // Check of US poster
+          chosen = p; // Zet als gekozen
+          break; // Break loop
+        } // Einde land check
+      } // Einde poster loop
+      chosen ??= postersList.isNotEmpty
+          ? postersList.first
+          : null; // Fallback naar eerste poster
       if (chosen == null) {
-        debugPrint('No posters found from tmdb-images endpoint');
-        return null;
-      }
-
-      final filePath = chosen['file_path']?.toString();
+        // Check of poster gekozen
+        debugPrint(
+          'No posters found from tmdb-images endpoint',
+        ); // Debug message
+        return null; // Return null
+      } // Einde chosen check
+      final filePath = chosen['file_path']?.toString(); // Haalt file path op
       if (filePath == null || filePath.isEmpty) {
-        debugPrint('Poster file_path empty');
-        return null;
-      }
-
-      // De URL voor TMDb afbeeldingen is meestal in de vorm van "https://image.tmdb.org/t/p/original{file_path}", waarbij {file_path} het pad is dat we van onze backend krijgen. We bouwen deze URL en loggen deze, zodat we kunnen controleren dat we de juiste afbeelding proberen te laden. We returnen deze URL, die vervolgens gebruikt kan worden om de poster te tonen in onze app.
-      final url = 'https://image.tmdb.org/t/p/original${filePath}';
-      debugPrint('Using TMDb poster URL: $url');
-      return url;
+        // Check of filePath leeg
+        debugPrint('Poster file_path empty'); // Debug message
+        return null; // Return null
+      } // Einde filePath check
+      final url =
+          'https://image.tmdb.org/t/p/original${filePath}'; // Bouwt TMDb URL
+      debugPrint('Using TMDb poster URL: $url'); // Debug message
+      return url; // Return URL
     } catch (e, s) {
-      debugPrint('Error fetching tmdb poster: $e\n$s');
-      return null;
-    }
-  }
+      // Catch errors
+      debugPrint('Error fetching tmdb poster: $e\n$s'); // Debug message
+      return null; // Return null
+    } // Einde try-catch
+  } // Einde _fetchTmdbPosterFromRapid functie
 
   Future<void> _translateText(String key, String originalText) async {
-    // Deze functie wordt gebruikt om tekst te vertalen naar het Nederlands. We gebruiken een backend endpoint dat we hebben gemaakt voor vertalingen. We sturen de originele tekst en de doeltaal (in dit geval 'nl' voor Nederlands) naar onze backend, die vervolgens een vertaling teruggeeft. We hebben ook een loading state per tekstveld, zodat we kunnen aangeven dat er een vertaling bezig is. Zodra we de vertaling ontvangen, slaan we deze op in de _translatedTexts map, zodat we deze kunnen tonen in de UI.
+    // Deze functie vertaalt tekst naar Nederlands via een backend endpoint.
     setState(() => _isTranslating[key] = true);
+    // Zet de loading state voor deze tekst op true.
 
     try {
       final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          // Bouwt de basis URL voor de API.
           .replace(
             queryParameters: {
               'type': 'translate',
+              // Zet het request type op 'translate'.
               'text': originalText,
+              // Voegt de originele tekst toe als parameter.
               'target': 'nl',
+              // Stelt Nederlands in als doeltaal.
             },
           );
 
       await _ensureEnvLoaded();
+      // Laadt de API key uit de environment variabelen.
       final headers = <String, String>{};
+      // Initialiseert een lege headers map.
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty)
         headers['x-app-api-key'] = _xAppApiKey!;
+      // Voegt de API key toe aan de headers als deze beschikbaar is.
       final resp = await http.get(uri, headers: headers);
+      // Stuurt een GET request naar de API.
       if (resp.statusCode == 200) {
+        // Controleert of het antwoord succesvol was.
         final data = jsonDecode(resp.body);
+        // Decodeert het JSON antwoord.
         final translated = data['translation'] ?? data['translatedText'] ?? '';
+        // Haalt de vertaalde tekst op uit het antwoord.
         setState(() {
           _translatedTexts[key] = translated.toString();
+          // Slaat de vertaalde tekst op in de cache.
         });
       } else {
         debugPrint('Translation failed: ${resp.statusCode}');
+        // Print fout als het request niet succesvol was.
       }
     } catch (e) {
       debugPrint('Translation error: $e');
+      // Print fout als er een exception optreedt.
     } finally {
       setState(() => _isTranslating[key] = false);
+      // Zet de loading state altijd op false na afloop.
     }
   }
 
   String proxiedUrl(String url) {
+    // Converteert een URL naar een proxy URL via de backend.
     return 'https://film-flix-olive.vercel.app/apiv2/movies'
         '?type=image-proxy'
+        // Geeft aan dat dit een image proxy request is.
         '&imageUrl=${Uri.encodeComponent(url)}';
+    // Voegt de originele afbeelding URL toe, geëncodeerd.
   }
 
   Future<void> _ensureEnvLoaded() async {
+    // Deze functie laadt de environment variabelen uit een bestand.
     if (_xAppApiKey != null) return;
+    // Returnt direct als de API key al geladen is.
     try {
       final content = await rootBundle.loadString('assets/env/.env');
+      // Laadt het .env bestand uit de assets.
       final lines = const LineSplitter().convert(content);
+      // Splitst de content in aparte regels.
       for (final line in lines) {
+        // Loop door elke regel in het bestand.
         final trimmed = line.trim();
+        // Verwijdert whitespace van de regel.
         if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+        // Slaat lege regels en comments over.
         final idx = trimmed.indexOf('=');
+        // Zoekt het gelijkteken (=) in de regel.
         if (idx <= 0) continue;
+        // Slaat regels zonder = over.
         final key = trimmed.substring(0, idx).trim();
+        // Extraheert het deel vóór het = teken.
         final value = trimmed.substring(idx + 1).trim();
+        // Extraheert het deel na het = teken.
         if (key == 'X_APP_API_KEY') {
+          // Zoekt naar de X_APP_API_KEY regel.
           _xAppApiKey = value;
+          // Slaat de waarde op in de instance variabele.
           break;
+          // Stopt het laden zodra de API key is gevonden.
         }
       }
     } catch (e) {
       if (kDebugMode) debugPrint('Failed to load .env: $e');
+      // Print debugging info als het laden van het bestand mislukt.
     }
   }
 
   Future<Uint8List?> _fetchProxiedImageBytes(String originalUrl) async {
+    // Deze functie haalt afbeeldingen op via de proxy en cacht ze.
     if (_imageCache.containsKey(originalUrl)) return _imageCache[originalUrl];
+    // Returnt de afbeelding direct als deze al in cache zit.
     await _ensureEnvLoaded();
+    // Zorg dat de API key geladen is.
     try {
       final uri = Uri.parse('https://film-flix-olive.vercel.app/apiv2/movies')
+          // Bouwt de basis URL voor de API.
           .replace(
             queryParameters: {'type': 'image-proxy', 'imageUrl': originalUrl},
+            // Voegt parameters toe voor afbeelding proxy.
           );
       final headers = <String, String>{};
+      // Initialiseert een lege headers map.
       if (_xAppApiKey != null && _xAppApiKey!.isNotEmpty) {
         headers['x-app-api-key'] = _xAppApiKey!;
+        // Voegt de API key toe als deze beschikbaar is.
       }
       final resp = await http.get(uri, headers: headers);
+      // Stuurt een GET request naar de proxy.
       if (resp.statusCode == 200) {
+        // Controleert of het antwoord succesvol was.
         _imageCache[originalUrl] = resp.bodyBytes;
+        // Cacht de afbeelding bytes.
         return resp.bodyBytes;
+        // Returnt de afbeelding bytes.
       }
     } catch (e) {
       debugPrint('Error fetching proxied image: $e');
+      // Print fout als het ophalen van de afbeelding mislukt.
     }
     return null;
+    // Returnt null als het ophalen niet succesvol was.
   }
 
   Widget _imageFromProxied(
+    // Deze functie bouwt een widget die een afbeelding via proxy laadt.
     String originalUrl, {
     BoxFit fit = BoxFit.cover,
+    // Standaard fit type voor de afbeelding.
     double? width,
+    // Optionele breedte van de afbeelding.
     double? height,
+    // Optionele hoogte van de afbeelding.
   }) {
     return FutureBuilder<Uint8List?>(
+      // Bouwt de widget asynchroon op basis van de afbeelding bytes.
       future: _fetchProxiedImageBytes(originalUrl),
+      // Haalt de afbeelding bytes op via de proxy.
       builder: (ctx, snap) {
+        // Bouwt de widget op basis van de Future status.
         if (snap.connectionState == ConnectionState.waiting) {
+          // Checkt of de Future nog bezig is.
           return Container(
             width: width,
+            // Zet de breedte van de container.
             height: height,
+            // Zet de hoogte van de container.
             color: Colors.grey.shade200,
+            // Zet de achtergrondkleur.
             child: const Center(child: CircularProgressIndicator()),
+            // Toont een laadspinner in het midden.
           );
         }
         final bytes = snap.data;
+        // Haalt de afbeelding bytes op.
         if (bytes != null && bytes.isNotEmpty) {
+          // Checkt of de bytes beschikbaar zijn.
           return Image.memory(bytes, fit: fit, width: width, height: height);
+          // Toont de afbeelding uit de bytes.
         }
         return Container(
           width: width,
+          // Zet de breedte van de fallback container.
           height: height,
+          // Zet de hoogte van de fallback container.
           color: Colors.grey.shade300,
+          // Zet een grijze achtergrondkleur.
           child: const Center(child: Icon(Icons.broken_image, size: 48)),
+          // Toont een kapot afbeeldings icoon.
         );
       },
     );
   }
 
   Widget _posterWithFallback(
+    // Deze functie bouwt een poster widget met fallback opties.
     BuildContext context,
+    // De build context voor theming.
     String? initialPoster,
+    // De initiële poster URL.
     Map<String, dynamic> rapid,
+    // De RapidAPI data voor fallback posters.
   ) {
     const double posterHeight = 600.0;
-    
+    // Zet de hoogte van de poster op 600 pixels.
+
     if (initialPoster == null || initialPoster.isEmpty) {
-      // no initial poster — fetch TMDb immediately
+      // Checkt of er geen initiële poster is opgegeven.
       return FutureBuilder<String?>(
+        // Bouwt de widget asynchroon op basis van TMDb poster.
         future: _fetchTmdbPosterFromRapid(rapid),
+        // Haalt TMDb poster op.
         builder: (ctx, snap) {
+          // Bouwt de widget op basis van de Future status.
           if (snap.connectionState == ConnectionState.waiting) {
+            // Checkt of de Future nog bezig is.
             return Container(
               height: posterHeight,
+              // Zet de hoogte.
               width: double.infinity,
+              // Zet de volle breedte.
               color: Colors.grey.shade200,
+              // Zet een grijze achtergrondkleur.
               child: const Center(child: CircularProgressIndicator()),
+              // Toont een laadspinner.
             );
           }
           final url = snap.data;
+          // Haalt de poster URL op.
           if (url != null && url.isNotEmpty) {
+            // Checkt of de URL beschikbaar is.
             return ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: _imageFromProxied(url, fit: BoxFit.cover, height: posterHeight, width: double.infinity),
+              // Rondt de hoeken af.
+              child: _imageFromProxied(
+                url,
+                // Laadt de afbeelding via proxy.
+                fit: BoxFit.cover,
+                // Vulde volledige ruimte.
+                height: posterHeight,
+                // Zet de hoogte.
+                width: double.infinity,
+                // Zet de volle breedte.
+              ),
             );
           }
           return Container(
             height: posterHeight,
+            // Zet de hoogte.
             width: double.infinity,
+            // Zet de volle breedte.
             color: Colors.grey.shade300,
+            // Zet een donkergrijze achtergrondkleur.
             child: const Center(child: Icon(Icons.broken_image, size: 48)),
+            // Toont een kapot afbeeldings icoon.
           );
         },
       );
@@ -610,43 +780,86 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     // We have an initial poster URL. Try to load it; on error fetch TMDb fallback.
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
+      // Rondt de hoeken af.
       child: FutureBuilder<Uint8List?>(
+        // Bouwt de widget asynchroon op basis van poster bytes.
         future: _fetchProxiedImageBytes(initialPoster),
+        // Haalt de initiële poster bytes op.
         builder: (ctx, snap) {
+          // Bouwt de widget op basis van de Future status.
           if (snap.connectionState == ConnectionState.waiting) {
+            // Checkt of de Future nog bezig is.
             return Container(
               height: posterHeight,
+              // Zet de hoogte.
               width: double.infinity,
+              // Zet de volle breedte.
               color: Colors.grey.shade200,
+              // Zet een lichte grijze achtergrondkleur.
               child: const Center(child: CircularProgressIndicator()),
+              // Toont een laadspinner.
             );
           }
           final bytes = snap.data;
+          // Haalt de afbeelding bytes op.
           if (bytes != null && bytes.isNotEmpty) {
-            return Image.memory(bytes, fit: BoxFit.cover, height: posterHeight, width: double.infinity);
+            // Checkt of de bytes beschikbaar zijn.
+            return Image.memory(
+              bytes,
+              // Toont de afbeelding uit de bytes.
+              fit: BoxFit.cover,
+              // Vulde volledige ruimte.
+              height: posterHeight,
+              // Zet de hoogte.
+              width: double.infinity,
+              // Zet de volle breedte.
+            );
           }
 
           // fallback to TMDb
           return FutureBuilder<String?>(
+            // Bouwt fallback widget asynchroon op basis van TMDb poster.
             future: _fetchTmdbPosterFromRapid(rapid),
+            // Haalt TMDb poster op als fallback.
             builder: (ctx2, snap2) {
+              // Bouwt de widget op basis van de Future status.
               if (snap2.connectionState == ConnectionState.waiting) {
+                // Checkt of de Future nog bezig is.
                 return Container(
                   height: posterHeight,
+                  // Zet de hoogte.
                   width: double.infinity,
+                  // Zet de volle breedte.
                   color: Colors.grey.shade200,
+                  // Zet een lichte grijze achtergrondkleur.
                   child: const Center(child: CircularProgressIndicator()),
+                  // Toont een laadspinner.
                 );
               }
               final url2 = snap2.data;
+              // Haalt de TMDb poster URL op.
               if (url2 != null && url2.isNotEmpty) {
-                return _imageFromProxied(url2, fit: BoxFit.cover, height: posterHeight, width: double.infinity);
+                // Checkt of de URL beschikbaar is.
+                return _imageFromProxied(
+                  url2,
+                  // Laadt de afbeelding via proxy.
+                  fit: BoxFit.cover,
+                  // Vulde volledige ruimte.
+                  height: posterHeight,
+                  // Zet de hoogte.
+                  width: double.infinity,
+                  // Zet de volle breedte.
+                );
               }
               return Container(
                 height: posterHeight,
+                // Zet de hoogte.
                 width: double.infinity,
+                // Zet de volle breedte.
                 color: Colors.grey.shade300,
+                // Zet een donkergrijze achtergrondkleur.
                 child: const Center(child: Icon(Icons.broken_image, size: 48)),
+                // Toont een kapot afbeeldings icoon.
               );
             },
           );
@@ -657,56 +870,75 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   void initState() {
-    super
-        .initState(); // In de initState van deze screen zetten we een listener op de Firebase Authentication status, zodat we kunnen reageren op veranderingen in de login status van de gebruiker. We halen ook direct de huidige user op, en als er al een user is ingelogd, laden we hun data (zoals watchlist en seen episodes). Daarnaast starten we het proces om de details van de film te laden, zodat we deze kunnen tonen zodra ze beschikbaar zijn.
+    // Deze methode initialiseert de state van de screen als deze wordt aangemaakt.
+    super.initState();
+    // Roept de parent initState aan.
     _user = FirebaseAuth.instance.currentUser;
+    // Haalt de huidige ingelogde gebruiker op.
 
     _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
+      // Luistert naar veranderingen in de auth status.
       setState(() {
         _user = u;
+        // Updatet de user wanneer deze verandert.
       });
       if (u != null)
         _loadUserData();
+      // Laadt user data als iemand inlogt.
       else {
         setState(() {
-          // Als de gebruiker uitlogt, resetten we de relevante state variabelen zoals _isInWatchlist en _seenSet, zodat we geen verouderde data tonen als er geen gebruiker is ingelogd.
+          // Zet hier ook setState als opmerking voor artikel
           _isInWatchlist = false;
+          // Reset watchlist status bij uitloggen.
           _seenSet.clear();
+          // Wist alle gezien afleveringen bij uitloggen.
         });
       }
     });
     if (_user != null) _loadUserData();
+    // Laadt user data als er al iemand ingelogd is.
 
     _loadMovie();
+    // Laadt de film details.
   }
 
   Future<void> _loadMovie() async {
-   try {
+    // Deze functie laadt de film details van meerdere API's.
+    try {
       setState(() {
         _loadingMovie = true;
+        // Zet loading state op true.
         _error = null;
+        // Resetst de error message.
       });
 
       final omdbFuture = MovieApi.omdbGet(imdbId: widget.imdbId, plot: 'full');
+      // Haalt film data op van OMDb API.
       final showFuture = MovieRepository.getRapidDetailsShow(widget.imdbId);
+      // Haalt show data op van RapidAPI (parallel).
       final episodeFuture = MovieRepository.getRapidDetailsEpisode(
         widget.imdbId,
       );
+      // Haalt episode data op van RapidAPI (parallel).
 
       // Zodra één van de Rapid futures als eerste binnen is, gebruiken we die om
       // direct iets te tonen.
       final firstRapid = await Future.any([showFuture, episodeFuture]);
+      // Wacht tot de eerste Rapid response aankomt.
       final omdb = await omdbFuture;
+      // Wacht tot de OMDb response aankomt.
 
       void applyRapidAndOmdb(
         Map<String, dynamic> rapid,
         Map<String, dynamic>? omdbData,
       ) {
+        // Dit is een helper functie om data van beide API's toe te passen.
         final poster =
             (rapid['imageSet']?['verticalPoster']?['w480'] ??
                     rapid['imageSet']?['verticalPoster']?['w300'] ??
                     omdbData?['Poster'])
                 ?.toString();
+        // Haalt de beste beschikbare poster URL op.
 
         final rapidGenres = _toList(rapid['genres'])
             .map(
@@ -714,101 +946,144 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   .toString(),
             )
             .toSet();
+        // Extraheert genres uit RapidAPI data.
 
         final omdbGenresRaw = omdbData?['Genre']?.toString() ?? '';
+        // Haalt genres op uit OMDb data.
         final omdbGenres = omdbGenresRaw
             .split(',')
             .map((g) => g.trim())
             .where((g) => g.isNotEmpty)
             .toSet();
+        // Splitst en filtert OMDb genres.
 
         setState(() {
           _rapidData = rapid;
+          // Slaat RapidAPI data op.
           _omdbData = omdbData;
+          // Slaat OMDb data op.
           _poster = poster;
+          // Slaat poster URL op.
           _title = (rapid['title'] ?? omdbData?['Title'] ?? '').toString();
+          // Zet de film titel.
           _overview = (rapid['overview'] ?? omdbData?['Plot'] ?? '').toString();
+          // Zet de film beschrijving.
           _rating =
               (omdbData?['imdbRating'] ?? rapid['rating']?.toString() ?? '-')
                   .toString();
+          // Zet de film rating.
           _rated = omdbData?['Rated']?.toString();
+          // Zet de ouderlijke waarschuwing.
 
           _genres = {...rapidGenres, ...omdbGenres}.toList();
+          // Combineert genres van beide API's.
 
           _creators = _toList(
             rapid['creators'],
           ).map((c) => c.toString()).toList();
+          // Extraheert creators/producers.
           _cast = _toList(rapid['cast']).map((c) => c.toString()).toList();
+          // Extraheert cast/acteurs.
           _seasons = _toList(rapid['seasons']);
+          // Extraheert seizoen data.
           _streaming = _toList(rapid['streamingOptions']?['nl']);
+          // Extraheert Nederlandse streaming opties.
 
           // Voor films: we tonen zoekopties naar bioscopen (Biosagenda en Kinepolis)
           // We voegen geen generieke 'Bioscoop' service meer toe aan _streaming;
           // de UI voegt aparte chips toe in _buildGroupedStreaming op basis van _title.
 
           _loadingMovie = false;
+          // Zet loading state op false.
         });
 
-        // Debug: show where we detected 'movie' from
+        // Debug: toon waar we 'movie' van hebben gedetecteerd
         try {
           final omdbType = omdbData?['Type']?.toString();
+          // Haalt type uit OMDb data.
           final rapidTypes = [
             rapid['itemType'],
             rapid['type'],
             rapid['showType'],
             rapid['titleType'],
           ].where((e) => e != null).map((e) => e.toString()).toList();
+          // Haalt mogelijke types uit RapidAPI data.
           debugPrint('Detected types - OMDb: $omdbType  Rapid: $rapidTypes');
+          // Print voor debugging.
         } catch (e) {
           debugPrint('Error printing detected types: $e');
+          // Print error als debug print mislukt.
         }
       }
 
       // apply first rapid result immediately
-      applyRapidAndOmdb(firstRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
+      applyRapidAndOmdb(
+        firstRapid as Map<String, dynamic>,
+        omdb as Map<String, dynamic>?,
+      );
+      // Past de eerste Rapid response direct toe.
 
       // load trailers (movie or tv) async
       _loadVideos().catchError((e) => debugPrint('Videos load error: $e'));
+      // Laadt trailers asynchroon.
 
-      // When the other Rapid response arrives, merge/update UI with additional info.
+      // Wanneer de andere Rapid-response arriveert, merge/update de UI met aanvullende info.
       showFuture
           .then((showRapid) {
             if (firstRapid != showRapid) {
-              applyRapidAndOmdb(showRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
+              applyRapidAndOmdb(
+                showRapid as Map<String, dynamic>,
+                omdb as Map<String, dynamic>?,
+              );
+              // Past de second Rapid response toe als deze anders is.
             }
           })
           .catchError((e) => debugPrint('Show fetch error: $e'));
+      // Haalt show data op als deze aankomt.
 
       episodeFuture
           .then((episodeRapid) {
             if (firstRapid != episodeRapid) {
-              applyRapidAndOmdb(episodeRapid as Map<String, dynamic>, omdb as Map<String, dynamic>?);
+              applyRapidAndOmdb(
+                episodeRapid as Map<String, dynamic>,
+                omdb as Map<String, dynamic>?,
+              );
+              // Past de second Rapid response toe als deze anders is.
             }
           })
           .catchError((e) => debugPrint('Episode fetch error: $e'));
+      // Haalt episode data op als deze aankomt.
     } catch (e, s) {
       debugPrint('Error loading movie: $e\n$s');
+      // Print error als het laden mislukt.
       setState(() {
         _error = e.toString();
+        // Sla de error op.
         _loadingMovie = false;
+        // Zet loading state op false.
       });
     }
   }
 
   @override
   void dispose() {
-    // In de dispose methode van deze screen zorgen we ervoor dat we onze Firebase Authentication listener netjes opruimen door de subscription te cancelen. Dit is belangrijk om geheugenlekken te voorkomen en ervoor te zorgen dat we geen onnodige updates meer ontvangen nadat de screen is gesloten. We roepen ook super.dispose() aan om ervoor te zorgen dat de rest van het opruimproces correct wordt afgehandeld.
+    // Deze methode ruimt resources op wanneer de screen wordt gesloten.
     _authSub?.cancel();
+    // Zegt de auth listener op.
     super.dispose();
+    // Roept de parent dispose aan.
   }
 
   Future<void> _loadUserData() async {
-    // Deze functie is verantwoordelijk voor het laden van de gebruikersspecifieke data, zoals de watchlist en de seen episodes. We halen eerst de huidige gebruiker op via Firebase Authentication, en als er geen gebruiker is ingelogd, returnen we direct. We zetten een loading state om aan te geven dat we bezig zijn met het laden van de gebruikersdata. We proberen vervolgens het document van de gebruiker op te halen uit Firestore, waar we verwachten dat we een 'watchlist' veld hebben dat een lijst van imdbIds bevat, en een 'seenEpisodes' veld dat informatie bevat over welke afleveringen van series de gebruiker heeft gezien. We verwerken deze data en updaten onze state variabelen _isInWatchlist en _seenSet zodat we deze kunnen gebruiken in de UI. We hebben ook foutafhandeling om eventuele problemen bij het laden van de gebruikersdata te loggen. Ten slotte zetten we de loading state weer uit.
+    // Deze functie laadt gebruikersspecifieke data zoals watchlist en gezien afleveringen.
     final u = FirebaseAuth.instance.currentUser;
+    // Haalt de huidige gebruiker op.
     if (u == null) return;
+    // Returnt als er geen gebruiker is ingelogd.
     setState(() {
-      // We zetten de loading state aan voordat we beginnen met het laden van de gebruikersdata, zodat we in de UI kunnen aangeven dat er een laadproces gaande is. Dit kan bijvoorbeeld worden gebruikt om een loading indicator te tonen terwijl we wachten op het antwoord van Firestore.
+      // Zet hier setState als opmerking
       _loadingUserData = true;
+      // Zet loading state op true.
     });
 
     try {
@@ -816,31 +1091,40 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           .collection('users')
           .doc(u.uid)
           .get();
-      final data =
-          doc.data() ??
-          {}; // We halen de data van het gebruikersdocument op uit Firestore. We verwachten dat deze data een 'watchlist' veld bevat dat een lijst van imdbIds is, en een 'seenEpisodes' veld dat informatie bevat over welke afleveringen van series de gebruiker heeft gezien. We zetten deze data om in de juiste formaten en updaten onze state variabelen zodat we deze kunnen gebruiken in de UI. We hebben ook uitgebreide debug prints toegevoegd om inzicht te krijgen in de structuur van de data die we ontvangen van Firestore, aangezien dit veld soms in verschillende formaten kan voorkomen afhankelijk van hoe het is opgeslagen.
+      // Haalt het gebruikersdocument op uit Firestore.
+      final data = doc.data() ?? {};
+      // Haalt de data uit het document, of een lege map.
       debugPrint('--- DEBUG USER DATA FOR ${widget.imdbId} ---');
+      // Print debugging info.
       debugPrint('Firestore keys: ${data.keys.toList()}');
+      // Print alle sleutels in de data.
 
       final watchlist =
           (data['watchlist']
-              is List) // We controleren of het 'watchlist' veld in de data een lijst is. Als dat het geval is, zetten we het om in een List<String>. Als het veld niet aanwezig is of geen lijst is, gebruiken we een lege lijst als fallback. Dit zorgt ervoor dat we altijd een geldige lijst hebben om mee te werken, zelfs als de data in Firestore niet precies is zoals we verwachten.
+              is List) // We controleren of het 'watchlist' veld in de data een lijst is.
           ? List<String>.from(data['watchlist'])
+          // Zet watchlist om naar List<String> als dat een lijst is.
           : <String>[];
+      // Gebruik een lege lijst als fallback.
 
       // Robuuste check voor seenEpisodes (genest of plat veld)
       final seenMap = data['seenEpisodes'];
-      List<dynamic> rawSeen =
-          []; // We initialiseren een lege lijst voor de raw seen episodes. We zullen deze vullen op basis van de structuur van de data die we ontvangen van Firestore. Omdat we hebben gemerkt dat het 'seenEpisodes' veld soms in verschillende formaten kan voorkomen (soms als een geneste map, soms als platte keys), hebben we een robuuste aanpak nodig om hier correct mee om te gaan. We proberen eerst platte keys te vinden die overeenkomen met de imdbId van de film/serie, en als die er niet zijn, kijken we of er een geneste structuur is waar we de informatie kunnen vinden.
+      // Haalt de seenEpisodes map op.
+      List<dynamic> rawSeen = [];
+      // Initialiseert de lege seen episodes lijst.
 
       // probeer eerst platte keys (zoals 'seenEpisodes.tt0944947' of 'seenEpisodes.TT0944947')
       final flatKey = 'seenEpisodes.${widget.imdbId}';
+      // Bouwt de platte sleutel met standaard casing.
       final flatKeyLower = 'seenEpisodes.${widget.imdbId.toLowerCase()}';
+      // Bouwt de platte sleutel met lowercase casing.
 
       if (data.containsKey(flatKey) && data[flatKey] is List) {
         rawSeen = data[flatKey];
+        // Gebruikt platte sleutel met standaard casing.
       } else if (data.containsKey(flatKeyLower) && data[flatKeyLower] is List) {
         rawSeen = data[flatKeyLower];
+        // Gebruikt platte sleutel met lowercase casing.
       }
       // Als we geen platte keys vinden, kijk dan of 'seenEpisodes' zelf een map is waar de imdbId als key in voorkomt
       else if (seenMap is Map) {
@@ -848,113 +1132,156 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             seenMap[widget.imdbId] ??
             seenMap[widget.imdbId.toLowerCase()] ??
             seenMap[widget.imdbId.toUpperCase()];
+        // Zoekt de imdbId in verschillende casings.
         if (entry is List)
           rawSeen = entry;
+        // Gebruikt de entry als deze een lijst is.
         else if (entry is Map)
           rawSeen = entry.values.toList();
+        // Converteert map values naar lijst.
       }
 
       final imdbSeenList = rawSeen.map((e) => e.toString().trim()).toList();
+      // Converteert alle items naar strings en verwijdert whitespace.
       debugPrint('Found seen items: $imdbSeenList');
+      // Print de gevonden seen items.
 
       // check seenFilm.<imdbId> as nested map or dotted key
       bool isSeenFilm = false;
+      // Initialiseert de seen film boolean.
       try {
         if (data.containsKey('seenFilm') && data['seenFilm'] is Map) {
+          // Checkt of seenFilm een geneste map is.
           final sf = data['seenFilm'] as Map;
+          // Cast seenFilm naar Map.
           if (sf.containsKey(widget.imdbId)) {
+            // Checkt of de imdbId in de map zit.
             isSeenFilm = sf[widget.imdbId] == true;
+            // Zet isSeenFilm op basis van de waarde.
           }
         }
         // fallback: dotted key
         if (!isSeenFilm && data.containsKey('seenFilm.${widget.imdbId}')) {
+          // Checkt als fallback voor platte sleutel.
           isSeenFilm = data['seenFilm.${widget.imdbId}'] == true;
+          // Zet isSeenFilm op basis van de platte sleutel.
         }
       } catch (e) {
         debugPrint('Error reading seenFilm flag: $e');
+        // Print error als het uitlezen mislukt.
       }
 
       setState(() {
-        // Nadat we de watchlist en seen episodes hebben verwerkt, updaten we onze state variabelen. We zetten _isInWatchlist op true als de imdbId van de huidige film/serie voorkomt in de watchlist van de gebruiker. We vullen _seenSet met de lijst van gezien afleveringen die we hebben gevonden, zodat we deze kunnen gebruiken om te controleren welke afleveringen als gezien moeten worden gemarkeerd in de UI.
+        // Zet hier setState als opmerking
         _isInWatchlist = watchlist.contains(widget.imdbId);
+        // Controleert of de imdbId in de watchlist zit.
         _seenSet.clear();
+        // Wist alle eerder geladen seen items.
         _seenSet.addAll(imdbSeenList);
-        // Ensure movie-level "movie" key reflects seenFilm flag so the
-        // movie 'Gezien' checkbox reads correct state regardless of how
-        // the data was stored (seenFilm map vs seenEpisodes list).
+        // Voegt alle nieuwe seen items toe.
+        // Zorg dat de 'movie'-sleutel op filmoniveau de seenFilm-flag weerspiegelt
+        // zodat de 'Gezien'-checkbox de juiste status toont, ongeacht hoe de
+        // data is opgeslagen (seenFilm map vs seenEpisodes lijst).
         if (isSeenFilm)
           _seenSet.add('movie');
+        // Voegt 'movie' toe als de film als gezien is gemarkeerd.
         else
           _seenSet.remove('movie');
+        // Verwijdert 'movie' als de film niet als gezien is gemarkeerd.
       });
     } catch (e, s) {
       debugPrint('Error loading user data: $e\n$s');
+      // Print error als het laden van user data mislukt.
     } finally {
       setState(() {
         _loadingUserData = false;
+        // Zet loading state altijd op false.
       });
     }
   }
 
   Future<bool> _ensureLoggedInWithPrompt(BuildContext context) async {
-    if (_user != null) return true;
+    // Functie om te controleren of gebruiker ingelogd is, anders prompt tonen
+    if (_user != null) return true; // Return true als gebruiker al ingelogd is
 
     final result = await showDialog<bool>(
+      // Toon dialoog met login prompt
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text(AppLocalizations.of(context)!.login_required_title),
-          content: Text(AppLocalizations.of(context)!.login_required_message),
+          // Bouw AlertDialog widget
+          title: Text(
+            AppLocalizations.of(context)!.login_required_title,
+          ), // Toon dialog titel
+          content: Text(
+            AppLocalizations.of(context)!.login_required_message,
+          ), // Toon dialog bericht
           actions: [
+            // Definieer knoppen in dialog
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text(AppLocalizations.of(context)!.cancel),
+              // Maak cancel knop
+              onPressed: () =>
+                  Navigator.of(ctx).pop(false), // Close dialog en return false
+              child: Text(
+                AppLocalizations.of(context)!.cancel,
+              ), // Toon cancel tekst
             ),
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text(AppLocalizations.of(context)!.goto_login),
+              // Maak login knop
+              onPressed: () =>
+                  Navigator.of(ctx).pop(true), // Close dialog en return true
+              child: Text(
+                AppLocalizations.of(context)!.goto_login,
+              ), // Toon login tekst
             ),
           ],
         );
       },
     );
 
-    if (result != true || !mounted) return false;
-    // Navigeer naar login als fullscreen dialog
+    if (result != true || !mounted)
+      return false; // Return false als dialog geannuleerd of widget unmounted
+
     final loggedIn = await Navigator.of(context).push<bool>(
+      // Push LoginScreen en wacht op resultaat
       MaterialPageRoute(
-        builder: (_) => const LoginScreen(returnAfterLogin: true),
-        fullscreenDialog: true,
+        // Maak navigatie route
+        builder: (_) => const LoginScreen(
+          returnAfterLogin: true,
+        ), // Bouw LoginScreen widget
+        fullscreenDialog: true, // Toon als fullscreen dialog
       ),
     );
 
     if (loggedIn == true && mounted) {
-      _user = FirebaseAuth.instance.currentUser;
-      if (_user != null) await _loadUserData();
-      return _user != null;
+      // Check of inloggen succesvol en widget nog mounted
+      _user = FirebaseAuth.instance.currentUser; // Update huidige gebruiker
+      if (_user != null) await _loadUserData(); // Laad user data als ingelogd
+      return _user != null; // Return of gebruiker succesvol ingelogd is
     }
 
-    return false;
+    return false; // Return false als inloggen mislukt
   }
 
   Future<void> _toggleWatchlist() async {
-    //  Deze functie wordt aangeroepen wanneer de gebruiker op de knop klikt om de film aan hun watchlist toe te voegen of ervan te verwijderen. We controleren eerst of er een gebruiker is ingelogd, en als dat niet het geval is, tonen we een prompt om in te loggen. Als de gebruiker ervoor kiest om in te loggen en succesvol inlogt, gaan we verder. We bepalen de nieuwe staat van de watchlist (toevoegen of verwijderen) op basis van de huidige staat. We voeren een optimistische update uit door direct de UI bij te werken naar de nieuwe staat, zodat de app snel reageert op de actie van de gebruiker. We proberen vervolgens deze verandering door te voeren in Firestore door het document van de gebruiker bij te werken: we gebruiken FieldValue.arrayUnion om een imdbId toe te voegen aan de watchlist, of FieldValue.arrayRemove om een imdbId te verwijderen. We hebben foutafhandeling om eventuele problemen bij het bij
-    final u = FirebaseAuth.instance.currentUser;
-    if (u == null)
-      return; // We controleren of er een gebruiker is ingelogd. Als dat niet het geval is, returnen we direct, omdat we geen watchlist kunnen bijwerken zonder een ingelogde gebruiker.
+    // Functie om film aan/van watchlist toe te voegen
+    final u = FirebaseAuth.instance.currentUser; // Haal huidige gebruiker op
+    if (u == null) return; // Return als geen gebruiker ingelogd
 
-    final newState = !_isInWatchlist;
+    final newState = !_isInWatchlist; // Bepaal nieuwe watchlist staat (toggle)
 
-    // Optimistic update: we updaten de UI direct naar de nieuwe staat, zodat de app snel reageert op de actie van de gebruiker. We zullen deze update terugdraaien als er een fout optreedt bij het bijwerken van Firestore, maar in de meeste gevallen zal dit zorgen voor een snellere en soepelere gebruikerservaring.
-    setState(() => _isInWatchlist = newState);
+    setState(
+      () => _isInWatchlist = newState,
+    ); // Update UI optimistisch naar nieuwe staat
 
-    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid); // Referentie naar user document
     try {
       if (newState) {
-        // Add imdbId to watchlist and save lightweight metadata so WatchlistScreen
-        // can show title/overview without extra API calls. Also store mediaType
-        // and a server timestamp of when the user saved this item.
+        // Als toevoegen aan watchlist
         final meta = {
+          // Bouw metadata object met film info
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
@@ -962,48 +1289,65 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'savedAt': FieldValue.serverTimestamp(),
         };
         await docRef.set({
-          'watchlist': FieldValue.arrayUnion([widget.imdbId]),
-          'watchlist_meta.${widget.imdbId}': meta,
-        }, SetOptions(merge: true));
+          // Update Firestore document
+          'watchlist': FieldValue.arrayUnion([
+            widget.imdbId,
+          ]), // Voeg imdbId aan watchlist array toe
+          'watchlist_meta.${widget.imdbId}':
+              meta, // Sla metadata op voor sneller laden
+        }, SetOptions(merge: true)); // Merge met bestaande data
       } else {
-        // Remove from watchlist and delete stored metadata for this id.
+        // Als verwijderen van watchlist
         await docRef.set({
-          'watchlist': FieldValue.arrayRemove([widget.imdbId]),
-          'watchlist_meta.${widget.imdbId}': FieldValue.delete(),
-        }, SetOptions(merge: true));
+          // Update Firestore document
+          'watchlist': FieldValue.arrayRemove([
+            widget.imdbId,
+          ]), // Verwijder imdbId uit watchlist
+          'watchlist_meta.${widget.imdbId}':
+              FieldValue.delete(), // Verwijder metadata
+        }, SetOptions(merge: true)); // Merge met bestaande data
       }
     } catch (e, s) {
-      debugPrint('Error toggling watchlist: $e\n$s');
-      // rollback UI if firestore fails
-      setState(() => _isInWatchlist = !newState);
+      // Catch fouten
+      debugPrint('Error toggling watchlist: $e\n$s'); // Print error
+      setState(
+        () => _isInWatchlist = !newState,
+      ); // Zet UI terug naar vorige staat
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.watchlist_update_failed)),
+        // Toon error snackbar
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.watchlist_update_failed,
+          ), // Toon foutbericht
+        ),
       );
     }
   }
 
   Future<void> _toggleEpisodeSeen(String epKey, bool seen) async {
-    // Deze functie wordt aangeroepen wanneer de gebruiker een aflevering markeert als gezien of niet gezien. We controleren eerst of er een gebruiker is ingelogd, en als dat niet het geval is, returnen we direct, omdat we geen seen status kunnen bijwerken zonder een ingelogde gebruiker. We voeren een optimistische update uit door direct de UI bij te werken naar de nieuwe staat van de aflevering (toevoegen aan seen set of verwijderen ervan), zodat de app snel reageert op de actie van de gebruiker. We proberen vervolgens deze verandering door te voeren in Firestore door het document van de gebruiker bij te werken: we gebruiken FieldValue.arrayUnion om een epKey toe te voegen aan de lijst van gezien afleveringen voor deze specifieke serie, of FieldValue.arrayRemove om een epKey te verwijderen. We hebben foutafhandeling om eventuele problemen bij het bijwerken van Firestore te loggen en om de UI terug te draaien naar de vorige staat als er een fout optreedt, zodat we consistent blijven met de daadwerkelijke data in Firestore.
-    final u = FirebaseAuth.instance.currentUser;
-    if (u == null) return;
+    // Functie om aflevering als gezien te markeren
+    final u = FirebaseAuth.instance.currentUser; // Haal huidige gebruiker op
+    if (u == null) return; // Return als geen gebruiker ingelogd
 
-    // Optimistic update
     setState(() {
+      // Start state update
       if (seen) {
-        _seenSet.add(
-          epKey,
-        ); // Als de gebruiker de aflevering als gezien markeert, voegen we de epKey toe aan de _seenSet. Deze set bevat alle afleveringen die de gebruiker heeft gemarkeerd als gezien, en we gebruiken deze in de UI om te bepalen welke afleveringen als gezien moeten worden weergegeven.
+        // Als aflevering gezien
+        _seenSet.add(epKey); // Voeg aflevering toe aan seen set
       } else {
-        _seenSet.remove(
-          epKey,
-        ); // Als de gebruiker de aflevering als niet gezien markeert, verwijderen we de epKey uit de _seenSet. Dit zorgt ervoor dat deze aflevering niet langer als gezien wordt weergegeven in de UI. We zullen deze verandering later doorvoeren in Firestore, maar we updaten de UI direct voor een snellere gebruikerservaring.
+        // Als aflevering niet gezien
+        _seenSet.remove(epKey); // Verwijder aflevering uit seen set
       }
-    });
+    }); // Einde state update
 
-    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid); // Referentie naar user document
     try {
       if (seen) {
+        // Als aflevering markeren als gezien
         final meta = {
+          // Bouw metadata object
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
@@ -1011,50 +1355,73 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'savedAt': FieldValue.serverTimestamp(),
         };
         await docRef.set({
-          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
-          // ensure metadata exists when user marks episodes as seen
-          'watchlist_meta.${widget.imdbId}': meta,
-        }, SetOptions(merge: true));
+          // Update Firestore document
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([
+            epKey,
+          ]), // Voeg episode key toe
+          'watchlist_meta.${widget.imdbId}': meta, // Sla metadata op
+        }, SetOptions(merge: true)); // Merge met bestaande data
       } else {
+        // Als aflevering markeren als niet gezien
         await docRef.set({
-          'seenEpisodes.${widget.imdbId}': FieldValue.arrayRemove([epKey]),
-        }, SetOptions(merge: true));
+          // Update Firestore document
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayRemove([
+            epKey,
+          ]), // Verwijder episode key
+        }, SetOptions(merge: true)); // Merge met bestaande data
       }
     } catch (e, s) {
-      debugPrint('Error toggling episode seen: $e\n$s');
-      // rollback UI if firestore fails: als er een fout optreedt bij het bijwerken van Firestore, draaien we de UI terug naar de vorige staat door de epKey weer toe te voegen aan de _seenSet als we hem hadden verwijderd, of te verwijderen als we hem hadden toegevoegd. Dit zorgt ervoor dat de UI consistent blijft met de daadwerkelijke data in Firestore, zelfs als er een fout optreedt.
+      // Catch fouten
+      debugPrint('Error toggling episode seen: $e\n$s'); // Print error
       setState(() {
+        // Start state update
         if (seen) {
-          _seenSet.remove(epKey);
+          // Als we gezien hadden toegevoegd
+          _seenSet.remove(epKey); // Verwijder terug
         } else {
-          _seenSet.add(epKey);
+          // Als we gezien hadden verwijderd
+          _seenSet.add(epKey); // Voeg terug toe
         }
-      });
+      }); // Einde state update
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.episode_status_update_failed)),
+        // Toon error snackbar
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.episode_status_update_failed, // Toon foutbericht
+          ),
+        ),
       );
     }
   }
 
   Future<void> _toggleMovieSeen(bool seen) async {
-    final u = FirebaseAuth.instance.currentUser;
-    if (u == null) return;
+    // Functie om film als gezien te markeren
+    final u = FirebaseAuth.instance.currentUser; // Haal huidige gebruiker op
+    if (u == null) return; // Return als geen gebruiker ingelogd
 
-    const epKey = 'movie';
+    const epKey = 'movie'; // Definieer aflevering key als 'movie' voor films
 
-    // Optimistic update
     setState(() {
+      // Start state update
       if (seen) {
-        _seenSet.add(epKey);
+        // Als film gezien
+        _seenSet.add(epKey); // Voeg 'movie' toe aan seen set
       } else {
-        _seenSet.remove(epKey);
+        // Als film niet gezien
+        _seenSet.remove(epKey); // Verwijder 'movie' uit seen set
       }
-    });
+    }); // Einde state update
 
-    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid); // Referentie naar user document
     try {
       if (seen) {
+        // Als film markeren als gezien
         final meta = {
+          // Bouw metadata object
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
@@ -1062,27 +1429,37 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           'savedAt': FieldValue.serverTimestamp(),
         };
         await docRef.set({
-          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([epKey]),
-          'watchlist_meta.${widget.imdbId}': meta,
-        }, SetOptions(merge: true));
+          // Update Firestore document
+          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([
+            epKey,
+          ]), // Voeg 'movie' key toe
+          'watchlist_meta.${widget.imdbId}': meta, // Sla metadata op
+        }, SetOptions(merge: true)); // Merge met bestaande data
       } else {
-        // When unmarking a movie as seen, remove the entire field so it
-        // doesn't leave an empty array like seenEpisodes.tt123456 (array)
+        // Als film markeren als niet gezien
         await docRef.set({
-          'seenEpisodes.${widget.imdbId}': FieldValue.delete(),
-        }, SetOptions(merge: true));
+          // Update Firestore document
+          'seenEpisodes.${widget.imdbId}':
+              FieldValue.delete(), // Verwijder hele field
+        }, SetOptions(merge: true)); // Merge met bestaande data
       }
     } catch (e, s) {
-      debugPrint('Error toggling movie seen: $e\n$s');
-      // rollback
+      // Catch fouten
+      debugPrint('Error toggling movie seen: $e\n$s'); // Print error
       setState(() {
-        if (seen)
-          _seenSet.remove(epKey);
-        else
-          _seenSet.add(epKey);
-      });
+        // Start state update
+        if (seen) // Als we gezien hadden toegevoegd
+          _seenSet.remove(epKey); // Verwijder terug
+        else // Als we gezien hadden verwijderd
+          _seenSet.add(epKey); // Voeg terug toe
+      }); // Einde state update
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.movie_seen_update_failed)),
+        // Toon error snackbar
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.movie_seen_update_failed,
+          ), // Toon foutbericht
+        ),
       );
     }
   }
@@ -1091,35 +1468,50 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     List<dynamic> streaming,
     BuildContext context,
   ) {
-    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    final Map<String, List<Map<String, dynamic>>> grouped =
+        {}; // Maakt een map aan die streaming services groepeert met hun opties.
 
     for (final item in streaming) {
-      if (item is! Map) continue;
-      final typedItem = item as Map<String, dynamic>;
-      final service = typedItem['service'] as Map<String, dynamic>?;
-      final name = service?['name']?.toString() ?? 'Service';
+      // Loop door elk streaming item in de lijst.
+      if (item is! Map) continue; // Sla items over die geen Map zijn.
+      final typedItem =
+          item as Map<String, dynamic>; // Cast het item naar een Map.
+      final service =
+          typedItem['service']
+              as Map<String, dynamic>?; // Haalt de service map op.
+      final name =
+          service?['name']?.toString() ??
+          'Service'; // Haalt de servicenaam op, of gebruikt 'Service' als fallback.
 
-      grouped.putIfAbsent(name, () => []);
-      grouped[name]!.add(typedItem);
+      grouped.putIfAbsent(
+        name,
+        () => [],
+      ); // Voegt de servicenaam toe als key als deze nog niet bestaat.
+      grouped[name]!.add(
+        typedItem,
+      ); // Voegt het item toe aan de lijst van die service.
     }
 
-    // Voor films: voeg één groep 'Bioscoop' toe met twee zoekchips: Biosagenda en Kinepolis
     final rapidTypeCandidates = [
+      // Maakt een lijst met mogelijke type velden uit de RapidAPI data.
       _rapidData?['itemType'],
       _rapidData?['type'],
       _rapidData?['showType'],
       _rapidData?['titleType'],
     ];
-    final bool isMovieResponse =
+    final bool
+    isMovieResponse = // Bepaalt of het een film is op basis van type velden.
         _isResponseMovie(_omdbData?['Type']?.toString()) ||
         rapidTypeCandidates.any((t) => _isResponseMovie(t?.toString()));
 
     if (isMovieResponse) {
-      final biosLink =
+      // Als het een film is, voeg bioscoop links toe.
+      final biosLink = // Bouwt de Biosagenda zoeklink met de filmtitel.
           'https://www.biosagenda.nl/zoeken?q=${Uri.encodeComponent(_title ?? '')}';
-      final kinepolisLink =
+      final kinepolisLink = // Bouwt de Kinepolis zoeklink met de filmtitel.
           'https://kinepolis.nl/search/movies?search=${Uri.encodeComponent(_title ?? '')}';
       grouped.putIfAbsent(
+        // Voegt 'Bioscoop' groep toe met beide links.
         'Bioscoop',
         () => [
           {'type': 'biosagenda', 'link': biosLink, 'label': 'Biosagenda'},
@@ -1128,44 +1520,65 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       );
     }
 
-    final List<Widget> widgets = [];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final List<Widget> widgets =
+        []; // Initialiseert de lege lijst voor widgets.
+    final isDark =
+        Theme.of(context).brightness ==
+        Brightness.dark; // Bepaalt of dark mode actief is.
 
     grouped.forEach((serviceName, options) {
+      // Loop door elke service en haar opties.
       options.sort(
+        // Sorteert de opties op type prioriteit.
         (a, b) => _typePriority(a['type']) - _typePriority(b['type']),
       );
 
-      final Map<String, Map<String, dynamic>> uniqueOptions = {};
+      final Map<String, Map<String, dynamic>> uniqueOptions =
+          {}; // Map voor unieke opties per type.
       for (var option in options) {
-        final type = option['type']?.toString() ?? 'other';
+        // Loop door elke optie.
+        final type =
+            option['type']?.toString() ??
+            'other'; // Haalt het type op, of gebruikt 'other'.
 
-        if (serviceName == 'Bioscoop' &&
+        if (serviceName ==
+                'Bioscoop' && // Als het een bioscoop is en geen link heeft, sla over.
             (option['link'] == null || option['link'].toString().isEmpty)) {
           continue;
         }
 
-        uniqueOptions.putIfAbsent(type, () => option);
+        uniqueOptions.putIfAbsent(
+          type,
+          () => option,
+        ); // Voegt optie toe als deze type nog niet bestaat.
       }
 
-      if (uniqueOptions.isEmpty) return; // skip services zonder opties
+      if (uniqueOptions.isEmpty) return; // Sla services over zonder opties.
 
       widgets.add(
+        // Voegt widget toe voor deze service.
         Padding(
+          // Voegt padding toe rond de service widget.
           padding: const EdgeInsets.only(bottom: 12),
           child: Column(
+            // Maakt een verticale kolom voor service info.
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                // Maakt een rij voor service logo en naam.
                 children: [
                   _buildServiceIconAsset(
+                    // Toont het service logo.
                     serviceName,
                     context: context,
                     height: 26,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(
+                    width: 8,
+                  ), // Voegt ruimte tussen logo en naam toe.
 
                   Text(
+                    // Toont de servicenaam.
                     serviceName,
                     style: TextStyle(
                       fontSize: 16,
@@ -1175,17 +1588,26 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(
+                height: 8,
+              ), // Voegt ruimte tussen naam en opties toe.
               Wrap(
+                // Maakt eenWrapper voor de optie chips.
                 spacing: 6,
                 runSpacing: 6,
                 children: uniqueOptions.values.map((option) {
-                  final link = option['link'] ?? option['service']?['homePage'];
+                  // Loop door elke unieke optie.
+                  final link =
+                      option['link'] ??
+                      option['service']?['homePage']; // Haalt de link op.
 
-                  final chip = (serviceName == 'Bioscoop')
+                  final chip =
+                      (serviceName ==
+                          'Bioscoop') // Bepaalt chip type (bioscoop of streaming).
                       ? Chip(
                           label: Text(
-                            option['label']?.toString() ?? 'Bioscoop',
+                            option['label']?.toString() ??
+                                'Bioscoop', // Toont bioscoop naam.
                             style: TextStyle(
                               color: isDark ? Colors.white : Colors.black,
                             ),
@@ -1194,35 +1616,65 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               ? Colors.grey[800]
                               : Colors.grey[200],
                         )
-                      : _buildTypeChip(context, option);
+                      : _buildTypeChip(
+                          context,
+                          option,
+                        ); // Bouwt streaming type chip.
 
                   return GestureDetector(
+                    // Maakt de chip aanklikbaar.
                     onTap: () async {
-                      final url = link?.toString();
-                      if (serviceName == 'Bioscoop' && option['type']?.toString() == 'biosagenda') {
+                      // Wanneer chip wordt geklikt.
+                      final url = link?.toString(); // Zet link om naar string.
+                      if (serviceName ==
+                              'Bioscoop' && // Als biosagenda, toon waarschuwing.
+                          option['type']?.toString() == 'biosagenda') {
                         final proceed = await showDialog<bool>(
+                          // Toon bevestigingsdialog.
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: Text(AppLocalizations.of(context)!.warning_title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            content: Text(AppLocalizations.of(context)!.warning_bioscoop_content),
+                            title: Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.warning_title, // Toon titel.
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            content: Text(
+                              AppLocalizations.of(
+                                // Toon waarschuwingsbericht.
+                                context,
+                              )!.warning_bioscoop_content,
+                            ),
                             actions: [
                               TextButton(
+                                // Cancel knop.
                                 onPressed: () => Navigator.of(ctx).pop(false),
-                                child: Text(AppLocalizations.of(context)!.cancel),
+                                child: Text(
+                                  AppLocalizations.of(context)!.cancel,
+                                ),
                               ),
                               ElevatedButton(
+                                // Doorgaan knop.
                                 onPressed: () => Navigator.of(ctx).pop(true),
-                                child: Text(AppLocalizations.of(context)!.continue_label),
+                                child: Text(
+                                  AppLocalizations.of(context)!.continue_label,
+                                ),
                               ),
                             ],
                           ),
                         );
-                        if (proceed == true && url != null) await _openLink(url);
+                        if (proceed == true &&
+                            url != null) // Als bevestigd en URL beschikbaar.
+                          await _openLink(url); // Open de link.
                       } else {
-                        if (url != null) await _openLink(url);
+                        // Voor andere services.
+                        if (url != null)
+                          await _openLink(url); // Open de link direct.
                       }
                     },
-                    child: chip,
+                    child: chip, // Toon de chip widget.
                   );
                 }).toList(),
               ),
@@ -1232,41 +1684,54 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       );
     });
 
-    return widgets;
+    return widgets; // Return de gebouwde widgets lijst.
   }
 
   Widget _buildSeasonTile(
+    // Functie om een seizoen en zijn afleveringen weer te geven.
     BuildContext context,
     dynamic seasonRaw,
     int seasonIndex,
     List seasons,
   ) {
-    final season =
-        (seasonRaw
-            is Map) // We controleren of seasonRaw een Map is, omdat we verwachten dat de seizoenen in de RapidAPI data als maps worden weergegeven. Als seasonRaw inderdaad een Map is, gebruiken we het direct. Als het geen Map is (bijvoorbeeld als het gewoon een string is), maken we een nieuwe Map aan met een 'title' key die de string waarde van seasonRaw bevat. Dit zorgt ervoor dat we altijd een consistente structuur hebben om mee te werken, ongeacht het oorspronkelijke formaat van de data.
+    final season = // Zorg dat season altijd een Map is.
+    (seasonRaw is Map)
         ? seasonRaw
         : {'title': seasonRaw.toString()};
-    final seasonTitle = (season['title'] ?? season['itemType'] ?? 'Season')
-        .toString();
-    final firstYear = season['firstAirYear']?.toString() ?? '';
-    final lastYear = season['lastAirYear']?.toString() ?? '';
-    final epRaw = season['episodes'];
-    final episodes = _toList(epRaw);
+    final seasonTitle =
+        (season['title'] ??
+                season['itemType'] ??
+                'Season') // Haalt seizoen titel op.
+            .toString();
+    final firstYear =
+        season['firstAirYear']?.toString() ??
+        ''; // Haalt eerste uitzendingsjaar op.
+    final lastYear =
+        season['lastAirYear']?.toString() ??
+        ''; // Haalt laatst uitzendingsjaar op.
+    final epRaw = season['episodes']; // Haalt afleveringsdata op.
+    final episodes = _toList(epRaw); // Converteert naar een lijst.
 
     return ExpansionTile(
-      title: Text(seasonTitle),
-      subtitle: Text('$firstYear${lastYear.isNotEmpty ? ' - $lastYear' : ''}'),
-      children: episodes.isEmpty
+      // Bouwt expandable tile voor het seizoen.
+      title: Text(seasonTitle), // Toon seizoen titel.
+      subtitle: Text(
+        '$firstYear${lastYear.isNotEmpty ? ' - $lastYear' : ''}',
+      ), // Toon jaren.
+      children:
+          episodes
+              .isEmpty // Als geen afleveringen.
           ? [
               const Padding(
                 padding: EdgeInsets.all(12),
                 child: Text(
-                  'Geen afleveringen gevonden',
+                  'Geen afleveringen gevonden', // Toon geen afleveringen bericht.
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
             ]
           : [
+              // Anders loop door afleveringen.
               for (var ei = 0; ei < episodes.length; ei++)
                 _buildEpisodeRow(context, episodes[ei], seasonIndex, ei),
             ],
@@ -1274,46 +1739,52 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Widget _buildEpisodeRow(
-    // Deze functie bouwt een widget die een enkele aflevering binnen een seizoen weergeeft. We nemen de BuildContext, de ruwe data van de aflevering (die in verschillende formaten kan voorkomen), de index van het seizoen en de index van de aflevering als parameters. We extraheren de relevante informatie uit de ruwe data van de aflevering, zoals de titel, het overzicht, streaming opties, thumbnail en een unieke sleutel voor opslag. We controleren ook of deze aflevering als gezien is gemarkeerd door de gebruiker. We bouwen vervolgens een ListTile die deze informatie weergeeft: we tonen de thumbnail (indien beschikbaar), de titel van de aflevering, en een deel van het overzicht met een optie om het volledige overzicht te vertalen. We tonen ook een play knop als er streaming opties beschikbaar zijn, en een checkbox om aan te geven of de aflevering als gezien is gemarkeerd. Wanneer de gebruiker op het overzicht klikt, tonen we een dialog met het volledige overzicht van de aflevering.
+    // Functie om een aflevering rij weer te geven.
     BuildContext context,
     dynamic epRaw,
     int seasonIndex,
     int episodeIndex,
   ) {
-    final ep = (epRaw is Map) ? epRaw : {'title': epRaw.toString()};
-    final epTitle = (ep['title'] ?? ep['itemType'] ?? 'Episode').toString();
-    final epOverview = (ep['overview'] ?? '').toString();
+    final ep = (epRaw is Map)
+        ? epRaw
+        : {'title': epRaw.toString()}; // Zorg dat ep altijd een Map is.
+    final epTitle = (ep['title'] ?? ep['itemType'] ?? 'Episode')
+        .toString(); // Haalt aflevering titel op.
+    final epOverview = (ep['overview'] ?? '').toString(); // Haalt overzicht op.
 
-    // stream options for episode
-    final epStreamRaw = ep['streamingOptions']?['nl'] ?? ep['streamingOptions'];
-    final epStreams = _toList(epStreamRaw);
+    final epStreamRaw =
+        ep['streamingOptions']?['nl'] ??
+        ep['streamingOptions']; // Haalt streaming opties op.
+    final epStreams = _toList(epStreamRaw); // Converteert naar lijst.
     if (epStreams.isNotEmpty) {
-      // We controleren of er streaming opties beschikbaar zijn voor deze aflevering. We proberen eerst de Nederlandse streaming opties te extraheren (aangegeven door 'nl'), en als die er niet zijn, gebruiken we de algemene 'streamingOptions'. We gebruiken de _toList helper om ervoor te zorgen dat we altijd een lijst hebben, ongeacht het oorspronkelijke formaat van de data. Als er streaming opties beschikbaar zijn, kunnen we deze later gebruiken om een play knop weer te geven waarmee de gebruiker naar de beschikbare streaming services kan navigeren.
-      final first = epStreams[0];
-      if (first is Map) {}
+      // Als streaming opties beschikbaar.
+      final first = epStreams[0]; // Haalt eerste optie op.
+      if (first is Map) {} // Controleer of het een Map is.
     }
 
-    // thumbnail
-    final epThumb =
+    final epThumb = // Haalt afleverings thumbnail op.
         ep['imageSet']?['verticalPoster']?['w160'] ?? ep['image'] ?? null;
 
-    // stable episode key for storage
-    final epKey =
-        's${seasonIndex}_e${episodeIndex}'; // We genereren een unieke sleutel voor deze aflevering op basis van de index van het seizoen en de index van de aflevering. Deze sleutel gebruiken we later om bij te houden welke afleveringen als gezien zijn gemarkeerd door de gebruiker. Door deze sleutel te gebruiken, kunnen we gemakkelijk controleren of een specifieke aflevering in de _seenSet zit, wat ons vertelt of de gebruiker deze aflevering als gezien heeft gemarkeerd.
-    _seenSet.contains(epKey);
+    final epKey = // Maakt unieke sleutel voor opslag.
+        's${seasonIndex}_e${episodeIndex}';
+    _seenSet.contains(epKey); // Controleer of aflevering gezien is.
 
     return Column(
       children: [
         ListTile(
-          leading: epThumb != null
+          // Bouwt ListTile voor aflevering.
+          leading:
+              epThumb !=
+                  null // Als thumbnail beschikbaar.
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(
-                    6,
-                  ), // We gebruiken ClipRRect om de thumbnail van de aflevering weer te geven met afgeronde hoeken. We controleren eerst of er een thumbnail beschikbaar is (epThumb is niet null), en als dat het geval is, tonen we deze in de leading positie van de ListTile. We stellen de breedte en hoogte van de afbeelding in op 84x48 pixels, en we gebruiken BoxFit.cover om ervoor te zorgen dat de afbeelding goed past binnen deze afmetingen. We voegen ook een errorBuilder toe om een fallback icoon weer te geven als er een fout optreedt bij het laden van de afbeelding, zoals wanneer de URL ongeldig is of wanneer er netwerkproblemen zijn.
+                  // Maak afbeelding met ronde hoeken.
+                  borderRadius: BorderRadius.circular(6),
                   child: SizedBox(
+                    // Zet vaste grootte voor thumbnail.
                     width: 84,
                     height: 48,
                     child: _imageFromProxied(
+                      // Laadt afbeelding via proxy.
                       epThumb.toString(),
                       fit: BoxFit.cover,
                       width: 84,
@@ -1323,34 +1794,48 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 )
               : null,
           title: Text(
+            // Toon aflevering titel.
             epTitle,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: epOverview.isNotEmpty
+          subtitle:
+              epOverview
+                  .isNotEmpty // Als overzicht beschikbaar.
               ? Column(
+                  // Toon overzicht met vertaal knop.
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
+                      // Toon overzicht (vertaald of origineel).
                       _translatedTexts[epKey] ?? epOverview,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     TextButton.icon(
-                      icon: _isTranslating[epKey] == true
+                      // Toon vertaal knop.
+                      icon:
+                          _isTranslating[epKey] ==
+                              true // Toon spinner als bezig.
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.translate, size: 16),
+                          : const Icon(
+                              Icons.translate,
+                              size: 16,
+                            ), // Toon vertaal icoon.
                       label: Text(
                         AppLocalizations.of(context)!.translate,
                         style: const TextStyle(fontSize: 12),
                       ),
-                      onPressed: _isTranslating[epKey] == true
+                      onPressed:
+                          _isTranslating[epKey] ==
+                              true // Disable als bezig.
                           ? null
                           : () {
+                              // Vertaal overzicht.
                               _translateText(epKey, epOverview);
                             },
                     ),
@@ -1358,52 +1843,70 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 )
               : null,
           trailing: Row(
+            // Toon knoppen aan rechterkant.
             mainAxisSize: MainAxisSize.min,
             children: [
-              // play button (if streams available)
-              if (epStreams
-                  .isNotEmpty) // We controleren of er streaming opties beschikbaar zijn voor deze aflevering. Als dat het geval is, tonen we een play knop in de trailing positie van de ListTile. Wanneer de gebruiker op deze knop klikt, willen we een modal bottom sheet tonen met de beschikbare streaming opties voor deze aflevering, zodat de gebruiker kan kiezen waar ze deze aflevering willen bekijken. We zullen de streaming opties die we eerder hebben geëxtraheerd gebruiken om deze informatie in de modal te tonen.
+              if (epStreams.isNotEmpty) // Als streaming opties beschikbaar.
                 IconButton(
+                  // Toon play knop.
                   icon: const Icon(Icons.play_arrow),
                   onPressed: () async {
-                    // dedupe per service+type
-                    final Map<String, Map<String, dynamic>> deduped = {};
+                    // Open streaming modal.
+                    final Map<String, Map<String, dynamic>> deduped =
+                        {}; // Dedupeer streaming opties.
                     for (var option in epStreams) {
-                      if (option is! Map) continue;
-                      final typedOption = option as Map<String, dynamic>;
-                      final serviceName =
+                      // Loop door opties.
+                      if (option is! Map) continue; // Sla niet-maps over.
+                      final typedOption =
+                          option as Map<String, dynamic>; // Cast naar Map.
+                      final serviceName = // Haalt service naam op.
                           typedOption['service']?['name']?.toString() ??
                           'Unknown';
-                      final type = typedOption['type']?.toString() ?? 'other';
-                      final key = '${serviceName.toLowerCase()}_$type';
-                      deduped.putIfAbsent(key, () => typedOption);
+                      final type =
+                          typedOption['type']?.toString() ??
+                          'other'; // Haalt type op.
+                      final key =
+                          '${serviceName.toLowerCase()}_$type'; // Maakt unieke key.
+                      deduped.putIfAbsent(
+                        key,
+                        () => typedOption,
+                      ); // Voegt toe als niet bestaat.
                     }
-                    final mergedStreams = deduped.values.toList();
+                    final mergedStreams = deduped.values
+                        .toList(); // Zet naar lijst.
 
                     showModalBottomSheet(
+                      // Toon modal met streaming opties.
                       context: context,
                       builder: (ctx) {
                         return Column(
+                          // Bouwt kolom met opties.
                           mainAxisSize: MainAxisSize.min,
                           children: mergedStreams.map<Widget>((option) {
-                            // We itereren door de gededupede lijst van streaming opties en bouwen een ListTile voor elke optie. We extraheren de naam van de service en de link van de optie, en tonen deze informatie in de ListTile. Wanneer de gebruiker op een ListTile klikt, sluiten we de modal bottom sheet en navigeren we naar de link van die streaming optie, zodat de gebruiker direct naar de juiste pagina kan gaan om deze aflevering te bekijken.
-                            final service =
+                            // Loop door opties.
+                            final service = // Haalt service naam op.
                                 option['service']?['name']?.toString() ??
                                 'Unknown';
-                            final link =
+                            final link = // Haalt link op.
                                 option['link'] ??
                                 option['service']?['homePage']?.toString();
                             return ListTile(
+                              // Toon option in ListTile.
                               leading: _buildServiceIconAsset(
+                                // Toon service logo.
                                 service,
                                 context: context,
                                 height: 28,
                               ),
-                              title: Text(service),
-                              subtitle: Text(_formatStreamingType(context, option)),
+                              title: Text(service), // Toon service naam.
+                              subtitle: Text(
+                                // Toon streaming type.
+                                _formatStreamingType(context, option),
+                              ),
                               onTap: () {
-                                Navigator.pop(ctx);
-                                _openLink(link?.toString());
+                                // Wanneer geklikt.
+                                Navigator.pop(ctx); // Sluit modal.
+                                _openLink(link?.toString()); // Open link.
                               },
                             );
                           }).toList(),
@@ -1413,79 +1916,146 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   },
                 ),
 
-              // seen checkbox
               Checkbox(
-                value: _seenSet.contains(epKey),
+                // Toon checkbox voor gezien.
+                value: _seenSet.contains(epKey), // Check of in seen set.
                 onChanged: (val) async {
+                  // Wanneer checkbox verandert.
                   if (_user == null) {
-                    final go = await _ensureLoggedInWithPrompt(context);
-                    if (!go) return;
+                    // Als niet ingelogd.
+                    final go = await _ensureLoggedInWithPrompt(
+                      context,
+                    ); // Toon login prompt.
+                    if (!go) return; // Annuleer als niet ingelogd.
                   }
 
-                  final newVal = val ?? false;
+                  final newVal = val ?? false; // Bepaal nieuwe waarde.
 
                   if (newVal) {
-                    // collect previous unseen episodes in this season
-                    final unseenPrev = <int>[];
+                    // Als markeren als gezien.
+                    final unseenPrev =
+                        <int>[]; // Lijst met onbekeken eerdere afleveringen.
                     for (var p = 0; p < episodeIndex; p++) {
-                      final prevKey = 's${seasonIndex}_e${p}';
-                      if (!_seenSet.contains(prevKey)) unseenPrev.add(p);
+                      // Loop door eerdere afleveringen.
+                      final prevKey =
+                          's${seasonIndex}_e${p}'; // Maak key voor vorige aflevering.
+                      if (!_seenSet.contains(prevKey))
+                        unseenPrev.add(p); // Voeg onbekeken toe.
                     }
 
                     if (unseenPrev.isNotEmpty) {
+                      // Als onbekeken afleveringen.
                       final confirm = await showDialog<bool>(
+                        // Toon bevestigingsdialog.
                         context: context,
                         builder: (dctx) => AlertDialog(
-                          title: Text(AppLocalizations.of(context)!.mark_previous_episodes_title),
-                          content: Text(AppLocalizations.of(context)!.mark_previous_episodes_message(epTitle, unseenPrev.length, seasonIndex + 1)),
+                          title: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.mark_previous_episodes_title, // Toon titel.
+                          ),
+                          content: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.mark_previous_episodes_message(
+                              // Toon bericht.
+                              epTitle,
+                              unseenPrev.length,
+                              seasonIndex + 1,
+                            ),
+                          ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.of(dctx).pop(false), child: Text(AppLocalizations.of(context)!.no)),
-                            TextButton(onPressed: () => Navigator.of(dctx).pop(true), child: Text(AppLocalizations.of(context)!.yes)),
+                            TextButton(
+                              // Nee knop.
+                              onPressed: () => Navigator.of(dctx).pop(false),
+                              child: Text(AppLocalizations.of(context)!.no),
+                            ),
+                            TextButton(
+                              // Ja knop.
+                              onPressed: () => Navigator.of(dctx).pop(true),
+                              child: Text(AppLocalizations.of(context)!.yes),
+                            ),
                           ],
                         ),
                       );
 
-                        if (confirm == true) {
+                      if (confirm == true) {
+                        // Als ja geklikt.
                         for (final p in unseenPrev) {
-                          await _toggleEpisodeSeen('s${seasonIndex}_e${p}', true);
+                          // Loop door onbekeken afleveringen.
+                          await _toggleEpisodeSeen(
+                            // Markeer als gezien.
+                            's${seasonIndex}_e${p}',
+                            true,
+                          );
                         }
-                        await _toggleEpisodeSeen(epKey, true);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.episodes_marked_seen(unseenPrev.length + 1))));
-                        setState(() {});
+                        await _toggleEpisodeSeen(
+                          epKey,
+                          true,
+                        ); // Markeer huidige als gezien.
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          // Toon snackbar.
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.episodes_marked_seen(
+                                unseenPrev.length + 1,
+                              ), // Toon aantal.
+                            ),
+                          ),
+                        );
+                        setState(() {}); // Rebuild.
                         return;
                       }
                     }
                   }
 
-                  await _toggleEpisodeSeen(epKey, newVal);
-                  setState(() {});
+                  await _toggleEpisodeSeen(
+                    epKey,
+                    newVal,
+                  ); // Toggle aflevering gezien.
+                  setState(() {}); // Rebuild.
                 },
               ),
             ],
           ),
-          onTap: epOverview.isNotEmpty
+          onTap:
+              epOverview
+                  .isNotEmpty // Als overzicht bestaat.
               ? () {
+                  // Toon dialog met volledige overzicht.
                   showDialog(
                     context: context,
                     builder: (ctx) {
-                      final maxHeight = MediaQuery.of(ctx).size.height * 0.7;
+                      final maxHeight =
+                          MediaQuery.of(ctx).size.height *
+                          0.7; // Bepaal max hoogte.
                       return StatefulBuilder(
+                        // Bouwt stateful dialog.
                         builder: (ctx, setDialogState) {
                           return AlertDialog(
-                            title: Text(epTitle),
+                            title: Text(epTitle), // Toon titel.
                             content: ConstrainedBox(
+                              // Zet max hoogte.
                               constraints: BoxConstraints(maxHeight: maxHeight),
                               child: SingleChildScrollView(
+                                // Maak scrollbaar.
                                 child: Column(
+                                  // Kolom met inhoud.
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
+                                      // Toon volledige overzicht.
                                       _translatedTexts[epKey] ?? epOverview,
                                       style: const TextStyle(height: 1.4),
                                     ),
                                     const SizedBox(height: 12),
                                     TextButton.icon(
-                                      icon: _isTranslating[epKey] == true
+                                      // Vertaal knop.
+                                      icon:
+                                          _isTranslating[epKey] ==
+                                              true // Toon spinner als bezig.
                                           ? const SizedBox(
                                               width: 16,
                                               height: 16,
@@ -1494,29 +2064,39 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                               ),
                                             )
                                           : const Icon(
-                                              Icons.translate,
+                                              Icons
+                                                  .translate, // Toon vertaal icoon.
                                               size: 16,
                                             ),
-                                      label: Text(AppLocalizations.of(context)!.translate),
-                                      onPressed: _isTranslating[epKey] == true
+                                      label: Text(
+                                        AppLocalizations.of(context)!.translate,
+                                      ),
+                                      onPressed:
+                                          _isTranslating[epKey] ==
+                                              true // Disable als bezig.
                                           ? null
                                           : () async {
+                                              // Vertaal overzicht.
                                               await _translateText(
                                                 epKey,
                                                 epOverview,
                                               );
-                                              // Zorg dat de dialog herbouwt
-                                              setDialogState(() {});
+                                              setDialogState(
+                                                () {},
+                                              ); // Rebuild dialog.
                                             },
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                              actions: [
+                            actions: [
                               TextButton(
+                                // Sluit knop.
                                 onPressed: () => Navigator.of(ctx).pop(),
-                                child: Text(AppLocalizations.of(context)!.close),
+                                child: Text(
+                                  AppLocalizations.of(context)!.close,
+                                ),
                               ),
                             ],
                           );
@@ -1527,474 +2107,793 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 }
               : null,
         ),
-        const Divider(height: 1),
+        const Divider(height: 1), // Toon scheidingslijn.
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    // Bouwt de UI van het scherm.
+    final loc = AppLocalizations.of(context)!; // Haalt taalinstellingen op.
     if (_loadingMovie) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      // Checkt of film nog wordt geladen.
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ); // Toon laadspinner.
     }
     if (_error != null) {
-      final loc = AppLocalizations.of(context)!;
-      return Scaffold(body: Center(child: Text(loc.fetch_error_message(_error ?? ''))));
+      // Checkt of er een fout is opgetreden.
+      final loc = AppLocalizations.of(context)!; // Haalt taalinstellingen op.
+      return Scaffold(
+        // Bouwt error scherm.
+        body: Center(
+          child: Text(loc.fetch_error_message(_error ?? '')),
+        ), // Toon foutbericht.
+      );
     }
-    final isMovie =
+    final isMovie = // Bepaalt of dit een film is.
         _isResponseMovie(_omdbData?['Type']?.toString()) ||
         _isResponseMovie(_rapidData?['itemType']?.toString()) ||
         _isResponseMovie(_rapidData?['type']?.toString()) ||
         _isResponseMovie(_rapidData?['showType']?.toString()) ||
         _isResponseMovie(_rapidData?['titleType']?.toString());
 
-    final rapid = _rapidData!;
-    final poster = _poster;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final rapid = _rapidData!; // Haalt RapidAPI data op.
+    final poster = _poster; // Haalt poster URL op.
+    final isDark =
+        Theme.of(context).brightness ==
+        Brightness.dark; // Checkt of dark mode actief is.
 
-    return Scaffold(
-      appBar: AppBar(title: Text(loc.details)),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _posterWithFallback(context, poster, rapid),
-
-            // Trailer (YouTube) - show in-app player when available
-            if (_loadingTrailer)
-              const Padding(
-                padding: EdgeInsets.only(top: 8.0),
-                child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator())),
-              )
-            else if (_trailerKey != null && _trailerKey!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Column(
-                  children: [
-                    YouTubePlayerWidget(
-                      // Use a UniqueKey or value-based key to force a rebuild when the trailerKey changes
-                      key: ValueKey(_trailerKey),
-                      videoId: _trailerKey!,
+    return AppBackground(
+      // Bouwt achtergrond widget.
+      child: Scaffold(
+        // Bouwt main scaffold.
+        backgroundColor: Colors.transparent, // Maakt background transparant.
+        appBar: PreferredSize(
+          // Bouwt custom top bar.
+          preferredSize: const Size.fromHeight(56), // Zet hoogte van top bar.
+          child: AppTopBar(
+            // Toon custom top bar.
+            title: loc.details, // Zet titel.
+            backgroundColor:
+                Colors.transparent, // Maakt achtergrond transparant.
+          ),
+        ),
+        body: SingleChildScrollView(
+          // Maakt content scrollbaar.
+          padding: const EdgeInsets.all(12), // Voegt padding toe rond content.
+          child: Column(
+            // Bouwt verticale kolom.
+            crossAxisAlignment:
+                CrossAxisAlignment.start, // Lijnt items links uit.
+            children: [
+              _posterWithFallback(
+                context,
+                poster,
+                rapid,
+              ), // Toon poster met fallback.
+              // Trailer (YouTube) - show in-app player when available
+              if (_loadingTrailer) // Checkt of trailer nog wordt geladen.
+                const Padding(
+                  // Voegt padding toe.
+                  padding: EdgeInsets.only(top: 8.0), // Zet padding.
+                  child: Center(
+                    // Centreert inhoud.
+                    child: SizedBox(
+                      // Zet vaste grootte.
+                      width: 24, // Zet breedte.
+                      height: 24, // Zet hoogte.
+                      child: CircularProgressIndicator(), // Toon laadspinner.
                     ),
-                    if (_allVideos.length > 1)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back_ios),
-                              onPressed: _currentVideoIndex > 0
-                                  ? () {
-                                      final rawKey = _allVideos[_currentVideoIndex - 1]['key']?.toString();
-                                      final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
-                                      debugPrint('Switched trailer (prev) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex - 1]['site']}');
-                                      setState(() {
-                                        _currentVideoIndex--;
-                                        _trailerKey = normKey;
-                                        _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
-                                      });
-                                    }
-                                  : null,
-                            ),
-                            Expanded(
-                              child: SizedBox(
-                                height: 24,
-                                child: Marquee(
-                                  text: '${_currentVideoIndex + 1} / ${_allVideos.length}: ${_allVideos[_currentVideoIndex]['name'] ?? ''}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                  scrollAxis: Axis.horizontal,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  blankSpace: 50.0,
-                                  velocity: 40.0,
-                                  pauseAfterRound: const Duration(seconds: 2),
-                                  accelerationDuration: const Duration(seconds: 1),
-                                  accelerationCurve: Curves.linear,
-                                  decelerationDuration: const Duration(milliseconds: 500),
-                                  decelerationCurve: Curves.easeOut,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.arrow_forward_ios),
-                              onPressed: _currentVideoIndex < _allVideos.length - 1
-                                  ? () {
-                                      final rawKey = _allVideos[_currentVideoIndex + 1]['key']?.toString();
-                                      final normKey = _normalizeYoutubeId(rawKey) ?? rawKey;
-                                      debugPrint('Switched trailer (next) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex + 1]['site']}');
-                                      setState(() {
-                                        _currentVideoIndex++;
-                                        _trailerKey = normKey;
-                                        _trailerSite = _allVideos[_currentVideoIndex]['site']?.toString();
-                                      });
-                                    }
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-            const SizedBox(height: 12),
-
-            // Main Info card
-            Card(
-              elevation: 3,
-              color: isDark ? Colors.grey.shade900 : Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _title ?? '',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _translatedTexts['overview'] ?? _overview ?? '',
-                          style: TextStyle(
-                            color: isDark
-                                ? Colors.grey.shade300
-                                : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextButton.icon(
-                          icon: _isTranslating['overview'] == true
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.translate, size: 18),
-                              label: Text(loc.translate),
-                          onPressed: _isTranslating['overview'] == true
-                              ? null
-                              : () {
-                                  if (_overview != null) {
-                                    _translateText('overview', _overview!);
-                                  }
-                                },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber),
-                        const SizedBox(width: 6),
-                        Text(
-                          _formatRating(_rating),
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                        ),
-
-                        const Spacer(),
-                        // watchlist button + movie 'Gezien' checkbox underneath
-                        _loadingUserData
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  OutlinedButton.icon(
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                        color: Colors.white,
-                                        width: 1,
-                                      ),
-                                      foregroundColor: isDark
-                                          ? Colors.white
-                                          : Colors.black,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      backgroundColor: Colors.transparent,
-                                    ),
-                                    icon: Icon(
-                                      _isInWatchlist
-                                          ? Icons.bookmark
-                                          : Icons.bookmark_add_outlined,
-                                      size: 20,
-                                    ),
-                                    label: Text(
-                                      _isInWatchlist ? loc.remove : loc.save,
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    onPressed: () async {
-                                      if (_user == null) {
-                                        final goToLogin =
-                                            await _ensureLoggedInWithPrompt(
-                                              context,
-                                            );
-                                        if (!goToLogin) return;
-                                        return;
-                                      }
-                                      await _toggleWatchlist();
-                                    },
-                                  ),
-                                  const SizedBox(height: 6),
-                                  if (isMovie)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Checkbox(
-                                          value: _seenSet.contains('movie'),
-                                          onChanged: (val) async {
-                                            if (_user == null) {
-                                              final go =
-                                                  await _ensureLoggedInWithPrompt(
-                                                    context,
-                                                  );
-                                              if (!go) return;
-                                            }
-                                            await _toggleMovieSeen(
-                                              val ?? false,
-                                            );
-                                            setState(() {});
-                                          },
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          loc.seen,
-                                          style: TextStyle(
-                                            color: isDark
-                                                ? Colors.white
-                                                : Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                      ],
-                    ),
-                    if (_rated != null && _rated!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.family_restroom_rounded, size: 18),
-                            const SizedBox(width: 6),
-                            Text(
-                              loc.age_rating(_rated ?? ''),
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.grey.shade300
-                                    : Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-
-                    if (_genres.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _genres
-                            .map(
-                              (g) => Chip(
-                                label: Text(g),
-                                backgroundColor: isDark
-                                    ? Colors.blue.shade900
-                                    : Colors.blue.shade50,
-                                labelStyle: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    const SizedBox(height: 8),
-
-                    // Creators
-                    if (_creators.isNotEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              loc.producers_creators,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
-                            ),
-                          ),
-                          Wrap(
-                            spacing: 8,
-                            children: _creators.map((c) {
-                              final searchUrl =
-                                  'https://www.imdb.com/find?q=${Uri.encodeComponent(c)}&s=nm';
-                              return GestureDetector(
-                                onTap: () => _openLink(searchUrl),
-                                child: Chip(
-                                  label: Text(c),
-                                  backgroundColor: isDark
-                                      ? Colors.green.shade900
-                                      : Colors.green.shade50,
-                                  labelStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.white
-                                        : Colors.black87,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-
-                    const SizedBox(height: 8),
-
-                    // Cast
-                    if (_cast.isNotEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              loc.actors,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: isDark ? Colors.white : Colors.black,
-                              ),
-                            ),
-                          ),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: _cast.take(8).map((c) {
-                              final searchUrl =
-                                  'https://www.imdb.com/find?q=${Uri.encodeComponent(c)}&s=nm';
-                              return GestureDetector(
-                                onTap: () => _openLink(searchUrl),
-                                child: Chip(
-                                  label: Text(c),
-                                  backgroundColor: isDark
-                                      ? Colors.grey.shade700
-                                      : Colors.grey.shade200,
-                                  labelStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.white
-                                        : Colors.black87,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                    const SizedBox(height: 12),
-                    Text(
-                      loc.seasons(rapid['seasonCount'] ?? '-'),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                    ),
-                    Text(
-                      loc.episodes(rapid['episodeCount'] ?? '-'),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Streaming card — show also for movies even when _streaming is empty
-            if (_streaming.isNotEmpty || isMovie)
-              Card(
-                color: isDark ? Colors.grey.shade900 : Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  ),
+                )
+              else if (_trailerKey != null &&
+                  _trailerKey!
+                      .isNotEmpty) // Checkt of trailer key beschikbaar is.
+                Padding(
+                  // Voegt padding toe.
+                  padding: const EdgeInsets.only(top: 8.0), // Zet padding.
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    // Bouwt verticale kolom.
+                    children: [
+                      YouTubePlayerWidget(
+                        // Toon YouTube player.
+                        key: ValueKey(_trailerKey), // Zet unieke key.
+                        videoId: _trailerKey!, // Zet video ID.
+                      ),
+                      if (_allVideos.length >
+                          1) // Checkt of meer video's beschikbaar zijn.
+                        Padding(
+                          // Voegt padding toe.
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8.0,
+                          ), // Zet padding.
+                          child: Row(
+                            // Bouwt horizontale rij.
+                            mainAxisAlignment:
+                                MainAxisAlignment.center, // Centreert items.
+                            children: [
+                              IconButton(
+                                // Bouwt vorige knop.
+                                icon: const Icon(
+                                  Icons.arrow_back_ios,
+                                ), // Zet pijl icoon.
+                                onPressed:
+                                    _currentVideoIndex >
+                                        0 // Checkt of niet aan begin.
+                                    ? () {
+                                        // Actie voor vorige video.
+                                        final rawKey = // Haalt raw video key op.
+                                            _allVideos[_currentVideoIndex -
+                                                    1]['key']
+                                                ?.toString();
+                                        final normKey = // Normaliseert YouTube ID.
+                                            _normalizeYoutubeId(rawKey) ??
+                                            rawKey;
+                                        debugPrint(
+                                          // Print debug info.
+                                          'Switched trailer (prev) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex - 1]['site']}',
+                                        );
+                                        setState(() {
+                                          // Update state.
+                                          _currentVideoIndex--; // Lagere video index.
+                                          _trailerKey =
+                                              normKey; // Zet nieuwe video key.
+                                          _trailerSite = // Zet video site.
+                                          _allVideos[_currentVideoIndex]['site']
+                                              ?.toString();
+                                        });
+                                      }
+                                    : null, // Disable als aan begin.
+                              ),
+                              Expanded(
+                                // Maakt beschrijving expandable.
+                                child: SizedBox(
+                                  // Zet vaste hoogte.
+                                  height: 24, // Zet hoogte.
+                                  child: Marquee(
+                                    // Bouwt scrollende tekst.
+                                    text: // Zet scroll tekst.
+                                        '${_currentVideoIndex + 1} / ${_allVideos.length}: ${_allVideos[_currentVideoIndex]['name'] ?? ''}',
+                                    style: const TextStyle(
+                                      // Zet tekst stijl.
+                                      fontSize: 12, // Zet font grootte.
+                                      fontWeight:
+                                          FontWeight.bold, // Maakt tekst vet.
+                                    ),
+                                    scrollAxis:
+                                        Axis.horizontal, // Scroll horizontaal.
+                                    crossAxisAlignment: // Verticale uitlijning.
+                                        CrossAxisAlignment.center,
+                                    blankSpace: 50.0, // Zet ruimte na tekst.
+                                    velocity: 40.0, // Zet scroll snelheid.
+                                    pauseAfterRound: const Duration(
+                                      seconds: 2,
+                                    ), // Pauze na scroll.
+                                    accelerationDuration: const Duration(
+                                      // Versnellings duur.
+                                      seconds: 1,
+                                    ),
+                                    accelerationCurve:
+                                        Curves.linear, // Lineaire versnelling.
+                                    decelerationDuration: const Duration(
+                                      // Vertradings duur.
+                                      milliseconds: 500,
+                                    ),
+                                    decelerationCurve:
+                                        Curves.easeOut, // Ease out vertraging.
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                // Bouwt volgende knop.
+                                icon: const Icon(
+                                  Icons.arrow_forward_ios,
+                                ), // Zet pijl icoon.
+                                onPressed: // Zet actie.
+                                    _currentVideoIndex <
+                                        _allVideos.length -
+                                            1 // Checkt of niet aan eind.
+                                    ? () {
+                                        // Actie voor volgende video.
+                                        final rawKey = // Haalt raw video key op.
+                                            _allVideos[_currentVideoIndex +
+                                                    1]['key']
+                                                ?.toString();
+                                        final normKey = // Normaliseert YouTube ID.
+                                            _normalizeYoutubeId(rawKey) ??
+                                            rawKey;
+                                        debugPrint(
+                                          // Print debug info.
+                                          'Switched trailer (next) raw: $rawKey, normalized: $normKey, site: ${_allVideos[_currentVideoIndex + 1]['site']}',
+                                        );
+                                        setState(() {
+                                          // Update state.
+                                          _currentVideoIndex++; // Hogere video index.
+                                          _trailerKey =
+                                              normKey; // Zet nieuwe video key.
+                                          _trailerSite = // Zet video site.
+                                          _allVideos[_currentVideoIndex]['site']
+                                              ?.toString();
+                                        });
+                                      }
+                                    : null, // Disable als aan eind.
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 12), // Voegt verticale ruimte toe.
+              // Main Info card
+              Card(
+                // Bouwt info kaart.
+                elevation: 3, // Zet schaduw hoogte.
+                color: isDark
+                    ? Colors.grey.shade900
+                    : Colors.white, // Zet themagebaseerde kleur.
+                child: Padding(
+                  // Voegt padding toe.
+                  padding: const EdgeInsets.all(16), // Zet padding.
+                  child: Column(
+                    // Bouwt verticale kolom.
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start, // Lijnt items links uit.
                     children: [
                       Text(
-                        'Streaming',
+                        // Toon filmtitel.
+                        _title ?? '', // Zet titel tekst.
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
+                          // Zet tekst stijl.
+                          fontSize: 22, // Zet font grootte.
+                          fontWeight: FontWeight.bold, // Maakt tekst vet.
+                          color: isDark
+                              ? Colors.white
+                              : Colors.black, // Zet themagebaseerde kleur.
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8), // Voegt verticale ruimte toe.
+                      Column(
+                        // Bouwt kolom voor overzicht en vertaal knop.
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start, // Lijnt items links uit.
+                        children: [
+                          Text(
+                            // Toon filmoverzicht.
+                            _translatedTexts['overview'] ??
+                                _overview ??
+                                '', // Zet overzicht tekst (vertaald of origineel).
+                            style: TextStyle(
+                              // Zet tekst stijl.
+                              color:
+                                  isDark // Zet themagebaseerde kleur.
+                                  ? Colors.grey.shade300
+                                  : Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 6,
+                          ), // Voegt verticale ruimte toe.
+                          TextButton.icon(
+                            // Bouwt vertaal knop.
+                            icon:
+                                _isTranslating['overview'] ==
+                                    true // Checkt of bezig met vertalen.
+                                ? const SizedBox(
+                                    // Toont spinner.
+                                    width: 16, // Zet breedte.
+                                    height: 16, // Zet hoogte.
+                                    child: CircularProgressIndicator(
+                                      // Bouwt spinner.
+                                      strokeWidth: 2, // Zet lijndikte.
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.translate,
+                                    size: 18,
+                                  ), // Toon vertaal icoon.
+                            label: Text(loc.translate), // Zet knop label.
+                            onPressed:
+                                _isTranslating['overview'] ==
+                                    true // Checkt of bezig.
+                                ? null // Disable als bezig.
+                                : () {
+                                    // Actie voor vertalen.
+                                    if (_overview != null) {
+                                      // Checkt of overzicht beschikbaar.
+                                      _translateText(
+                                        'overview',
+                                        _overview!,
+                                      ); // Vertaal overzicht.
+                                    }
+                                  },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12), // Voegt verticale ruimte toe.
+                      Row(
+                        // Bouwt rij voor rating en knoppen.
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                          ), // Toon ster icoon.
+                          const SizedBox(
+                            width: 6,
+                          ), // Voegt horizontale ruimte toe.
+                          Text(
+                            // Toon filmrating.
+                            _formatRating(_rating), // Zet geformateerde rating.
+                            style: TextStyle(
+                              // Zet tekst stijl.
+                              color: isDark
+                                  ? Colors.white
+                                  : Colors.black, // Zet themagebaseerde kleur.
+                            ),
+                          ),
 
-                      ..._buildGroupedStreaming(_streaming, context),
+                          const Spacer(), // Voegt flexibele ruimte toe.
+                          // watchlist button + movie 'Gezien' checkbox underneath
+                          _loadingUserData // Checkt of user data wordt geladen.
+                              ? const SizedBox(
+                                  // Toont spinner.
+                                  width: 24, // Zet breedte.
+                                  height: 24, // Zet hoogte.
+                                  child: CircularProgressIndicator(
+                                    // Bouwt spinner.
+                                    strokeWidth: 2, // Zet lijndikte.
+                                  ),
+                                )
+                              : Column(
+                                  // Bouwt kolom voor knoppen.
+                                  crossAxisAlignment: CrossAxisAlignment
+                                      .end, // Lijnt items rechts uit.
+                                  children: [
+                                    OutlinedButton.icon(
+                                      // Bouwt watchlist knop.
+                                      style: OutlinedButton.styleFrom(
+                                        // Zet knop stijl.
+                                        side: const BorderSide(
+                                          // Zet grens.
+                                          color:
+                                              Colors.white, // Zet grens kleur.
+                                          width: 1, // Zet grens breedte.
+                                        ),
+                                        foregroundColor:
+                                            isDark // Zet tekst kleur.
+                                            ? Colors.white
+                                            : Colors.black,
+                                        padding: const EdgeInsets.symmetric(
+                                          // Zet padding.
+                                          horizontal:
+                                              12, // Zet horizontale padding.
+                                          vertical: 8, // Zet verticale padding.
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          // Zet vorm.
+                                          borderRadius: BorderRadius.circular(
+                                            // Maak hoeken rond.
+                                            6,
+                                          ),
+                                        ),
+                                        backgroundColor: Colors
+                                            .transparent, // Maakt achtergrond transparant.
+                                      ),
+                                      icon: Icon(
+                                        // Zet knop icoon.
+                                        _isInWatchlist // Checkt of in watchlist.
+                                            ? Icons
+                                                  .bookmark // Toon volle bladwijzer.
+                                            : Icons
+                                                  .bookmark_add_outlined, // Toon lege bladwijzer.
+                                        size: 20, // Zet icoon grootte.
+                                      ),
+                                      label: Text(
+                                        // Zet knop label.
+                                        _isInWatchlist
+                                            ? loc.remove
+                                            : loc.save, // Zet label tekst.
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                        ), // Zet tekst grootte.
+                                      ),
+                                      onPressed: () async {
+                                        // Actie voor knop klik.
+                                        if (_user == null) {
+                                          // Checkt of niet ingelogd.
+                                          final goToLogin = // Toon login prompt.
+                                          await _ensureLoggedInWithPrompt(
+                                            context,
+                                          );
+                                          if (!goToLogin)
+                                            return; // Return als niet ingelogd.
+                                          return;
+                                        }
+                                        await _toggleWatchlist(); // Toggle watchlist.
+                                      },
+                                    ),
+                                    const SizedBox(
+                                      height: 6,
+                                    ), // Voegt verticale ruimte toe.
+                                    if (isMovie) // Checkt of film is.
+                                      Row(
+                                        // Bouwt rij voor gezien checkbox.
+                                        mainAxisSize: MainAxisSize
+                                            .min, // Zet minimale grootte.
+                                        children: [
+                                          Checkbox(
+                                            // Bouwt gezien checkbox.
+                                            value: _seenSet.contains(
+                                              'movie',
+                                            ), // Checkt of gezien.
+                                            onChanged: (val) async {
+                                              // Actie voor checkbox change.
+                                              if (_user == null) {
+                                                // Checkt of niet ingelogd.
+                                                final go = // Toon login prompt.
+                                                await _ensureLoggedInWithPrompt(
+                                                  context,
+                                                );
+                                                if (!go)
+                                                  return; // Return als niet ingelogd.
+                                              }
+                                              await _toggleMovieSeen(
+                                                // Toggle film gezien.
+                                                val ?? false,
+                                              );
+                                              setState(() {}); // Rebuild UI.
+                                            },
+                                          ),
+                                          const SizedBox(
+                                            width: 4,
+                                          ), // Voegt horizontale ruimte toe.
+                                          Text(
+                                            // Toon gezien label.
+                                            loc.seen, // Zet label tekst.
+                                            style: TextStyle(
+                                              // Zet tekst stijl.
+                                              color:
+                                                  isDark // Zet themagebaseerde kleur.
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                        ],
+                      ),
+                      if (_rated != null &&
+                          _rated!
+                              .isNotEmpty) // Checkt of leeftijdsrating beschikbaar.
+                        Padding(
+                          // Voegt padding toe.
+                          padding: const EdgeInsets.only(
+                            top: 8,
+                          ), // Zet padding.
+                          child: Row(
+                            // Bouwt rij voor rating info.
+                            children: [
+                              const Icon(
+                                // Toon familie icoon.
+                                Icons.family_restroom_rounded,
+                                size: 18, // Zet icoon grootte.
+                              ),
+                              const SizedBox(
+                                width: 6,
+                              ), // Voegt horizontale ruimte toe.
+                              Text(
+                                // Toon leeftijdsrating.
+                                loc.age_rating(
+                                  _rated ?? '',
+                                ), // Zet rating tekst.
+                                style: TextStyle(
+                                  // Zet tekst stijl.
+                                  color:
+                                      isDark // Zet themagebaseerde kleur.
+                                      ? Colors.grey.shade300
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 12), // Voegt verticale ruimte toe.
+
+                      if (_genres.isNotEmpty) // Checkt of genres beschikbaar.
+                        Wrap(
+                          // Bouwt flex rij voor genres.
+                          spacing: 8, // Zet horizontale ruimte tussen items.
+                          runSpacing: 8, // Zet verticale ruimte tussen rijen.
+                          children:
+                              _genres // Loop door genres.
+                                  .map(
+                                    (g) => Chip(
+                                      // Bouwt genre chip.
+                                      label: Text(g), // Zet chip label.
+                                      backgroundColor:
+                                          isDark // Zet themagebaseerde kleur.
+                                          ? Colors.blue.shade900
+                                          : Colors.blue.shade50,
+                                      labelStyle: TextStyle(
+                                        // Zet label stijl.
+                                        color:
+                                            isDark // Zet themagebaseerde kleur.
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      const SizedBox(height: 8), // Voegt verticale ruimte toe.
+                      // Creators
+                      if (_creators
+                          .isNotEmpty) // Checkt of creators beschikbaar.
+                        Column(
+                          // Bouwt kolom voor creators.
+                          crossAxisAlignment: CrossAxisAlignment
+                              .start, // Lijnt items links uit.
+                          children: [
+                            Padding(
+                              // Voegt padding toe.
+                              padding: const EdgeInsets.only(
+                                bottom: 4,
+                              ), // Zet padding.
+                              child: Text(
+                                // Toon creators label.
+                                loc.producers_creators, // Zet label tekst.
+                                style: TextStyle(
+                                  // Zet tekst stijl.
+                                  fontWeight:
+                                      FontWeight.bold, // Maakt tekst vet.
+                                  fontSize: 14, // Zet font grootte.
+                                  color: isDark
+                                      ? Colors.white
+                                      : Colors
+                                            .black, // Zet themagebaseerde kleur.
+                                ),
+                              ),
+                            ),
+                            Wrap(
+                              // Bouwt flex rij voor creators.
+                              spacing:
+                                  8, // Zet horizontale ruimte tussen items.
+                              children: _creators.map((c) {
+                                // Loop door creators.
+                                final searchUrl = // Bouwt IMDB zoeklink.
+                                    'https://www.imdb.com/find?q=${Uri.encodeComponent(c)}&s=nm';
+                                return GestureDetector(
+                                  // Maakt chip aanklikbaar.
+                                  onTap: () =>
+                                      _openLink(searchUrl), // Open IMDB link.
+                                  child: Chip(
+                                    // Bouwt creator chip.
+                                    label: Text(c), // Zet chip label.
+                                    backgroundColor:
+                                        isDark // Zet themagebaseerde kleur.
+                                        ? Colors.green.shade900
+                                        : Colors.green.shade50,
+                                    labelStyle: TextStyle(
+                                      // Zet label stijl.
+                                      color:
+                                          isDark // Zet themagebaseerde kleur.
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+
+                      const SizedBox(height: 8), // Voegt verticale ruimte toe.
+                      // Cast
+                      if (_cast.isNotEmpty) // Checkt of cast beschikbaar.
+                        Column(
+                          // Bouwt kolom voor cast.
+                          crossAxisAlignment: CrossAxisAlignment
+                              .start, // Lijnt items links uit.
+                          children: [
+                            Padding(
+                              // Voegt padding toe.
+                              padding: const EdgeInsets.only(
+                                bottom: 4,
+                              ), // Zet padding.
+                              child: Text(
+                                // Toon cast label.
+                                loc.actors, // Zet label tekst.
+                                style: TextStyle(
+                                  // Zet tekst stijl.
+                                  fontWeight:
+                                      FontWeight.bold, // Maakt tekst vet.
+                                  fontSize: 14, // Zet font grootte.
+                                  color: isDark
+                                      ? Colors.white
+                                      : Colors
+                                            .black, // Zet themagebaseerde kleur.
+                                ),
+                              ),
+                            ),
+                            Wrap(
+                              // Bouwt flex rij voor cast.
+                              spacing:
+                                  8, // Zet horizontale ruimte tussen items.
+                              runSpacing:
+                                  8, // Zet verticale ruimte tussen rijen.
+                              children: _cast.take(8).map((c) {
+                                // Loop door cast (max 8).
+                                final searchUrl = // Bouwt IMDB zoeklink.
+                                    'https://www.imdb.com/find?q=${Uri.encodeComponent(c)}&s=nm';
+                                return GestureDetector(
+                                  // Maakt chip aanklikbaar.
+                                  onTap: () =>
+                                      _openLink(searchUrl), // Open IMDB link.
+                                  child: Chip(
+                                    // Bouwt actor chip.
+                                    label: Text(c), // Zet chip label.
+                                    backgroundColor:
+                                        isDark // Zet themagebaseerde kleur.
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade200,
+                                    labelStyle: TextStyle(
+                                      // Zet label stijl.
+                                      color:
+                                          isDark // Zet themagebaseerde kleur.
+                                          ? Colors.white
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 12), // Voegt verticale ruimte toe.
+                      Text(
+                        // Toon aantal seizoenen.
+                        loc.seasons(
+                          rapid['seasonCount'] ?? '-',
+                        ), // Zet seizoen label.
+                        style: TextStyle(
+                          // Zet tekst stijl.
+                          color: isDark
+                              ? Colors.white
+                              : Colors.black, // Zet themagebaseerde kleur.
+                        ),
+                      ),
+                      Text(
+                        // Toon aantal afleveringen.
+                        loc.episodes(
+                          rapid['episodeCount'] ?? '-',
+                        ), // Zet aflever label.
+                        style: TextStyle(
+                          // Zet tekst stijl.
+                          color: isDark
+                              ? Colors.white
+                              : Colors.black, // Zet themagebaseerde kleur.
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
 
-            const SizedBox(height: 12),
+              const SizedBox(height: 12), // Voegt verticale ruimte toe.
+              // Streaming card — show also for movies even when _streaming is empty
+              if (_streaming.isNotEmpty ||
+                  isMovie) // Checkt of streaming beschikbaar of film.
+                Card(
+                  // Bouwt streaming kaart.
+                  color: isDark
+                      ? Colors.grey.shade900
+                      : Colors.white, // Zet themagebaseerde kleur.
+                  child: Padding(
+                    // Voegt padding toe.
+                    padding: const EdgeInsets.all(12), // Zet padding.
+                    child: Column(
+                      // Bouwt verticale kolom.
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start, // Lijnt items links uit.
+                      children: [
+                        Text(
+                          // Toon streaming titel.
+                          'Streaming', // Zet titel.
+                          style: TextStyle(
+                            // Zet tekst stijl.
+                            fontWeight: FontWeight.bold, // Maakt tekst vet.
+                            color: isDark
+                                ? Colors.white
+                                : Colors.black, // Zet themagebaseerde kleur.
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ), // Voegt verticale ruimte toe.
 
-            // Seasons & Episodes expansion
-            if (_seasons.isNotEmpty)
-              Card(
-                color: isDark ? Colors.grey.shade900 : Colors.white,
-                child: ExpansionTile(
-                  title: Text(
-                    'Seizoenen & Afleveringen (${_seasons.length})',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                        ..._buildGroupedStreaming(
+                          _streaming,
+                          context,
+                        ), // Bouwt streaming diensten.
+                      ],
                     ),
                   ),
-                  children: [
-                    for (var si = 0; si < _seasons.length; si++)
-                      _buildSeasonTile(context, _seasons[si], si, _seasons),
-                  ],
                 ),
-              ),
 
-            if (_seasons.isEmpty && !isMovie)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text(
-                    'Geen seizoenen gevonden',
-                    style: TextStyle(
-                      color: isDark
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade600,
+              const SizedBox(height: 12), // Voegt verticale ruimte toe.
+              // Seasons & Episodes expansion
+              if (_seasons.isNotEmpty) // Checkt of seizoenen beschikbaar.
+                Card(
+                  // Bouwt seizoen kaart.
+                  color: isDark
+                      ? Colors.grey.shade900
+                      : Colors.white, // Zet themagebaseerde kleur.
+                  child: ExpansionTile(
+                    // Bouwt expandable tile.
+                    title: Text(
+                      // Zet titel.
+                      AppLocalizations.of(
+                        // Haalt localisatie op.
+                        context,
+                      )!.seasons_episodes_title(
+                        _seasons.length.toString(),
+                      ), // Zet seizoen titel.
+                      style: TextStyle(
+                        // Zet tekst stijl.
+                        fontWeight: FontWeight.bold, // Maakt tekst vet.
+                        color: isDark
+                            ? Colors.white
+                            : Colors.black, // Zet themagebaseerde kleur.
+                      ),
+                    ),
+                    children: [
+                      // Bouwt kinderen voor tile.
+                      for (
+                        var si = 0;
+                        si < _seasons.length;
+                        si++
+                      ) // Loop door seizoenen.
+                        _buildSeasonTile(
+                          context,
+                          _seasons[si],
+                          si,
+                          _seasons,
+                        ), // Bouwt seizoen tile.
+                    ],
+                  ),
+                ),
+
+              if (_seasons.isEmpty &&
+                  !isMovie) // Checkt of geen seizoenen en geen film.
+                Padding(
+                  // Voegt padding toe.
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                  ), // Zet padding.
+                  child: Center(
+                    // Centreert inhoud.
+                    child: Text(
+                      // Toon melding.
+                      AppLocalizations.of(
+                        context,
+                      )!.no_seasons_found, // Zet melding tekst.
+                      style: TextStyle(
+                        // Zet tekst stijl.
+                        color:
+                            isDark // Zet themagebaseerde kleur.
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

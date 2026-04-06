@@ -249,6 +249,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get delete_failed => 'Silme işlemi başarısız';
 
   @override
+  String get marked_unread => 'Okunmadı olarak işaretlendi';
+
+  @override
+  String get action_failed => 'İşlem başarısız';
+
+  @override
   String get user_label_default => 'Kullanıcı';
 
   @override
@@ -281,7 +287,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get new_faq_title => 'Yeni SSS';
 
   @override
-  String get question_label => 'Soru';
+  String get question_label => 'Soru/Yorum';
 
   @override
   String get answer_label => 'Cevap';
@@ -342,7 +348,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get navFood => 'Yemek';
 
   @override
+  String get navigationReorder => 'Gezinmeyi yeniden sırala';
+
+  @override
   String get navProfile => 'Profil';
+
+  @override
+  String get infoTooltip => 'Bilgi';
+
+  @override
+  String get watchlistInfoTitle => 'Bilgi';
+
+  @override
+  String get watchlistInfoContent => 'Uygulama ne yazık ki yayın hizmetlerinden veri çekemiyor. İzlediğiniz bölümleri kendiniz işaretleyebilirsiniz.';
 
   @override
   String get tutorialHome => 'Hoş geldiniz! Burada en yeni film ve dizileri bulabilirsiniz.';
@@ -360,10 +378,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tutorialProfile => 'Profilinizi ve ayarlarınızı buradan yönetin.';
 
   @override
+  String get tutorialNavBar => 'Buradan ekranlar arasında geçiş yapabilirsin. Sayfaların sırasını değiştirmek için bir düğmeye uzun bas.';
+
+  @override
+  String get tutorialHomeExtra => 'Ana ekranda en yeni yayınları ve önerileri görürsün.';
+
+  @override
+  String get tutorialWatchlistExtra => 'İzleme listende filmleri kaldırabilir veya daha sonra izlemek üzere kaydedebilirsin.';
+
+  @override
+  String get tutorialSearchExtra => 'Başlıkları ve oyuncuları hızlıca bulmak için arama çubuğunu kullan.';
+
+  @override
+  String get tutorialFoodExtra => 'Film tercihine uygun atıştırmalıkları ve tarifleri bul.';
+
+  @override
+  String get tutorialProfileExtra => 'Profilinde ayarları, tercihleri ve hesap bilgilerini yönet.';
+
+  @override
   String get tutorialMap => 'Yakındaki sinemaları bulmak için haritaya bakabilirsiniz!';
 
   @override
-  String get map_all_cinemas_title => 'Hollanda\'daki Tüm Sinemalar';
+  String get map_all_cinemas_title => 'Hollanda\'daki sinemalar';
 
   @override
   String map_load_error(Object error) {
@@ -699,6 +735,27 @@ class AppLocalizationsTr extends AppLocalizations {
   String get googleSignInCancelled => 'Google girişi iptal edildi';
 
   @override
+  String get loginErrorCredentialMalformed => 'Sağlanan kimlik bilgisi hatalı veya süresi dolmuş.';
+
+  @override
+  String get loginErrorUserDisabled => 'Bu kullanıcı hesabı devre dışı bırakıldı.';
+
+  @override
+  String get loginErrorTooManyRequests => 'Sıra dışı etkinlik nedeniyle bu cihazdan gelen tüm istekleri engelledik. Daha sonra tekrar deneyin.';
+
+  @override
+  String get loginErrorInvalidEmail => 'E-posta adresi kötü biçimlendirilmiş.';
+
+  @override
+  String get loginErrorWrongPassword => 'Yanlış şifre.';
+
+  @override
+  String get loginErrorUserNotFound => 'Bu e-postaya sahip bir kullanıcı bulunamadı.';
+
+  @override
+  String get loginErrorAccountExists => 'Aynı e-posta adresiyle ancak farklı oturum açma bilgileriyle zaten bir hesap var.';
+
+  @override
   String get details => 'Detaylar';
 
   @override
@@ -814,6 +871,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get appleSignInNoIdentityToken => 'Apple girişi başarısız: kimlik tokenı alınamadı';
+
+  @override
+  String get googleSignInFailed => 'Google ile giriş başarısız';
+
+  @override
+  String get loginErrorWeakPassword => 'Parola çok zayıf.';
+
+  @override
+  String get loginErrorNetworkFailed => 'Ağ hatası. Lütfen bağlantınızı kontrol edin.';
+
+  @override
+  String get loginErrorRequiresRecentLogin => 'Devam etmek için lütfen tekrar giriş yapın (yakın zamanda kimlik doğrulaması gerekli).';
 
   @override
   String get avatar_login_prompt => 'Profil fotoğrafınızı değiştirmek için giriş yapın';
@@ -1089,4 +1158,66 @@ class AppLocalizationsTr extends AppLocalizations {
   String seen_episodes_label(Object count) {
     return 'İzlenen bölümler: $count';
   }
+
+  @override
+  String get disclaimerTitle => 'Feragatname';
+
+  @override
+  String get disclaimerHeading => 'Üçüncü taraf hizmetleri ve veri kaynakları';
+
+  @override
+  String get disclaimerText => 'Bu uygulama birden fazla üçüncü taraf kaynaktan veri kullanır:\n\n* Brian Fritz tarafından sağlanan API (OMDb API)\n CC BY-NC 4.0 lisansı altında lisanslanmıştır\n Bu hizmet IMDb.com tarafından onaylanmamış veya onunla bağlantılı değildir\n\n* Bu uygulama TMDB ve TMDB API’lerini kullanır ancak TMDB tarafından onaylanmamış, sertifikalandırılmamış veya başka bir şekilde desteklenmemektedir\n\n* Bazı veriler IMDb’den alınmıştır\n\n* Yayın (streaming) bilgileri ve çeviri hizmetleri RapidAPI üzerinden sağlanmaktadır\n\n* Fragmanlar YouTube tarafından sağlanmaktadır\n\nHarita verileri © OpenStreetMap katkıda bulunanlar\n\nTüm ticari markalar, logolar ve telif hakları ilgili sahiplerine aittir.';
+
+  @override
+  String get playbackDisabledByVideoOwner => 'Oynatma, videonun sahibi tarafından devre dışı bırakıldı.';
+
+  @override
+  String get disclaimerNote => 'Tüm üçüncü taraf ticari markaları, logoları ve veriler ilgili sahiplerine aittir; ayrıntılar için lütfen hizmetlerin kullanım koşullarını ve gizlilik politikalarını inceleyin.';
+
+  @override
+  String get add_series_button => 'Dizi ekle';
+
+  @override
+  String get add_series_title => 'Dizi ekle';
+
+  @override
+  String get add_series_use_dates => 'Yinelenen günleri kullan';
+
+  @override
+  String get add_series_until_date => 'Tarihine kadar';
+
+  @override
+  String get until_label => 'Kadar';
+
+  @override
+  String get select => 'Seç';
+
+  @override
+  String get imdb_id_label => 'ID (örn. tt1234567)';
+
+  @override
+  String get title_label => 'Başlık';
+
+  @override
+  String get number_of_seasons => 'Sezon sayısı';
+
+  @override
+  String get number_of_episodes => 'Bölüm sayısı';
+
+  @override
+  String episodes_in_season(Object season) {
+    return 'Sezon $season içindeki bölümler';
+  }
+
+  @override
+  String get episodes_per_season_hint => 'Sezon başına bölüm sayısı (virgülle ayrılmış, örn. 10,8,12)';
+
+  @override
+  String get invalid_series_input => 'Geçersiz giriş';
+
+  @override
+  String get series_added => 'Dizi eklendi';
+
+  @override
+  String get add_series_failed => 'Dizi eklenemedi';
 }

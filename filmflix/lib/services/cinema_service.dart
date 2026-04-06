@@ -17,8 +17,12 @@ Future<List<Map<String, dynamic>>> fetchCinemasFromOverpass() async {
     double? lon;
 
     final geometry = feat['geometry'] as Map<String, dynamic>?;
-    if (geometry != null && geometry['type'] == 'Point' && geometry['coordinates'] is List) {
-      final coords = (geometry['coordinates'] as List).map((e) => e as num).toList();
+    if (geometry != null &&
+        geometry['type'] == 'Point' &&
+        geometry['coordinates'] is List) {
+      final coords = (geometry['coordinates'] as List)
+          .map((e) => e as num)
+          .toList();
       if (coords.length >= 2) {
         lon = coords[0].toDouble();
         lat = coords[1].toDouble();
@@ -31,12 +35,17 @@ Future<List<Map<String, dynamic>>> fetchCinemasFromOverpass() async {
     String? website;
     final props = feat['properties'] as Map<String, dynamic>?;
     if (props != null) {
-      if (props.containsKey('name')) name = props['name']?.toString() ?? name;
-      else if (props.containsKey('operator')) name = props['operator']?.toString() ?? name;
+      if (props.containsKey('name'))
+        name = props['name']?.toString() ?? name;
+      else if (props.containsKey('operator'))
+        name = props['operator']?.toString() ?? name;
 
-      if (props.containsKey('website')) website = props['website']?.toString();
-      else if (props.containsKey('url')) website = props['url']?.toString();
-      else if (props.containsKey('contact:website')) website = props['contact:website']?.toString();
+      if (props.containsKey('website'))
+        website = props['website']?.toString();
+      else if (props.containsKey('url'))
+        website = props['url']?.toString();
+      else if (props.containsKey('contact:website'))
+        website = props['contact:website']?.toString();
     }
 
     cinemas.add({'name': name, 'lat': lat, 'lng': lon, 'website': website});
