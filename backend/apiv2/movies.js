@@ -1,7 +1,6 @@
 import { put, list } from "@vercel/blob";
 const https = require('https');
 
-// In-process coalescing map to dedupe concurrent upstream requests per instance
 const _inFlight = new Map();
 function fetchWithCoalesce(key, fetcher) {
     if (_inFlight.has(key)) {
@@ -94,7 +93,12 @@ export default async function handler(req, res) {
     const RAPIDAPI_KEYS = [
         process.env.RAPIDAPI_KEY,
         process.env.RAPIDAPI_KEY2,
-        process.env.RAPIDAPI_KEY3
+        process.env.RAPIDAPI_KEY3,
+        process.env.RAPIDAPI_KEY4,
+        process.env.RAPIDAPI_KEY5,
+        process.env.RAPIDAPI_KEY6,
+        process.env.RAPIDAPI_KEY7,
+        process.env.RAPIDAPI_KEY8,
     ].filter(Boolean);
 
     async function fetchWithKeys(url) {

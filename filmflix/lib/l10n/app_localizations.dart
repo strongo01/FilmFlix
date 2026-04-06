@@ -535,6 +535,18 @@ abstract class AppLocalizations {
   /// **'Delete failed'**
   String get delete_failed;
 
+  /// No description provided for @marked_unread.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as unread'**
+  String get marked_unread;
+
+  /// No description provided for @action_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Action failed'**
+  String get action_failed;
+
   /// No description provided for @user_label_default.
   ///
   /// In en, this message translates to:
@@ -598,7 +610,7 @@ abstract class AppLocalizations {
   /// No description provided for @question_label.
   ///
   /// In en, this message translates to:
-  /// **'Question'**
+  /// **'Question/Comment'**
   String get question_label;
 
   /// No description provided for @answer_label.
@@ -709,11 +721,35 @@ abstract class AppLocalizations {
   /// **'Food'**
   String get navFood;
 
+  /// No description provided for @navigationReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder navigation'**
+  String get navigationReorder;
+
   /// No description provided for @navProfile.
   ///
   /// In en, this message translates to:
   /// **'Profile'**
   String get navProfile;
+
+  /// No description provided for @infoTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get infoTooltip;
+
+  /// No description provided for @watchlistInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get watchlistInfoTitle;
+
+  /// No description provided for @watchlistInfoContent.
+  ///
+  /// In en, this message translates to:
+  /// **'The app cannot fetch data from streaming services. You can manually check off episodes you\'ve watched.'**
+  String get watchlistInfoContent;
 
   /// No description provided for @tutorialHome.
   ///
@@ -745,6 +781,42 @@ abstract class AppLocalizations {
   /// **'Manage your profile and settings here.'**
   String get tutorialProfile;
 
+  /// No description provided for @tutorialNavBar.
+  ///
+  /// In en, this message translates to:
+  /// **'Here you can switch screens. Long-press a button to reorder pages.'**
+  String get tutorialNavBar;
+
+  /// No description provided for @tutorialHomeExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'On the Home screen you see latest releases and recommendations.'**
+  String get tutorialHomeExtra;
+
+  /// No description provided for @tutorialWatchlistExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'In your Watchlist you can remove films or mark them to watch later.'**
+  String get tutorialWatchlistExtra;
+
+  /// No description provided for @tutorialSearchExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the search bar to quickly find titles and actors.'**
+  String get tutorialSearchExtra;
+
+  /// No description provided for @tutorialFoodExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Find snacks and recipes that match your movie choice.'**
+  String get tutorialFoodExtra;
+
+  /// No description provided for @tutorialProfileExtra.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage settings, preferences and account details in your profile.'**
+  String get tutorialProfileExtra;
+
   /// No description provided for @tutorialMap.
   ///
   /// In en, this message translates to:
@@ -754,7 +826,7 @@ abstract class AppLocalizations {
   /// AppBar title for the cinemas map
   ///
   /// In en, this message translates to:
-  /// **'All cinemas in the Netherlands'**
+  /// **'Cinemas in the Netherlands'**
   String get map_all_cinemas_title;
 
   /// No description provided for @map_load_error.
@@ -880,13 +952,13 @@ abstract class AppLocalizations {
   /// No description provided for @food_postcode_label.
   ///
   /// In en, this message translates to:
-  /// **'Postcode (4 digits)'**
+  /// **'ZIP code (4 digits)'**
   String get food_postcode_label;
 
   /// No description provided for @food_zip_required.
   ///
   /// In en, this message translates to:
-  /// **'Enter 4 digits of your postcode first!'**
+  /// **'Enter 4 digits of your ZIP code first!'**
   String get food_zip_required;
 
   /// No description provided for @filter_vegetarian.
@@ -1399,6 +1471,48 @@ abstract class AppLocalizations {
   /// **'Google sign-in cancelled'**
   String get googleSignInCancelled;
 
+  /// No description provided for @loginErrorCredentialMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'The supplied credential is malformed or has expired.'**
+  String get loginErrorCredentialMalformed;
+
+  /// No description provided for @loginErrorUserDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'This user account has been disabled.'**
+  String get loginErrorUserDisabled;
+
+  /// No description provided for @loginErrorTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'We have blocked all requests from this device due to unusual activity. Try again later.'**
+  String get loginErrorTooManyRequests;
+
+  /// No description provided for @loginErrorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'The email address is badly formatted.'**
+  String get loginErrorInvalidEmail;
+
+  /// No description provided for @loginErrorWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password.'**
+  String get loginErrorWrongPassword;
+
+  /// No description provided for @loginErrorUserNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No user found with this email.'**
+  String get loginErrorUserNotFound;
+
+  /// No description provided for @loginErrorAccountExists.
+  ///
+  /// In en, this message translates to:
+  /// **'An account already exists with the same email address but different sign-in credentials.'**
+  String get loginErrorAccountExists;
+
   /// No description provided for @details.
   ///
   /// In en, this message translates to:
@@ -1596,6 +1710,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apple Sign-In failed: no identity token returned'**
   String get appleSignInNoIdentityToken;
+
+  /// No description provided for @googleSignInFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in failed'**
+  String get googleSignInFailed;
+
+  /// No description provided for @loginErrorWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak.'**
+  String get loginErrorWeakPassword;
+
+  /// No description provided for @loginErrorNetworkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection.'**
+  String get loginErrorNetworkFailed;
+
+  /// No description provided for @loginErrorRequiresRecentLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in again to continue (recent authentication required).'**
+  String get loginErrorRequiresRecentLogin;
 
   /// No description provided for @avatar_login_prompt.
   ///
@@ -2118,6 +2256,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Seen episodes: {count}'**
   String seen_episodes_label(Object count);
+
+  /// No description provided for @disclaimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disclaimer'**
+  String get disclaimerTitle;
+
+  /// No description provided for @disclaimerHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Third parties & APIs'**
+  String get disclaimerHeading;
+
+  /// No description provided for @disclaimerText.
+  ///
+  /// In en, this message translates to:
+  /// **'This app uses data from multiple third-party sources:\n\n* API by Brian Fritz (OMDb API)\n Licensed under CC BY-NC 4.0\n This service is not endorsed by or affiliated with IMDb.com\n\n* This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB\n\n* Some data sourced from IMDb\n\n* Streaming availability and translation services provided via RapidAPI\n\n* Trailers provided by YouTube\n\nMap data © OpenStreetMap contributors\n\nAll trademarks, logos, and copyrights belong to their respective owners.'**
+  String get disclaimerText;
+
+  /// No description provided for @playbackDisabledByVideoOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback disabled by video owner.'**
+  String get playbackDisabledByVideoOwner;
+
+  /// No description provided for @disclaimerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Use and display of content is subject to the terms and licenses of the services listed above.'**
+  String get disclaimerNote;
+
+  /// No description provided for @add_series_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Add series'**
+  String get add_series_button;
+
+  /// No description provided for @add_series_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add series'**
+  String get add_series_title;
+
+  /// No description provided for @add_series_use_dates.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recurring days'**
+  String get add_series_use_dates;
+
+  /// No description provided for @add_series_until_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Until date'**
+  String get add_series_until_date;
+
+  /// No description provided for @until_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get until_label;
+
+  /// No description provided for @select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get select;
+
+  /// No description provided for @imdb_id_label.
+  ///
+  /// In en, this message translates to:
+  /// **'ID (e.g. tt1234567)'**
+  String get imdb_id_label;
+
+  /// No description provided for @title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get title_label;
+
+  /// No description provided for @number_of_seasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of seasons'**
+  String get number_of_seasons;
+
+  /// No description provided for @number_of_episodes.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of episodes'**
+  String get number_of_episodes;
+
+  /// No description provided for @episodes_in_season.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes in season {season}'**
+  String episodes_in_season(Object season);
+
+  /// No description provided for @episodes_per_season_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Episodes per season (comma separated, e.g. 10,8,12)'**
+  String get episodes_per_season_hint;
+
+  /// No description provided for @invalid_series_input.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid input'**
+  String get invalid_series_input;
+
+  /// No description provided for @series_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Series added'**
+  String get series_added;
+
+  /// No description provided for @add_series_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add series'**
+  String get add_series_failed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

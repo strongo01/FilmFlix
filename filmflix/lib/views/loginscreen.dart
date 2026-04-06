@@ -1,65 +1,72 @@
-import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
+import 'dart:async'; // Asynchrone operaties en streams
+import 'dart:convert'; // JSON en UTF-8 conversie
+import 'dart:math'; // Wiskundige functies en random
 
-import 'package:cinetrackr/main.dart';
-import 'package:email_validator/email_validator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'dart:convert';
-import 'dart:math';
-
-import 'package:crypto/crypto.dart';
-import 'package:cinetrackr/l10n/app_localizations.dart';
-import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:flutter_signin_button/flutter_signin_button.dart';
-import 'package:crypto/crypto.dart';
+import 'package:cinetrackr/main.dart'; // Hoofd app bestand
+import 'package:email_validator/email_validator.dart'; // Email validatie
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase authenticatie
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore database
+import 'package:flutter/material.dart'; // Flutter UI widgets
+import 'package:flutter/services.dart'; // Platform specifieke services
+import 'package:fluttertoast/fluttertoast.dart'; // Toast notificaties
+import 'package:crypto/crypto.dart'; // SHA256 hashing
+import 'package:cinetrackr/l10n/app_localizations.dart'; // Lokalisatie/vertalingen
+import 'package:flutter/foundation.dart'; // Flutter framework utiliteiten
+import 'package:google_sign_in/google_sign_in.dart'; // Google inloggen
+import 'package:sign_in_with_apple/sign_in_with_apple.dart'; // Apple inloggen
+import 'package:flutter_signin_button/flutter_signin_button.dart'; // Social login buttons
 
 class LoginScreen extends StatefulWidget {
-  final bool returnAfterLogin;
+  // Login scherm widget met state
+  final bool returnAfterLogin; // Property om terug te keren na login
 
-  const LoginScreen({super.key, this.returnAfterLogin = false});
+  const LoginScreen({super.key, this.returnAfterLogin = false}); // Constructor
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState(); // Creëer state
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  StreamSubscription<User?>? _authSub;
-  final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
-  bool _isLoading = false;
-  bool _obscure = true;
-  bool _isLogin = true;
+  // State voor login scherm
+  StreamSubscription<User?>? _authSub; // Abonnement op auth veranderingen
+  final _formKey = GlobalKey<FormState>(); // Formulier validatie sleutel
+  final _nameCtrl = TextEditingController(); // Naam input controller
+  final _emailCtrl = TextEditingController(); // Email input controller
+  final _passwordCtrl = TextEditingController(); // Wachtwoord input controller
+  bool _isLoading = false; // Laad status indicator
+  bool _obscure = true; // Wachtwoord verbergen toggle
+  bool _isLogin = true; // Login/Register mode toggle
 
   @override
   void dispose() {
-    _authSub?.cancel();
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _passwordCtrl.dispose();
-    super.dispose();
+    // Opruimen bij verwijdering
+    _authSub?.cancel(); // Stop auth abonnement
+    _nameCtrl.dispose(); // Ruim naam controller op
+    _emailCtrl.dispose(); // Ruim email controller op
+    _passwordCtrl.dispose(); // Ruim wachtwoord controller op
+    super.dispose(); // Roep parent dispose aan
   }
 
   @override
   void initState() {
-    super.initState();
+    // Initialisatie
+    super.initState(); // Roep parent initState aan
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user != null &&
-          mounted &&
+      // Luister naar login veranderingen
+      if (user != null && // Gebruiker is ingelogd
+          mounted && // Widget bestaat nog
           ModalRoute.of(context)?.isCurrent == true) {
+        // Dit scherm is actief
         if (widget.returnAfterLogin) {
-          Navigator.of(context).pop(true);
+          // Moet teruggaan
+          Navigator.of(context).pop(true); // Ga terug naar vorige scherm
         } else {
+          // Anders ga naar home
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainNavigation()),
+            // Vervang huidiig scherm
+            MaterialPageRoute(
+              builder: (_) => const MainNavigation(),
+            ), // Met home scherm
           );
         }
       }
@@ -67,365 +74,629 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    final loc = AppLocalizations.of(context)!;
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
+    // Inlog/registratie formulier indienen
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
+    if (!_formKey.currentState!.validate()) return; // Valideer formulier
+    setState(() => _isLoading = true); // Toon laad indicator
     try {
-      final auth = FirebaseAuth.instance;
+      // Probeer in te loggen
+      final auth = FirebaseAuth.instance; // Haal Firebase auth op
       if (_isLogin) {
+        // Inloggen
         await auth.signInWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text,
+          // Inloggen met email/wachtwoord
+          email: _emailCtrl.text.trim(), // Email
+          password: _passwordCtrl.text, // Wachtwoord
         );
       } else {
+        // Registreren
         final cred = await auth.createUserWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text,
+          // Maak nieuw account
+          email: _emailCtrl.text.trim(), // Email
+          password: _passwordCtrl.text, // Wachtwoord
         );
-        final user = cred.user;
+        final user = cred.user; // Haal nieuwe gebruiker op
         if (user != null) {
-          await user.updateDisplayName(_nameCtrl.text.trim());
-          await user.reload();
-          // After reload, user is a new object from the SDK for safety
-          final updatedUser = auth.currentUser;
+          // Gebruiker bestaat
+          await user.updateDisplayName(
+            _nameCtrl.text.trim(),
+          ); // Zet weergavenaam
+          await user.reload(); // Herlaad gebruiker gegevens
+          final updatedUser = auth.currentUser; // Haal bijgewerkte gebruiker op
           if (updatedUser != null) {
-            final usersRef = FirebaseFirestore.instance
+            // Gebruiker bestaat
+            final usersRef = FirebaseFirestore
+                .instance // Haal Firestore collectie op
                 .collection('users')
                 .doc(updatedUser.uid);
             await usersRef.set({
-              'displayName': _nameCtrl.text.trim(),
-              'email': updatedUser.email,
-              'createdAt': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
+              // Sla gebruiker gegevens op
+              'displayName': _nameCtrl.text.trim(), // Weergavenaam
+              'email': updatedUser.email, // Email
+              'createdAt': FieldValue.serverTimestamp(), // Aanmaakdatum
+            }, SetOptions(merge: true)); // Merge met bestaande data
           }
         }
       }
-      if (!mounted) return;
+      if (!mounted) return; // Stop als widget weg is
       if (!widget.returnAfterLogin) {
+        // Niet teruggaan
         Navigator.of(context).pushReplacement(
+          // Ga naar home
           MaterialPageRoute(builder: (_) => const MainNavigation()),
         );
       }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? loc.authenticationFailed);
+      // Firebase auth fout
+      final message = _localizedFirebaseAuthMessage(e); // Vertaal fout bericht
+      Fluttertoast.showToast(msg: message); // Toon bericht
     } catch (e) {
-      Fluttertoast.showToast(msg: loc.loginSomethingWentWrong);
+      // Andere fout
+      Fluttertoast.showToast(
+        msg: loc.loginSomethingWentWrong,
+      ); // Toon generieke fout
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      // Ook als geen fouten
+      if (mounted) setState(() => _isLoading = false); // Verberg laad indicator
     }
   }
 
   Future<UserCredential> _signInWithGoogle() async {
-    final loc = AppLocalizations.of(context)!;
+    // Inloggen met Google
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
     if (kIsWeb) {
-      final googleProvider = GoogleAuthProvider();
-      googleProvider.addScope('email');
-      googleProvider.setCustomParameters({'prompt': 'select_account'});
-      final userCred = await FirebaseAuth.instance.signInWithPopup(
-        googleProvider,
-      );
-      await _saveUserDoc(userCred.user);
-      return userCred;
+      // Web platform
+      final googleProvider = GoogleAuthProvider(); // Creëer Google provider
+      googleProvider.addScope('email'); // Voeg email scope toe
+      googleProvider.setCustomParameters({
+        'prompt': 'select_account',
+      }); // Eis account selectie
+      try {
+        // Probeer in te loggen
+        final userCred = await FirebaseAuth.instance.signInWithPopup(
+          // Toon inlog popup
+          googleProvider,
+        );
+        await _saveUserDoc(userCred.user); // Sla gebruiker op
+        return userCred; // Geef credentials terug
+      } on FirebaseAuthException catch (e) {
+        // Firebase fout
+        final message = _localizedFirebaseAuthMessage(e); // Vertaal fout
+        Fluttertoast.showToast(msg: message); // Toon fout
+        rethrow; // Gooi fout door
+      }
     }
 
     try {
-      final googleSignIn = GoogleSignIn.instance;
-      final googleUser = await googleSignIn.authenticate();
-      final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
-      if (idToken == null) {
+      // Mobiel platform
+      final googleSignIn = GoogleSignIn.instance; // Haal Google signin op
+      final googleUser = await googleSignIn
+          .authenticate(); // Vraag authenticatie
+      if (googleUser == null) {
+        // Gebruiker geannuleerd
         throw FirebaseAuthException(
+          // Gooi fout
+          code: 'sign_in_cancelled',
+          message: loc.googleSignInCancelled,
+        );
+      }
+      final googleAuth = await googleUser.authentication; // Haal auth tokens op
+      final idToken = googleAuth.idToken; // Haal ID token op
+      if (idToken == null) {
+        // Geen ID token
+        throw FirebaseAuthException(
+          // Gooi fout
           code: 'missing_id_token',
           message: loc.googleIdTokenError,
         );
       }
 
-      String? accessToken;
+      String? accessToken; // Access token
       try {
-        final scopes = <String>['openid', 'email', 'profile'];
-        var authorization = await googleUser.authorizationClient
+        // Probeer access token te krijgen
+        final scopes = <String>[
+          'openid',
+          'email',
+          'profile',
+        ]; // Gewenste scopes
+        var authorization = await googleUser
+            .authorizationClient // Vraag toestemming
             .authorizationForScopes(scopes);
         authorization ??= await googleUser.authorizationClient.authorizeScopes(
+          // Of vraag opnieuw
           scopes,
         );
-        accessToken = authorization.accessToken;
+        accessToken = authorization.accessToken; // Haal access token op
       } catch (_) {
-        accessToken = null;
+        // Fout bij ophalen
+        accessToken = null; // Zet null
       }
 
       final credential = GoogleAuthProvider.credential(
+        // Creëer credentials
         idToken: idToken,
         accessToken: accessToken,
       );
 
       final userCred = await FirebaseAuth.instance.signInWithCredential(
+        // Inloggen met credentials
         credential,
       );
-      await _saveUserDoc(userCred.user);
-      return userCred;
+      await _saveUserDoc(userCred.user); // Sla gebruiker op
+      return userCred; // Geef credentials terug
+    } on FirebaseAuthException catch (e) {
+      // Firebase fout
+      _handleFirebaseAuthError(e); // Behandel fout
+      rethrow; // Gooi door
     } on PlatformException catch (e) {
+      // Platform fout
       if (e.code.toLowerCase().contains('cancel')) {
+        // Gebruiker geannuleerd
         throw FirebaseAuthException(
+          // Gooi fout
           code: 'sign_in_cancelled',
           message: loc.googleSignInCancelled,
         );
       }
-      rethrow;
+      Fluttertoast.showToast(
+        msg: e.message ?? loc.googleSignInFailed,
+      ); // Toon fout
+      rethrow; // Gooi door
     }
   }
 
+  void _handleFirebaseAuthError(FirebaseAuthException e) {
+    // Behandel Firebase auth fout
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
+    String message = e.message ?? loc.authenticationFailed; // Standaard bericht
+    switch (e.code) {
+      // Controleer fout code
+      case 'invalid-credential': // Ongeldige credentials
+      case 'malformed-jwt': // Ongeldige JWT
+        message = loc.loginErrorCredentialMalformed; // Vertaal bericht
+        break;
+      case 'user-disabled': // Gebruiker uitgeschakeld
+        message = loc.loginErrorUserDisabled;
+        break;
+      case 'too-many-requests': // Te veel aanvragen
+        message = loc.loginErrorTooManyRequests;
+        break;
+      case 'account-exists-with-different-credential': // Account bestaat al
+        message = loc.loginErrorAccountExists;
+        break;
+    }
+    Fluttertoast.showToast(msg: message); // Toon bericht
+  }
+
+  String _localizedFirebaseAuthMessage(FirebaseAuthException e) {
+    // Vertaal Firebase fout
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
+    String message = e.message ?? loc.authenticationFailed; // Standaard bericht
+    switch (e.code) {
+      // Controleer fout code
+      case 'invalid-email': // Ongeldige email
+        message = loc.loginErrorInvalidEmail;
+        break;
+      case 'user-disabled': // Gebruiker uitgeschakeld
+        message = loc.loginErrorUserDisabled;
+        break;
+      case 'user-not-found': // Gebruiker niet gevonden
+        message = loc.loginErrorUserNotFound;
+        break;
+      case 'wrong-password': // Fout wachtwoord
+        message = loc.loginErrorWrongPassword;
+        break;
+      case 'too-many-requests': // Te veel aanvragen
+        message = loc.loginErrorTooManyRequests;
+        break;
+      case 'invalid-credential': // Ongeldige credentials
+      case 'malformed-jwt': // Ongeldige JWT
+      case 'invalid-verification-code': // Ongeldige verificatie code
+      case 'invalid-verification-id': // Ongeldige verificatie ID
+        message = loc.loginErrorCredentialMalformed;
+        break;
+      case 'account-exists-with-different-credential': // Account bestaat al
+      case 'email-already-in-use': // Email al in gebruik
+        message = loc.loginErrorAccountExists;
+        break;
+      case 'weak-password': // Zwak wachtwoord
+        message = loc.loginErrorWeakPassword;
+        break;
+      case 'network-request-failed': // Netwerk fout
+        message = loc.loginErrorNetworkFailed;
+        break;
+      case 'user-token-expired': // Token verlopen
+      case 'requires-recent-login': // Recente login vereist
+        message = loc.loginErrorRequiresRecentLogin;
+        break;
+      default: // Onbekende fout
+        message = e.message ?? loc.authenticationFailed;
+    }
+    return message; // Geef bericht terug
+  }
+
   Future<void> _signInWithGitHub() async {
-    final loc = AppLocalizations.of(context)!;
+    // Inloggen met GitHub
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
 
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = true); // Toon laad indicator
     try {
-      final provider = GithubAuthProvider();
-      provider.addScope('read:user');
-      provider.addScope('user:email');
+      // Probeer in te loggen
+      final provider = GithubAuthProvider(); // Creëer GitHub provider
+      provider.addScope('read:user'); // Voeg scope toe
+      provider.addScope('user:email'); // Voeg email scope toe
 
-      UserCredential? userCred;
+      UserCredential? userCred; // Credentials variabele
       if (kIsWeb) {
-        userCred = await FirebaseAuth.instance.signInWithPopup(provider);
+        // Web platform
+        userCred = await FirebaseAuth.instance.signInWithPopup(
+          provider,
+        ); // Toon popup
       } else {
-        userCred = await FirebaseAuth.instance.signInWithProvider(provider);
+        // Mobiel platform
+        userCred = await FirebaseAuth.instance.signInWithProvider(
+          provider,
+        ); // Gebruik provider
       }
 
-      await _saveUserDoc(userCred.user);
-      if (!mounted) return;
-      if (!widget.returnAfterLogin) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MainNavigation()),
-        );
+      if (userCred.user != null) {
+        // Gebruiker bestaat
+        await _saveUserDoc(userCred.user); // Sla gebruiker op
+        if (mounted) {
+          // Widget bestaat nog
+          if (widget.returnAfterLogin) {
+            // Moet teruggaan
+            Navigator.of(context).pop(true); // Ga terug
+          } else {
+            // Anders ga naar home
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const MainNavigation()),
+            );
+          }
+        }
       }
     } on FirebaseAuthException catch (e) {
-      Fluttertoast.showToast(msg: e.message ?? loc.loginGithubFailed);
+      // Firebase fout
+      debugPrint(
+        'GitHub Sign-In Error: ${e.code} - ${e.message}',
+      ); // Debug print
+      final message = _localizedFirebaseAuthMessage(e); // Vertaal fout
+      Fluttertoast.showToast(msg: message); // Toon fout
+    } catch (e) {
+      // Andere fout
+      debugPrint('GitHub Sign-In Unexpected Error: $e'); // Debug print
+      Fluttertoast.showToast(
+        msg: loc.loginSomethingWentWrong,
+      ); // Toon generieke fout
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      // Ook als geen fouten
+      if (mounted) setState(() => _isLoading = false); // Verberg laad indicator
     }
   }
 
   String generateNonce([int length = 32]) {
-    const charset =
+    // Genereer willekeurige string
+    const charset = // Beschikbare caractters
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
-    final rand = Random.secure();
+    final rand = Random.secure(); // Beveiligde random generator
     return List.generate(
+      // Genereer lijst
       length,
-      (_) => charset[rand.nextInt(charset.length)],
-    ).join();
+      (_) => charset[rand.nextInt(charset.length)], // Willekeurig karakter
+    ).join(); // Voeg samen
   }
 
   String sha256ofString(String input) {
-    final bytes = utf8.encode(input);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+    // Hash string met SHA256
+    final bytes = utf8.encode(input); // Converteer naar bytes
+    final digest = sha256.convert(bytes); // Hash met sha256
+    return digest.toString(); // Converteer naar string
   }
 
   Future<UserCredential> signInWithApple() async {
-    final loc = AppLocalizations.of(context)!;
-    final rawNonce = generateNonce();
-    final nonce = sha256ofString(rawNonce);
-    final appleCredential = await SignInWithApple.getAppleIDCredential(
-      scopes: [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: nonce,
-    );
-
-    if (appleCredential.identityToken == null) {
-      throw FirebaseAuthException(
-        code: 'null_identity_token',
-        message: loc.appleSignInNoIdentityToken,
+    // Inloggen met Apple
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
+    final rawNonce = generateNonce(); // Genereer nonce
+    final nonce = sha256ofString(rawNonce); // Hash nonce
+    try {
+      // Probeer in te loggen
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        // Vraag Apple login
+        scopes: [
+          // Gevraagde gegevens
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: nonce,
       );
-    }
-    final oauthCredential = OAuthProvider("apple.com").credential(
-      idToken: appleCredential.identityToken!,
-      rawNonce: rawNonce,
-      accessToken: appleCredential.authorizationCode,
-    );
-    final userCredential = await FirebaseAuth.instance.signInWithCredential(
-      oauthCredential,
-    );
 
-    final userBefore = FirebaseAuth.instance.currentUser;
-    try {
-      final given = appleCredential.givenName;
-      if (userBefore != null &&
-          given != null &&
-          given.trim().isNotEmpty &&
-          (userBefore.displayName == null ||
-              userBefore.displayName!.trim().isEmpty)) {
-        await userBefore.updateDisplayName(given.trim());
-        await userBefore.reload();
+      if (appleCredential.identityToken == null) {
+        // Geen token
+        throw FirebaseAuthException(
+          // Gooi fout
+          code: 'null_identity_token',
+          message: loc.appleSignInNoIdentityToken,
+        );
       }
-    } catch (e) {
-      debugPrint('Apple sign-in: kon displayName niet updaten: $e');
-    }
-
-    final userAfter = FirebaseAuth.instance.currentUser;
-    try {
-      final uid = userAfter?.uid;
-      final given = appleCredential.givenName?.trim();
-      if (uid != null && given != null && given.isNotEmpty) {
-        final usersRef = FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid);
-        final doc = await usersRef.get();
-        final shouldSet =
-            !doc.exists ||
-            (doc.data()?['displayName'] == null ||
-                (doc.data()?['displayName'] as String).trim().isEmpty);
-        if (shouldSet) {
-          await usersRef.set({
-            'displayName': given,
-            'email': appleCredential.email ?? userAfter?.email,
-            'createdAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        // Creëer OAuth credentials
+        idToken: appleCredential.identityToken!,
+        rawNonce: rawNonce,
+        accessToken: appleCredential.authorizationCode,
+      );
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        // Inloggen met credentials
+        oauthCredential,
+      );
+      if (mounted) {
+        // Widget bestaat nog
+        if (widget.returnAfterLogin) {
+          // Moet teruggaan
+          Navigator.of(context).pop(true); // Ga terug
+        } else {
+          // Anders ga naar home
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainNavigation()),
+          );
         }
       }
-    } catch (e) {
-      debugPrint('AppleSignIn: failed to write user doc: $e');
-    }
+      final userBefore =
+          FirebaseAuth.instance.currentUser; // Haal huidge gebruiker op
+      try {
+        // Probeer displayName in te stellen
+        final given = appleCredential.givenName; // Haal voornaam op
+        if (userBefore != null && // Gebruiker bestaat
+            given != null && // Voornaam bestaat
+            given.trim().isNotEmpty && // Voornaam niet leeg
+            (userBefore.displayName == null || // Geen displayName
+                userBefore.displayName!.trim().isEmpty)) {
+          // Of displayName leeg
+          await userBefore.updateDisplayName(given.trim()); // Zet displayName
+          await userBefore.reload(); // Herlaad gebruiker
+        }
+      } catch (e) {
+        // Fout bij updaten
+        debugPrint(
+          'Apple sign-in: kon displayName niet updaten: $e',
+        ); // Debug print
+      }
 
-    return userCredential;
+      final userAfter =
+          FirebaseAuth.instance.currentUser; // Haal huidge gebruiker op
+      try {
+        // Probeer gebruiker document op te slaan
+        final uid = userAfter?.uid; // Haal UID op
+        final given = appleCredential.givenName?.trim(); // Haal voornaam op
+        if (uid != null && given != null && given.isNotEmpty) {
+          // UID en voornaam bestaan
+          final usersRef = FirebaseFirestore
+              .instance // Haal Firestore collectie op
+              .collection('users')
+              .doc(uid);
+          final doc = await usersRef.get(); // Haal huidiing document op
+          final shouldSet = // Bepaal of document opgeslagen moet worden
+              !doc.exists || // Document bestaat niet
+              (doc.data()?['displayName'] == null || // Geen displayName
+                  (doc.data()?['displayName'] as String)
+                      .trim()
+                      .isEmpty); // Of displayName leeg
+          if (shouldSet) {
+            // Moet opslaan
+            await usersRef.set({
+              // Sla gebruiker document op
+              'displayName': given,
+              'email': appleCredential.email ?? userAfter?.email,
+              'createdAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true)); // Merge met bestaande data
+          }
+        }
+      } catch (e) {
+        // Fout bij opslaan
+        debugPrint('AppleSignIn: failed to write user doc: $e'); // Debug print
+      }
+
+      return userCredential; // Geef credentials terug
+    } on FirebaseAuthException catch (e) {
+      // Firebase fout
+      final message = _localizedFirebaseAuthMessage(e); // Vertaal fout
+      Fluttertoast.showToast(msg: message); // Toon fout
+      rethrow; // Gooi door
+    }
   }
 
   Future<void> _resetPassword() async {
-    final loc = AppLocalizations.of(context)!;
-    final email = _emailCtrl.text.trim();
+    // Wachtwoord reset
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
+    final email = _emailCtrl.text.trim(); // Haal email op
     if (email.isEmpty || !EmailValidator.validate(email)) {
+      // Email niet geldig
       ScaffoldMessenger.of(
+        // Toon bericht
         context,
       ).showSnackBar(SnackBar(content: Text(loc.loginEnterValidEmail)));
-      return;
+      return; // Stop
     }
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      // Probeer reset email te sturen
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: email,
+      ); // Stuur reset email
       ScaffoldMessenger.of(
+        // Toon succes bericht
         context,
       ).showSnackBar(SnackBar(content: Text(loc.loginPasswordResetEmailSent)));
     } on FirebaseAuthException catch (e) {
+      // Firebase fout
+      final message = _localizedFirebaseAuthMessage(e); // Vertaal fout
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? loc.loginPasswordResetFailed)),
+        // Toon fout bericht
+        SnackBar(content: Text(message)),
       );
     }
   }
 
   Future<void> _saveUserDoc(User? user, {String? displayName}) async {
-    if (user == null) return;
-    final name = (displayName ?? user.displayName)?.trim();
+    // Sla gebruiker document op
+    if (user == null) return; // Stop als geen gebruiker
+    final name = (displayName ?? user.displayName)?.trim(); // Haal naam op
     try {
-      final usersRef = FirebaseFirestore.instance
+      // Probeer op te slaan
+      final usersRef = FirebaseFirestore
+          .instance // Haal Firestore collectie op
           .collection('users')
           .doc(user.uid);
       await usersRef.set({
-        if (name != null && name.isNotEmpty) 'displayName': name,
+        // Sla document op
+        if (name != null && name.isNotEmpty)
+          'displayName': name, // Als naam bestaat
         'email': user.email,
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      }, SetOptions(merge: true)); // Merge met bestaande data
     } catch (e) {
-      debugPrint('saveUserDoc failed: $e');
+      // Fout bij opslaan
+      debugPrint('saveUserDoc failed: $e'); // Debug print
     }
   }
 
-  // --- STYLING METHODS ---
-
   Widget _buildCustomTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
+    // Bouw aangepast invoer veld
+    required TextEditingController controller, // Tekst controller
+    required String label, // Labeltext
+    required IconData icon, // Icoon
+    bool obscureText = false, // Tekstverberging
+    Widget? suffixIcon, // Achter icoon
+    TextInputType? keyboardType, // Keyboard type
+    String? Function(String?)? validator, // Validatie functie
   }) {
     return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      // Creëer formulier veld
+      controller: controller, // Zet controller
+      obscureText: obscureText, // Zet tekstverberging
+      keyboardType: keyboardType, // Zet keyboard type
+      style: const TextStyle(color: Colors.white), // Witte tekst
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(icon, color: Colors.white70),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: const Color(0xFF22404B).withOpacity(0.5),
+        // Zet stijl
+        labelText: label, // Zet label
+        labelStyle: const TextStyle(color: Colors.white70), // Grijs label
+        prefixIcon: Icon(icon, color: Colors.white70), // Voor icoon
+        suffixIcon: suffixIcon, // Achter icoon
+        filled: true, // Vul achtergrond
+        fillColor: const Color(
+          0xFF22404B,
+        ).withOpacity(0.5), // Donker blauw achtergrond
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
+          // Zet border
+          borderRadius: BorderRadius.circular(15), // Ronde hoeken
+          borderSide: BorderSide.none, // Geen border
         ),
         enabledBorder: OutlineInputBorder(
+          // Border wanneer actief
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(
+            color: Colors.white.withOpacity(0.1),
+          ), // Subtiele border
         ),
         focusedBorder: OutlineInputBorder(
+          // Border wanneer gericht
           borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Color(0xFFFFC107), width: 1),
+          borderSide: const BorderSide(
+            color: Color(0xFFFFC107),
+            width: 1,
+          ), // Gele border
         ),
       ),
-      validator: validator,
+      validator: validator, // Zet validator
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color scaffoldBgColor = Color(0xFF22404B);
-    const Color cardColor = Color(0xFF2C4E5B);
-    const Color accentColor = Color(0xFFFFC107);
-    const Color textColor = Colors.white;
+    // Bouw de UI
+    const Color scaffoldBgColor = Color(
+      0xFF22404B,
+    ); // Definieer achtergrondkleur
+    const Color cardColor = Color(0xFF2C4E5B); // Definieer kaartkleur
+    const Color accentColor = Color(0xFFFFC107); // Definieer accentkleur
+    const Color textColor = Colors.white; // Definieer tekstkleur
 
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context)!; // Haal vertalingen op
 
     return Scaffold(
-      backgroundColor: scaffoldBgColor,
+      // Creëer basis scherm
+      backgroundColor: scaffoldBgColor, // Zet achtergrondkleur
       body: SafeArea(
+        // Voeg veilige gebied toe
         child: Center(
+          // Centreer inhoud
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            // Maak scrollbaar
+            padding: const EdgeInsets.all(24.0), // Voeg padding toe
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              // Beperk maximale breedte
+              constraints: const BoxConstraints(
+                maxWidth: 480,
+              ), // Zet maximale breedte
               child: Card(
+                // Creëer kaart widget
                 shape: RoundedRectangleBorder(
+                  // Zet afgeronde hoeken
                   borderRadius: BorderRadius.circular(28),
                 ),
-                elevation: 0,
-                color: cardColor,
+                elevation: 0, // Verwijder schaduw
+                color: cardColor, // Zet kaartkleur
                 child: Padding(
+                  // Voeg binnenpadding toe
                   padding: const EdgeInsets.all(32.0),
                   child: Form(
-                    key: _formKey,
+                    // Creëer formulier
+                    key: _formKey, // Zet formuliersleutel
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // Creëer verticale layout
+                      mainAxisSize: MainAxisSize.min, // Minimale hoogte
+                      crossAxisAlignment:
+                          CrossAxisAlignment.stretch, // Zet volle breedte
                       children: [
                         Center(
+                          // Centreer icoon
                           child: Container(
-                            padding: const EdgeInsets.all(16),
+                            // Creëer container
+                            padding: const EdgeInsets.all(
+                              16,
+                            ), // Voeg padding toe
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              shape: BoxShape.circle,
+                              // Zet stijl
+                              color: Colors.white.withOpacity(
+                                0.1,
+                              ), // Subtiele achtergrond
+                              shape: BoxShape.circle, // Maak cirkel
                             ),
                             child: const Icon(
+                              // Creëer icoon
                               Icons.movie_filter_rounded,
                               size: 48,
                               color: accentColor,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 24), // Voeg verticale spatie toe
                         Text(
-                          _isLogin ? loc.loginWelcome : loc.loginCreateAccount,
-                          textAlign: TextAlign.center,
+                          // Creëer titel tekst
+                          _isLogin
+                              ? loc.loginWelcome
+                              : loc.loginCreateAccount, // Zet conditionele titel
+                          textAlign: TextAlign.center, // Centreer tekst
                           style: const TextStyle(
+                            // Zet tekststijl
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: textColor,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 32), // Voeg verticale spatie toe
                         if (!_isLogin) ...[
+                          // Toon naam veld alleen bij registratie
                           _buildCustomTextField(
+                            // Bouw naam invoerveld
                             controller: _nameCtrl,
                             label: loc.loginName,
                             icon: Icons.person_outline,
@@ -433,14 +704,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? loc.loginNameRequired
                                 : null,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(
+                            height: 16,
+                          ), // Voeg verticale spatie toe
                         ],
                         _buildCustomTextField(
+                          // Bouw email invoerveld
                           controller: _emailCtrl,
                           label: loc.loginEmail,
                           icon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
+                            // Valideer email
                             if (v == null || v.trim().isEmpty)
                               return loc.loginEmailRequired;
                             if (!EmailValidator.validate(v.trim()))
@@ -448,33 +723,41 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 16), // Voeg verticale spatie toe
                         _buildCustomTextField(
+                          // Bouw wachtwoord invoerveld
                           controller: _passwordCtrl,
                           label: loc.loginPassword,
                           icon: Icons.lock_outline,
                           obscureText: _obscure,
                           suffixIcon: IconButton(
+                            // Voeg zichtbaarheid knop toe
                             icon: Icon(
                               _obscure
                                   ? Icons.visibility
                                   : Icons.visibility_off,
                               color: Colors.white70,
                             ),
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
+                            onPressed: () => setState(
+                              () => _obscure = !_obscure,
+                            ), // Toggle wachtwoord zichtbaarheid
                           ),
                           validator: (v) {
+                            // Valideer wachtwoord
                             if (v == null || v.isEmpty)
                               return loc.loginPasswordRequired;
                             if (v.length < 6) return loc.loginPasswordTooShort;
                             return null;
                           },
                         ),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 30), // Voeg verticale spatie toe
                         ElevatedButton(
-                          onPressed: _isLoading ? null : _submit,
+                          // Creëer inlog/registratie knop
+                          onPressed: _isLoading
+                              ? null
+                              : _submit, // Zet onPress handler
                           style: ElevatedButton.styleFrom(
+                            // Zet knopstijl
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: const Color(0xFF3B6372),
                             foregroundColor: Colors.white,
@@ -482,7 +765,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(15),
                             ),
                           ),
-                          child: _isLoading
+                          child:
+                              _isLoading // Toon spinner of tekst
                               ? const SizedBox(
                                   height: 20,
                                   width: 20,
@@ -499,22 +783,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 16), // Voeg verticale spatie toe
                         TextButton(
+                          // Creëer toggle login/register knop
                           onPressed: _isLoading
                               ? null
-                              : () => setState(() => _isLogin = !_isLogin),
+                              : () => setState(
+                                  () => _isLogin = !_isLogin,
+                                ), // Toggle modus
                           child: Text(
+                            // Zet knoptekst
                             _isLogin
                                 ? loc.loginNoAccountRegister
                                 : loc.loginHaveAccountLogin,
                             style: const TextStyle(color: accentColor),
                           ),
                         ),
-                        if (_isLogin)
+                        if (_isLogin) // Toon wachtwoord reset knop alleen bij login
                           TextButton(
-                            onPressed: _isLoading ? null : _resetPassword,
+                            // Creëer wachtwoord reset knop
+                            onPressed: _isLoading
+                                ? null
+                                : _resetPassword, // Zet onPress handler
                             child: Text(
+                              // Zet knoptekst
                               loc.loginForgotPassword,
                               style: const TextStyle(
                                 color: Colors.white60,
@@ -522,17 +814,27 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ),
-                        if (_isLogin)
+                        if (_isLogin) // Toon gast login knop alleen bij login
                           TextButton(
+                            // Creëer gast login knop
                             onPressed: _isLoading
                                 ? null
                                 : () async {
-                                    setState(() => _isLoading = true);
+                                    // Async handler voor navigatie
+                                    setState(
+                                      () => _isLoading = true,
+                                    ); // Toon laad indicator
                                     try {
-                                      if (!mounted) return;
+                                      // Probeer navigatie
+                                      if (!mounted)
+                                        return; // Stop als widget weg is
                                       if (widget.returnAfterLogin) {
-                                        Navigator.of(context).pop(true);
+                                        // Moet teruggaan
+                                        Navigator.of(
+                                          context,
+                                        ).pop(true); // Pop navigatie
                                       } else {
+                                        // Anders ga naar home
                                         Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(
                                             builder: (_) =>
@@ -541,26 +843,35 @@ class _LoginScreenState extends State<LoginScreen> {
                                         );
                                       }
                                     } finally {
+                                      // Ook als geen fouten
                                       if (mounted)
-                                        setState(() => _isLoading = false);
+                                        setState(
+                                          () => _isLoading = false,
+                                        ); // Verberg laad indicator
                                     }
                                   },
                             child: Text(
+                              // Zet knoptekst
                               loc.loginContinueAsGuest,
                               style: const TextStyle(color: Colors.white70),
                             ),
                           ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 20), // Voeg verticale spatie toe
                         Row(
+                          // Creëer horizontale rij
                           children: [
+                            // Voeg kinderen toe
                             const Expanded(
+                              // Voeg expandeerbare divider toe
                               child: Divider(color: Colors.white24),
                             ),
                             Padding(
+                              // Voeg voor/na padding toe
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                               ),
                               child: Text(
+                                // Creëer scheidingstekst
                                 loc.loginOrDivider,
                                 style: TextStyle(
                                   color: Colors.white38,
@@ -569,12 +880,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const Expanded(
+                              // Voeg expandeerbare divider toe
                               child: Divider(color: Colors.white24),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 20), // Voeg verticale spatie toe
                         SignInButton(
+                          // Creëer Google inlog knop
                           Buttons.Google,
                           text: loc.loginSignInWithGoogle,
                           shape: RoundedRectangleBorder(
@@ -582,25 +895,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           onPressed: _isLoading
                               ? null
-                              : () => _signInWithGoogle(),
+                              : () =>
+                                    _signInWithGoogle(), // Zet onPress handler
                         ),
-                        const SizedBox(height: 12),
-                        SignInButton(
-                          Buttons.GitHub,
-                          text: loc.loginSignInWithGitHub,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          onPressed: _isLoading
-                              ? null
-                              : () => _signInWithGitHub(),
-                        ),
-                        if (!kIsWeb &&
+                        if (!kIsWeb && // Toon Apple knop alleen op iOS/macOS
                             (defaultTargetPlatform == TargetPlatform.iOS ||
                                 defaultTargetPlatform ==
                                     TargetPlatform.macOS)) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(
+                            height: 12,
+                          ), // Voeg verticale spatie toe
                           SignInButton(
+                            // Creëer Apple inlog knop
                             Buttons.Apple,
                             text: loc.loginSignInWithApple,
                             shape: RoundedRectangleBorder(
@@ -608,9 +914,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             onPressed: _isLoading
                                 ? null
-                                : () => signInWithApple(),
+                                : () =>
+                                      signInWithApple(), // Zet onPress handler
                           ),
                         ],
+                        const SizedBox(height: 12), // Voeg verticale spatie toe
+                        SignInButton(
+                          // Creëer GitHub inlog knop
+                          Buttons.GitHub,
+                          text: loc.loginSignInWithGitHub,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onPressed: _isLoading
+                              ? null
+                              : () =>
+                                    _signInWithGitHub(), // Zet onPress handler
+                        ),
                       ],
                     ),
                   ),
