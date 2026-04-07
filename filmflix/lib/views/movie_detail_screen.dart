@@ -203,7 +203,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   Map<String, String> _translatedTexts = {}; // Map voor vertaalde teksten
   Map<String, bool> _isTranslating = {}; // Map voor translation status per key
-  
+
   final GlobalKey _infoKey = GlobalKey(); // Ref naar de info card
   final GlobalKey _watchlistKey = GlobalKey(); // Ref naar opslaan/bookmark knop
   final GlobalKey _streamingKey = GlobalKey(); // Ref naar streaming card
@@ -1080,7 +1080,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   void startMovieDetailTutorial({bool force = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final done = prefs.getBool('tutorial_done_movie_detail') ?? false;
-    
+
     if (done && !force) return;
 
     _tryStart(prefs, force, 0);
@@ -1090,18 +1090,25 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (!mounted) return;
     if (attempts > 30) return; // 30 pogingen (6 sec)
     if (_loadingMovie) {
-      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      Future.delayed(
+        const Duration(milliseconds: 200),
+        () => _tryStart(prefs, force, attempts + 1),
+      );
       return;
     }
 
     final infoCtx = _infoKey.currentContext;
     final watchlistCtx = _watchlistKey.currentContext;
-    
+
     bool infoReady = infoCtx != null && infoCtx.findRenderObject() != null;
-    bool watchlistReady = watchlistCtx != null && watchlistCtx.findRenderObject() != null;
+    bool watchlistReady =
+        watchlistCtx != null && watchlistCtx.findRenderObject() != null;
 
     if (!infoReady || !watchlistReady) {
-      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      Future.delayed(
+        const Duration(milliseconds: 200),
+        () => _tryStart(prefs, force, attempts + 1),
+      );
       return;
     }
 
@@ -1111,8 +1118,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
-  void _showTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force) {
-     List<TargetFocus> targets = [
+  void _showTutorialTargets(
+    AppLocalizations loc,
+    SharedPreferences prefs,
+    bool force,
+  ) {
+    List<TargetFocus> targets = [
       TutorialService.createTarget(
         identify: "movie-info",
         key: _infoKey,
@@ -1128,25 +1139,25 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     ];
 
     if (_streamingKey.currentContext != null) {
-       targets.add(
-         TutorialService.createTarget(
+      targets.add(
+        TutorialService.createTarget(
           identify: "movie-streaming",
           key: _streamingKey,
           text: loc.tutorialMovieDetailStreaming,
           align: ContentAlign.top,
-         )
-       );
+        ),
+      );
     }
 
     if (_seasonsKey.currentContext != null) {
-       targets.add(
-         TutorialService.createTarget(
+      targets.add(
+        TutorialService.createTarget(
           identify: "movie-seasons",
           key: _seasonsKey,
           text: loc.tutorialMovieDetailSeasons,
           align: ContentAlign.top,
-         )
-       );
+        ),
+      );
     }
 
     TutorialService.checkAndShowTutorial(

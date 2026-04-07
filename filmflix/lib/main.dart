@@ -213,9 +213,10 @@ class _MainNavigationState extends State<MainNavigation> {
   List<int> _navOrder = [0, 1, 2, 3, 4];
   bool _reorderMode = false; // When true, user can drag to reorder items
 
-  int get currentScreenId => (_selectedIndex >= 0 && _selectedIndex < _navOrder.length)
-        ? _navOrder[_selectedIndex]
-        : _navOrder.first;
+  int get currentScreenId =>
+      (_selectedIndex >= 0 && _selectedIndex < _navOrder.length)
+      ? _navOrder[_selectedIndex]
+      : _navOrder.first;
 
   // Map screen id -> GlobalKey used for tutorial targeting (keep existing keys)
   late final Map<int, GlobalKey> _navKeys = {
@@ -258,9 +259,7 @@ class _MainNavigationState extends State<MainNavigation> {
         // Target voor de Home-knop in de navigatiebalk.
         identify: "home",
         key: _homeKey,
-        text:
-            l10n?.tutorialHome ??
-            "Hier vind je de nieuwste films en series.",
+        text: l10n?.tutorialHome ?? "Hier vind je de nieuwste films en series.",
         align: ContentAlign.top,
       ),
       TutorialService.createTarget(
@@ -375,9 +374,11 @@ class _MainNavigationState extends State<MainNavigation> {
       onFinish: () async {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('tutorial_done_main_navigation', true);
-        debugPrint("Main navigation tutorial complete, starting Home tutorial...");
-        
-        // We gebruiken een setState om de UI te forceren te verversen 
+        debugPrint(
+          "Main navigation tutorial complete, starting Home tutorial...",
+        );
+
+        // We gebruiken een setState om de UI te forceren te verversen
         if (mounted) setState(() {});
 
         // Directe aanroep zonder lange delay om de UI thread "wakker" te houden
@@ -390,8 +391,10 @@ class _MainNavigationState extends State<MainNavigation> {
       onSkip: () async {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('tutorial_done_main_navigation', true);
-        debugPrint("Main navigation tutorial skipped, starting Home tutorial...");
-        
+        debugPrint(
+          "Main navigation tutorial skipped, starting Home tutorial...",
+        );
+
         if (mounted) setState(() {});
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -651,25 +654,29 @@ class _MainNavigationState extends State<MainNavigation> {
           onTap: () {
             setState(() => _selectedIndex = position);
             if (screenId == 2) {
-               // When switching to search tab, try starting the search tutorial
-               WidgetsBinding.instance.addPostFrameCallback((_) {
-                 SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial();
-               });
+              // When switching to search tab, try starting the search tutorial
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                SearchScreen.searchScreenKey.currentState
+                    ?.startSearchScreenTutorial();
+              });
             } else if (screenId == 3) {
-               // When switching to food tab, try starting the food tutorial
-               WidgetsBinding.instance.addPostFrameCallback((_) {
-                 FoodScreen.foodScreenKey.currentState?.startFoodScreenTutorial();
-               });
+              // When switching to food tab, try starting the food tutorial
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                FoodScreen.foodScreenKey.currentState
+                    ?.startFoodScreenTutorial();
+              });
             } else if (screenId == 1) {
-               // When switching to watchlist tab, try starting the watchlist tutorial
-               WidgetsBinding.instance.addPostFrameCallback((_) {
-                 WatchlistScreen.watchlistScreenKey.currentState?.startWatchlistScreenTutorial();
-               });
+              // When switching to watchlist tab, try starting the watchlist tutorial
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                WatchlistScreen.watchlistScreenKey.currentState
+                    ?.startWatchlistScreenTutorial();
+              });
             } else if (screenId == 4) {
-               // When switching to profile tab, try starting the profile tutorial
-               WidgetsBinding.instance.addPostFrameCallback((_) {
-                 ProfileScreen.profileScreenKey.currentState?.startProfileScreenTutorial();
-               });
+              // When switching to profile tab, try starting the profile tutorial
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                ProfileScreen.profileScreenKey.currentState
+                    ?.startProfileScreenTutorial();
+              });
             }
           },
           onLongPress: () async {
@@ -771,7 +778,7 @@ class _MainNavigationState extends State<MainNavigation> {
   int _tutorialRetryCount = 0;
   void _checkAndStartTutorial() async {
     // Om de tutorial WEL elke keer te tonen (voor testen), kun je de check in TutorialService tijdelijk skippen.
-    
+
     Future.delayed(const Duration(milliseconds: 100), () {
       //dit stukje doet een check na een korte vertraging om te zien of de home key beschikbar is
       if (!mounted) return;
@@ -807,7 +814,9 @@ class _MainNavigationState extends State<MainNavigation> {
     if (pos != -1) {
       setState(() => _selectedIndex = pos);
       Future.delayed(const Duration(milliseconds: 300), () {
-        SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial(force: true);
+        SearchScreen.searchScreenKey.currentState?.startSearchScreenTutorial(
+          force: true,
+        );
       });
     }
   }
@@ -817,7 +826,9 @@ class _MainNavigationState extends State<MainNavigation> {
     if (pos != -1) {
       setState(() => _selectedIndex = pos);
       Future.delayed(const Duration(milliseconds: 300), () {
-        FoodScreen.foodScreenKey.currentState?.startFoodScreenTutorial(force: true);
+        FoodScreen.foodScreenKey.currentState?.startFoodScreenTutorial(
+          force: true,
+        );
       });
     }
   }
@@ -827,7 +838,8 @@ class _MainNavigationState extends State<MainNavigation> {
     if (pos != -1) {
       setState(() => _selectedIndex = pos);
       Future.delayed(const Duration(milliseconds: 300), () {
-        WatchlistScreen.watchlistScreenKey.currentState?.startWatchlistScreenTutorial(force: true);
+        WatchlistScreen.watchlistScreenKey.currentState
+            ?.startWatchlistScreenTutorial(force: true);
       });
     }
   }
@@ -837,7 +849,9 @@ class _MainNavigationState extends State<MainNavigation> {
     if (pos != -1) {
       setState(() => _selectedIndex = pos);
       Future.delayed(const Duration(milliseconds: 300), () {
-        ProfileScreen.profileScreenKey.currentState?.startProfileScreenTutorial(force: true);
+        ProfileScreen.profileScreenKey.currentState?.startProfileScreenTutorial(
+          force: true,
+        );
       });
     }
   }

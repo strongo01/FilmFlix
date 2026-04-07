@@ -14,7 +14,8 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:cinetrackr/services/tutorial_service.dart';
 
 class WatchlistScreen extends StatefulWidget {
-  static final GlobalKey<_WatchlistScreenState> watchlistScreenKey = GlobalKey<_WatchlistScreenState>();
+  static final GlobalKey<_WatchlistScreenState> watchlistScreenKey =
+      GlobalKey<_WatchlistScreenState>();
   const WatchlistScreen({super.key});
 
   @override
@@ -42,7 +43,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     debugPrint("startWatchlistScreenTutorial called with force=$force");
     final prefs = await SharedPreferences.getInstance();
     final done = prefs.getBool('tutorial_done_watchlist_screen') ?? false;
-    
+
     if (done && !force) return;
 
     _tryStart(prefs, force, 0);
@@ -59,25 +60,33 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       return;
     }
 
-    final isCurrentScreen = (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 1;
+    final isCurrentScreen =
+        (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 1;
     if (!isCurrentScreen && !force) {
-      return; 
+      return;
     }
 
     final loc = AppLocalizations.of(context);
     final user = FirebaseAuth.instance.currentUser;
-    
+
     // Determine which targets are needed based on login status
     final tabsCtx = _tabsKey.currentContext;
     final loginCtx = _loginButtonKey.currentContext;
     final contentCtx = _contentKey.currentContext;
-    
+
     bool tabsReady = tabsCtx != null && tabsCtx.findRenderObject() != null;
-    bool loginReady = user == null ? (loginCtx != null && loginCtx.findRenderObject() != null) : true;
-    bool contentReady = user != null ? (contentCtx != null && contentCtx.findRenderObject() != null) : true;
+    bool loginReady = user == null
+        ? (loginCtx != null && loginCtx.findRenderObject() != null)
+        : true;
+    bool contentReady = user != null
+        ? (contentCtx != null && contentCtx.findRenderObject() != null)
+        : true;
 
     if (!tabsReady || !loginReady || !contentReady) {
-      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      Future.delayed(
+        const Duration(milliseconds: 200),
+        () => _tryStart(prefs, force, attempts + 1),
+      );
       return;
     }
 
@@ -86,7 +95,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     }
   }
 
-  void _showWatchlistTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force, bool isLoggedIn) {
+  void _showWatchlistTutorialTargets(
+    AppLocalizations loc,
+    SharedPreferences prefs,
+    bool force,
+    bool isLoggedIn,
+  ) {
     List<TargetFocus> targets = [
       TutorialService.createTarget(
         identify: "watchlist-tabs",
@@ -96,7 +110,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         shape: ShapeLightFocus.RRect,
       ),
     ];
-    
+
     if (isLoggedIn) {
       targets.add(
         TutorialService.createTarget(
@@ -896,7 +910,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => const LoginScreen(returnAfterLogin: true),
+                            builder: (_) =>
+                                const LoginScreen(returnAfterLogin: true),
                           ),
                         );
                       },
@@ -1547,12 +1562,10 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                   }
 
                   return TabBarView(
-                    
                     children: [
                       // Opgeslagen
                       Column(
                         children: [
-                          
                           Expanded(
                             child: ListView(
                               padding: const EdgeInsets.all(8),
@@ -1598,19 +1611,30 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.info_outline),
-                                  tooltip: AppLocalizations.of(ctx)!.infoTooltip,
+                                  tooltip: AppLocalizations.of(
+                                    ctx,
+                                  )!.infoTooltip,
                                   onPressed: () {
                                     showDialog(
                                       context: ctx,
                                       builder: (context) => AlertDialog(
-                                        title: Text(AppLocalizations.of(ctx)!.watchlistInfoTitle),
+                                        title: Text(
+                                          AppLocalizations.of(
+                                            ctx,
+                                          )!.watchlistInfoTitle,
+                                        ),
                                         content: Text(
-                                          AppLocalizations.of(ctx)!.watchlistInfoContent,
+                                          AppLocalizations.of(
+                                            ctx,
+                                          )!.watchlistInfoContent,
                                         ),
                                         actions: [
                                           TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: Text(AppLocalizations.of(ctx)!.ok),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: Text(
+                                              AppLocalizations.of(ctx)!.ok,
+                                            ),
                                           ),
                                         ],
                                       ),
