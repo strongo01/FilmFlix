@@ -842,14 +842,28 @@ class _MainNavigationState extends State<MainNavigation> {
       if (start == true) {
         _showTutorial();
       } else {
-       // Markeer alle tutorial keys als done zodat de gebruiker niet steeds opnieuw wordt gevraagd, maar forceer de main_navigation tutorial als gedaan zodat deze niet meer verschijnt.
+       // Markeer bekende tutorial keys als done (ook als ze nog niet bestaan),
+       // en zet ook alle bestaande tutorial-pref keys op true.
+        final knownKeys = [
+          'tutorial_done_main_navigation',
+          'tutorial_done_home_screen',
+          'tutorial_done_search_screen',
+          'tutorial_done_food_screen',
+          'tutorial_done_watchlist_screen',
+          'tutorial_done_profile_screen',
+          'tutorial_done_movie_detail',
+          'tutorial_done', 
+        ];
+        for (final key in knownKeys) {
+          await prefs.setBool(key, true);
+        }
+        // Daarnaast, als er nog andere keys in prefs zijn die 'tutorial' bevatten, markeer die ook als done. Dit zorgt ervoor dat zelfs als we later nieuwe tutorial keys toevoegen, gebruikers die de tutorial hebben overgeslagen niet alsnog getarget worden door die nieuwe keys.
         final keys = prefs.getKeys();
         for (final key in keys) {
           if (key.contains('tutorial') || key.contains('tutorial_done')) {
             await prefs.setBool(key, true);
           }
         }
-        await prefs.setBool('tutorial_done_main_navigation', true);
         debugPrint('Tutorial: user declined - marked tutorial keys as done.');
       }
     } catch (e) {
