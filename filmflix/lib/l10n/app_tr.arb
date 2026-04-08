@@ -132,7 +132,13 @@
   "tutorialFoodExtra": "Film tercihine uygun atıştırmalıkları ve tarifleri bul.",
   "tutorialProfileExtra": "Profilinde ayarları, tercihleri ve hesap bilgilerini yönet.",
   "tutorialMap": "Yakındaki sinemaları bulmak için haritaya bakabilirsiniz!",
+  "tutorialPromptTitle": "Tanıtım turu",
+  "tutorialPromptBody": "Uygulamanın kısa bir turunu görmek ister misiniz?",
   "resetTutorial": "Eğitimi sıfırla",
+  "tutorialResetExplanation": "Önce hangi eğitim(leri) sıfırlamak istediğinizi seçin. Eğitimler yalnızca bir seçim yaptıktan sonra sıfırlanacaktır.",
+  "@tutorialResetExplanation": {
+    "description": "'Eğitimi sıfırla' iletişim kutusunun üstünde gösterilen açıklama; kullanıcıyı önce seçim yapması gerektiği konusunda bilgilendirir"
+  },
   "tutorialResetMessage": "Eğitim sıfırlandı, yeniden başlatılacak",
   "map_all_cinemas_title": "Hollanda'daki sinemalar",
   "map_load_error": "Sinemalar yüklenirken hata oluştu: {error}",

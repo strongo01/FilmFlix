@@ -417,7 +417,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get tutorialMap => 'Hier können Sie die Karte ansehen, um Kinos in Ihrer Nähe zu finden!';
 
   @override
+  String get tutorialPromptTitle => 'Einführungstour';
+
+  @override
+  String get tutorialPromptBody => 'Möchtest du eine kurze Einführung durch die App?';
+
+  @override
   String get resetTutorial => 'Tutorial zurücksetzen';
+
+  @override
+  String get tutorialResetExplanation => 'Wähle zuerst, welches/welche Tutorial(s) du zurücksetzen möchtest. Tutorials werden erst zurückgesetzt, nachdem du eine Auswahl getroffen hast.';
 
   @override
   String get tutorialResetMessage => 'Tutorial zurückgesetzt, wird neu gestartet';

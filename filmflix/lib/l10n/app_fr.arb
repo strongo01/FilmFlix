@@ -129,7 +129,13 @@
   "tutorialFoodExtra": "Trouvez des snacks et recettes adaptés à votre film.",
   "tutorialProfileExtra": "Gérez vos paramètres, préférences et compte dans votre profil.",
   "tutorialMap": "Consultez la carte pour trouver les cinémas à proximité !",
+  "tutorialPromptTitle": "Visite guidée",
+  "tutorialPromptBody": "Souhaitez-vous une brève présentation de l'application ?",
   "resetTutorial": "Réinitialiser le tutoriel",
+  "tutorialResetExplanation": "Choisissez d'abord le(s) tutoriel(s) que vous souhaitez réinitialiser. Les tutoriels ne seront réinitialisés qu'après votre sélection.",
+  "@tutorialResetExplanation": {
+    "description": "Explication affichée en haut de la boîte de dialogue 'Réinitialiser le tutoriel' informant l'utilisateur qu'il doit d'abord sélectionner les tutoriels à réinitialiser"
+  },
   "tutorialResetMessage": "Tutoriel réinitialisé, redémarrage",
   "map_all_cinemas_title": "Cinémas aux Pays-Bas",
   "map_load_error": "Erreur lors du chargement des cinémas : {error}",

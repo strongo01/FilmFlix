@@ -417,7 +417,16 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tutorialMap => 'Consultez la carte pour trouver les cinémas à proximité !';
 
   @override
+  String get tutorialPromptTitle => 'Visite guidée';
+
+  @override
+  String get tutorialPromptBody => 'Souhaitez-vous une brève présentation de l\'application ?';
+
+  @override
   String get resetTutorial => 'Réinitialiser le tutoriel';
+
+  @override
+  String get tutorialResetExplanation => 'Choisissez d\'abord le(s) tutoriel(s) que vous souhaitez réinitialiser. Les tutoriels ne seront réinitialisés qu\'après votre sélection.';
 
   @override
   String get tutorialResetMessage => 'Tutoriel réinitialisé, redémarrage';

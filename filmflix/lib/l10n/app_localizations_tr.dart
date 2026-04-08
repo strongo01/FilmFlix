@@ -417,7 +417,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tutorialMap => 'Yakındaki sinemaları bulmak için haritaya bakabilirsiniz!';
 
   @override
+  String get tutorialPromptTitle => 'Tanıtım turu';
+
+  @override
+  String get tutorialPromptBody => 'Uygulamanın kısa bir turunu görmek ister misiniz?';
+
+  @override
   String get resetTutorial => 'Eğitimi sıfırla';
+
+  @override
+  String get tutorialResetExplanation => 'Önce hangi eğitim(leri) sıfırlamak istediğinizi seçin. Eğitimler yalnızca bir seçim yaptıktan sonra sıfırlanacaktır.';
 
   @override
   String get tutorialResetMessage => 'Eğitim sıfırlandı, yeniden başlatılacak';

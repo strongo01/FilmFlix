@@ -126,7 +126,13 @@
   "tutorialFoodExtra": "Find snacks and recipes that match your movie choice.",
   "tutorialProfileExtra": "Manage settings, preferences and account details in your profile.",
   "tutorialMap": "View the map to find nearby cinemas!",
+  "tutorialPromptTitle": "Introductory tour",
+  "tutorialPromptBody": "Would you like a quick tour of the app?",
   "resetTutorial": "Reset tutorial",
+  "tutorialResetExplanation": "First choose which tutorial(s) you want to reset. Tutorials will only be reset after you make a selection.",
+  "@tutorialResetExplanation": {
+    "description": "Explanation shown at the top of the Reset tutorial dialog informing users they must select which tutorials to reset first"
+  },
   "tutorialResetMessage": "Tutorial reset, will restart",
   "map_all_cinemas_title": "Cinemas in the Netherlands",
   "@map_all_cinemas_title": {

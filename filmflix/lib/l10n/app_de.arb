@@ -171,7 +171,13 @@
   "@tutorialMap": {
     "description": "Tutorial text for map"
   },
+  "tutorialPromptTitle": "Einführungstour",
+  "tutorialPromptBody": "Möchtest du eine kurze Einführung durch die App?",
   "resetTutorial": "Tutorial zurücksetzen",
+  "tutorialResetExplanation": "Wähle zuerst, welches/welche Tutorial(s) du zurücksetzen möchtest. Tutorials werden erst zurückgesetzt, nachdem du eine Auswahl getroffen hast.",
+  "@tutorialResetExplanation": {
+    "description": "Erklärung, die oben im 'Reset tutorial' Dialog angezeigt wird und den Nutzer informiert, dass Tutorials erst nach Auswahl zurückgesetzt werden"
+  },
   "tutorialResetMessage": "Tutorial zurückgesetzt, wird neu gestartet",
   "map_all_cinemas_title": "Kinos in den Niederlanden",
   "@map_all_cinemas_title": {

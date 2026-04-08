@@ -200,9 +200,10 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     // open externe link via browser als valide
     final uri = Uri.tryParse(url);
     if (uri == null) return;
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
+        // Fall back naar externe browser als webview niet ondersteund
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
   }
 
   static const Map<String, String> _serviceAssetMap = {

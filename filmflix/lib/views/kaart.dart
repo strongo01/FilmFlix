@@ -184,10 +184,11 @@ class _CinemasMapViewState extends State<CinemasMapView> {
                 // Als URI valid is
                 try {
                   // Probeert URL te openen
-                  await launchUrl(
-                    uri,
-                    mode: LaunchMode.externalApplication,
-                  ); // Opent URL in externe app
+                
+                  if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
+        // Fall back naar externe browser als webview niet ondersteund
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
                   return; // Beëindigt het taphandelaar
                 } catch (_) {
                   // Als openen mislukt

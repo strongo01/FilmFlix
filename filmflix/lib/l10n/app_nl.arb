@@ -102,7 +102,7 @@
   "send_failed": "Versturen mislukt",
   "appTitle": "CineTrackr",
   "tutorialSkip": "Overslaan",
-  "navHome": "Home",
+  "navHome": "Hoofdscherm",
   "navWatchlist": "Watchlist",
   "navSearch": "Zoeken",
   "navFood": "Eten",
@@ -129,7 +129,13 @@
   "tutorialFoodExtra": "Bekijk snacks en recepten die passen bij je filmkeuze.",
   "tutorialProfileExtra": "Beheer instellingen, voorkeuren en accountgegevens in je profiel.",
   "tutorialMap": "Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!",
+  "tutorialPromptTitle": "Introductietour",
+  "tutorialPromptBody": "Wil je graag een korte rondleiding door de app?",
   "resetTutorial": "Tutorial resetten",
+  "tutorialResetExplanation": "Kies eerst welke tutorial(s) je wilt resetten. Tutorials worden pas gereset nadat je een keuze hebt gemaakt.",
+  "@tutorialResetExplanation": {
+    "description": "Uitleg die bovenaan de 'Reset tutorial' dialoog wordt getoond en de gebruiker informeert dat ze eerst tutorials moeten selecteren voordat ze gereset worden"
+  },
   "tutorialResetMessage": "Tutorial gereset, wordt opnieuw gestart",
   "map_all_cinemas_title": "Bioscopen in Nederland",
   "map_load_error": "Fout bij laden bioscopen: {error}",

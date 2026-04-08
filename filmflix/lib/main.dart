@@ -384,7 +384,13 @@ class _MainNavigationState extends State<MainNavigation> {
         // Directe aanroep zonder lange delay om de UI thread "wakker" te houden
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_selectedIndex == 0) {
-            HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
+            () async {
+              final prefs = await SharedPreferences.getInstance();
+              final homeDone = prefs.getBool('tutorial_done_home_screen') ?? true;
+              if (!homeDone) {
+                HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
+              }
+            }();
           }
         });
       },
@@ -399,7 +405,13 @@ class _MainNavigationState extends State<MainNavigation> {
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_selectedIndex == 0) {
-            HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
+            () async {
+              final prefs = await SharedPreferences.getInstance();
+              final homeDone = prefs.getBool('tutorial_done_home_screen') ?? true;
+              if (!homeDone) {
+                HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
+              }
+            }();
           }
         });
       },
@@ -779,13 +791,13 @@ class _MainNavigationState extends State<MainNavigation> {
   void _checkAndStartTutorial() async {
     // Om de tutorial WEL elke keer te tonen (voor testen), kun je de check in TutorialService tijdelijk skippen.
 
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () async {
       //dit stukje doet een check na een korte vertraging om te zien of de home key beschikbar is
       if (!mounted) return;
 
       if (_homeKey.currentContext != null) {
-        debugPrint("Tutorial: Home key valid, starting...");
-        _showTutorial(); // De logic zit nu in _showTutorial via TutorialService.checkAndShowTutorial
+        debugPrint("Tutorial: Home key valid, asking user permission...");
+        await _askToStartTutorial();
       } else if (_tutorialRetryCount < 10) {
         _tutorialRetryCount++;
         debugPrint(
@@ -798,7 +810,54 @@ class _MainNavigationState extends State<MainNavigation> {
     });
   }
 
-  // Public helper to allow external callers to retrigger the tutorial.
+  Future<void> _askToStartTutorial() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final alreadyDone = prefs.getBool('tutorial_done_main_navigation') ?? false;
+      if (alreadyDone) return;
+
+      final l10n = L10n.of(context);
+
+      final bool? start = await showDialog<bool>(
+        context: _homeKey.currentContext ?? context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: Text(l10n?.tutorialPromptTitle ?? 'Introductietour'),
+            content: Text(l10n?.tutorialPromptBody ??
+                'Wil je graag een korte rondleiding door de app?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(l10n?.no ?? 'Nee'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(l10n?.yes ?? 'Ja'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (start == true) {
+        _showTutorial();
+      } else {
+       // Markeer alle tutorial keys als done zodat de gebruiker niet steeds opnieuw wordt gevraagd, maar forceer de main_navigation tutorial als gedaan zodat deze niet meer verschijnt.
+        final keys = prefs.getKeys();
+        for (final key in keys) {
+          if (key.contains('tutorial') || key.contains('tutorial_done')) {
+            await prefs.setBool(key, true);
+          }
+        }
+        await prefs.setBool('tutorial_done_main_navigation', true);
+        debugPrint('Tutorial: user declined - marked tutorial keys as done.');
+      }
+    } catch (e) {
+      debugPrint('Error asking/setting tutorial prefs: $e');
+    }
+  }
+
+  // dit is een helper functie die we kunnen aanroepen vanuit andere schermen om de tutorial opnieuw te starten, bijvoorbeeld als de gebruiker in de instellingen op "Tutorial opnieuw starten" klikt. We forceren hier ook dat we teruggaan naar het home scherm voordat we de tutorial starten, zodat we zeker weten dat alle elementen van de tutorial beschikbaar zijn.
   void startTutorial() {
     setState(() {
       _selectedIndex = 0; // Forceer terug naar home

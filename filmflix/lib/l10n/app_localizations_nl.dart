@@ -336,7 +336,7 @@ class AppLocalizationsNl extends AppLocalizations {
   String get appTitle => 'CineTrackr';
 
   @override
-  String get navHome => 'Home';
+  String get navHome => 'Hoofdscherm';
 
   @override
   String get navWatchlist => 'Watchlist';
@@ -417,7 +417,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get tutorialMap => 'Hier kun je de kaart bekijken om bioscopen in de buurt te vinden!';
 
   @override
+  String get tutorialPromptTitle => 'Introductietour';
+
+  @override
+  String get tutorialPromptBody => 'Wil je graag een korte rondleiding door de app?';
+
+  @override
   String get resetTutorial => 'Tutorial resetten';
+
+  @override
+  String get tutorialResetExplanation => 'Kies eerst welke tutorial(s) je wilt resetten. Tutorials worden pas gereset nadat je een keuze hebt gemaakt.';
 
   @override
   String get tutorialResetMessage => 'Tutorial gereset, wordt opnieuw gestart';

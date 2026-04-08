@@ -129,7 +129,13 @@
   "tutorialFoodExtra": "Encuentra snacks y recetas que encajen con tu película.",
   "tutorialProfileExtra": "Gestiona ajustes, preferencias y datos de cuenta en tu perfil.",
   "tutorialMap": "¡Aquí puedes ver el mapa para encontrar cines cercanos!",
+  "tutorialPromptTitle": "Tour introductorio",
+  "tutorialPromptBody": "¿Te gustaría un breve recorrido por la aplicación?",
   "resetTutorial": "Restablecer tutorial",
+  "tutorialResetExplanation": "Primero elige qué tutorial(es) quieres restablecer. Los tutoriales sólo se restablecerán después de que hagas una selección.",
+  "@tutorialResetExplanation": {
+    "description": "Explicación mostrada en la parte superior del diálogo 'Restablecer tutorial' informando al usuario que debe seleccionar primero qué tutoriales restablecer"
+  },
   "tutorialResetMessage": "Tutorial restablecido, se reiniciará",
   "map_all_cinemas_title": "Cines en los Países Bajos",
   "map_load_error": "Error al cargar los cines: {error}",

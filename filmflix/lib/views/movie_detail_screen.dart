@@ -377,10 +377,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     if (uri == null) return; // Return als parsing mislukt
     if (await canLaunchUrl(uri)) {
       // Check of URL kan worden geopend
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      ); // Open URL in externe app
+     if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
+        // Fall back naar externe browser als webview niet ondersteund
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     } else {
       // Anders
       debugPrint('Cannot launch url: $url'); // Print debug message

@@ -381,18 +381,21 @@ class _SearchScreenState extends State<SearchScreen> {
                           children: [
                             Expanded(
                               child: ChoiceChip(
-                                // Chip voor "alle" types
-                                label: Center(
-                                  child: Text(
-                                    AppLocalizations.of(ctx)!.filter_all,
+                                  // Chip voor "alle" types
+                                  label: Center(
+                                    child: Text(
+                                      AppLocalizations.of(ctx)!.filter_all,
+                                    ),
                                   ),
+                                  labelStyle: TextStyle(
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                  selected: showType == '',
+                                  selectedColor: Colors.lightBlueAccent
+                                      .withOpacity(0.2),
+                                  onSelected: (v) =>
+                                      setModalState(() => showType = ''),
                                 ),
-                                selected: showType == '',
-                                selectedColor: Colors.lightBlueAccent
-                                    .withOpacity(0.2),
-                                onSelected: (v) =>
-                                    setModalState(() => showType = ''),
-                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -401,6 +404,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                   child: Text(
                                     AppLocalizations.of(ctx)!.filter_movies,
                                   ),
+                                ),
+                                labelStyle: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                                 selected: showType == 'movie',
                                 selectedColor: Colors.lightBlueAccent
@@ -416,6 +422,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                   child: Text(
                                     AppLocalizations.of(ctx)!.filter_series,
                                   ),
+                                ),
+                                labelStyle: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                                 selected: showType == 'series',
                                 selectedColor: Colors.lightBlueAccent
@@ -472,7 +481,10 @@ class _SearchScreenState extends State<SearchScreen> {
                             return FilterChip(
                               label: Text(
                                 label,
-                                style: const TextStyle(fontSize: 13),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
                               ),
                               selected: sel,
                               selectedColor: Colors.blueAccent.withOpacity(0.2),

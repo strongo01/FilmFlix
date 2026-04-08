@@ -10,7 +10,8 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:cinetrackr/services/tutorial_service.dart';
 
 class FoodScreen extends StatefulWidget {
-  static final GlobalKey<_FoodScreenState> foodScreenKey = GlobalKey<_FoodScreenState>();
+  static final GlobalKey<_FoodScreenState> foodScreenKey =
+      GlobalKey<_FoodScreenState>();
   // Definieert stateful widget voor voedsel scherm
   const FoodScreen({super.key}); // Constructor met key parameter
 
@@ -46,7 +47,7 @@ class _FoodScreenState extends State<FoodScreen> {
     debugPrint("startFoodScreenTutorial called with force=$force");
     final prefs = await SharedPreferences.getInstance();
     final done = prefs.getBool('tutorial_done_food_screen') ?? false;
-    
+
     if (done && !force) return;
 
     _tryStart(prefs, force, 0);
@@ -63,30 +64,39 @@ class _FoodScreenState extends State<FoodScreen> {
       return;
     }
 
-    final isCurrentScreen = (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 3;
+    final isCurrentScreen =
+        (MainNavigation.mainKey.currentState as dynamic)?.currentScreenId == 3;
     debugPrint("Food _tryStart: isCurrentScreen=$isCurrentScreen");
     if (!isCurrentScreen && !force) {
       // If we switched away or not yet switched, stop retrying unless force
-      debugPrint("Food _tryStart: Not current screen and not forced, aborting.");
-      return; 
+      debugPrint(
+        "Food _tryStart: Not current screen and not forced, aborting.",
+      );
+      return;
     }
 
-    // Check if the essential targets have a context and render box. 
+    // Check if the essential targets have a context and render box.
     final zipCtx = _zipCodeKey.currentContext;
     final dietCtx = _dietKey.currentContext;
     final quickCtx = _quickChoicesKey.currentContext;
     final searchCtx = _searchFoodKey.currentContext;
-    
+
     bool zipReady = zipCtx != null && zipCtx.findRenderObject() != null;
     bool dietReady = dietCtx != null && dietCtx.findRenderObject() != null;
     bool quickReady = quickCtx != null && quickCtx.findRenderObject() != null;
-    bool searchReady = searchCtx != null && searchCtx.findRenderObject() != null;
+    bool searchReady =
+        searchCtx != null && searchCtx.findRenderObject() != null;
 
-    debugPrint("Food _tryStart: zipReady=$zipReady, dietReady=$dietReady, quickReady=$quickReady, searchReady=$searchReady");
+    debugPrint(
+      "Food _tryStart: zipReady=$zipReady, dietReady=$dietReady, quickReady=$quickReady, searchReady=$searchReady",
+    );
 
     if (!zipReady || !dietReady || !quickReady || !searchReady) {
       debugPrint("Food _tryStart: waiting for UI elements, retrying...");
-      Future.delayed(const Duration(milliseconds: 200), () => _tryStart(prefs, force, attempts + 1));
+      Future.delayed(
+        const Duration(milliseconds: 200),
+        () => _tryStart(prefs, force, attempts + 1),
+      );
       return;
     }
 
@@ -97,7 +107,11 @@ class _FoodScreenState extends State<FoodScreen> {
     }
   }
 
-  void _showFoodTutorialTargets(AppLocalizations loc, SharedPreferences prefs, bool force) {
+  void _showFoodTutorialTargets(
+    AppLocalizations loc,
+    SharedPreferences prefs,
+    bool force,
+  ) {
     List<TargetFocus> targets = [
       TutorialService.createTarget(
         identify: "food-zip",
@@ -336,7 +350,11 @@ class _FoodScreenState extends State<FoodScreen> {
     final Uri url = Uri.parse(urlString); // Parsed URL string
     try {
       // Probeert URL te openen in in-app WebView (voorkomt openen native app)
-      await launchUrl(url, mode: LaunchMode.inAppWebView);
+
+      if (!await launchUrl(url, mode: LaunchMode.inAppWebView)) {
+        // Fall back naar externe browser als webview niet ondersteund
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      }
     } catch (e) {
       // Vangt fouten op
       debugPrint('Fout bij openen: $e');
@@ -500,40 +518,51 @@ class _FoodScreenState extends State<FoodScreen> {
                         labelText = loc.filter_halal;
                     }
 
-                    return FilterChip(
-                      // Chip widget voor filter
-                      label: Text(labelText),
-                      labelStyle: TextStyle(
-                        // Stijl label
-                        color: isSelected ? Colors.white : textColorLocal,
-                        fontSize: 13,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        // Disable the default colored splash/highlight on release
+                        // and use no splash to avoid the brief red flash.
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
+                        focusColor: Colors.transparent,
+                        splashFactory: NoSplash.splashFactory,
                       ),
-                      selected: isSelected,
-                      backgroundColor: // Achtergrond kleur
-                          MediaQuery.of(context).platformBrightness ==
-                              Brightness.dark
-                          ? Colors.white.withOpacity(0.05)
-                          : movieBlue.withOpacity(0.08),
-                      selectedColor: movieBlue,
-                      checkmarkColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        // Vorm rand
-                        borderRadius: BorderRadius.circular(10),
-                        side: BorderSide(
-                          color: isSelected
-                              ? Colors.transparent
-                              : movieBlue.withOpacity(0.2),
+                      child: FilterChip(
+                        // Chip widget voor filter
+                        label: Text(labelText),
+                        labelStyle: TextStyle(
+                          // Stijl label
+                          color: isSelected ? Colors.white : textColorLocal,
+                          fontSize: 13,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
+                        selected: isSelected,
+                        backgroundColor: // Achtergrond kleur
+                            MediaQuery.of(context).platformBrightness ==
+                                Brightness.dark
+                            ? Colors.white.withOpacity(0.05)
+                            : movieBlue.withOpacity(0.08),
+                        selectedColor: movieBlue,
+                        checkmarkColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          // Vorm rand
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(
+                            color: isSelected
+                                ? movieBlue.withOpacity(0.0)
+                                : movieBlue.withOpacity(0.2),
+                          ),
+                        ),
+                        onSelected: (bool selected) {
+                          // Afhandeling selectie
+                          setState(() {
+                            _selectedFilter = selected ? filter['slug'] : null;
+                          });
+                        },
                       ),
-                      onSelected: (bool selected) {
-                        // Afhandeling selectie
-                        setState(() {
-                          _selectedFilter = selected ? filter['slug'] : null;
-                        });
-                      },
                     );
                   }).toList(),
                 ),

@@ -417,7 +417,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialMap => 'View the map to find nearby cinemas!';
 
   @override
+  String get tutorialPromptTitle => 'Introductory tour';
+
+  @override
+  String get tutorialPromptBody => 'Would you like a quick tour of the app?';
+
+  @override
   String get resetTutorial => 'Reset tutorial';
+
+  @override
+  String get tutorialResetExplanation => 'First choose which tutorial(s) you want to reset. Tutorials will only be reset after you make a selection.';
 
   @override
   String get tutorialResetMessage => 'Tutorial reset, will restart';

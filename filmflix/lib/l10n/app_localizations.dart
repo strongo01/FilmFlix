@@ -859,11 +859,29 @@ abstract class AppLocalizations {
   /// **'View the map to find nearby cinemas!'**
   String get tutorialMap;
 
+  /// No description provided for @tutorialPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Introductory tour'**
+  String get tutorialPromptTitle;
+
+  /// No description provided for @tutorialPromptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Would you like a quick tour of the app?'**
+  String get tutorialPromptBody;
+
   /// No description provided for @resetTutorial.
   ///
   /// In en, this message translates to:
   /// **'Reset tutorial'**
   String get resetTutorial;
+
+  /// Explanation shown at the top of the Reset tutorial dialog informing users they must select which tutorials to reset first
+  ///
+  /// In en, this message translates to:
+  /// **'First choose which tutorial(s) you want to reset. Tutorials will only be reset after you make a selection.'**
+  String get tutorialResetExplanation;
 
   /// No description provided for @tutorialResetMessage.
   ///
