@@ -12,6 +12,7 @@ import 'package:cinetrackr/main.dart'; // Importeert MainNavigation
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:cinetrackr/services/tutorial_service.dart';
+import 'package:rxdart/rxdart.dart';
 
 class WatchlistScreen extends StatefulWidget {
   static final GlobalKey<_WatchlistScreenState> watchlistScreenKey =
@@ -163,27 +164,24 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       );
       return;
     }
-    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
-    // verwijzing naar gebruikersdocument in Firestore
+    final seendoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid)
+        .collection('seenEpisodes')
+        .doc(imdbId);
     try {
       if (seen) {
-        await docRef.set({
-          'seenEpisodes.$imdbId': FieldValue.arrayUnion([epKey]),
+        await seendoc.set({
+          'episodes': FieldValue.arrayUnion([epKey]),
+          'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
         // voeg epKey toe aan array van geziene episodes voor dit id
       } else {
-        if (epKey == 'movie') {
-          // verwijder heel veld bij het uitvinken van een film 'Gezien'-markering
-          await docRef.set({
-            'seenEpisodes.$imdbId': FieldValue.delete(),
-          }, SetOptions(merge: true));
-          // verwijder heel veld bij unchecken van een film
-        } else {
-          await docRef.set({
-            'seenEpisodes.$imdbId': FieldValue.arrayRemove([epKey]),
-          }, SetOptions(merge: true));
-          // verwijder enkel het episode-key uit de array
-        }
+        await seendoc.set({
+          'episodes': FieldValue.arrayRemove([epKey]),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        // verwijder enkel het episode-key uit de array
       }
     } catch (e) {
       debugPrint('Failed to toggle seen $epKey for $imdbId: $e');
@@ -476,15 +474,20 @@ if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
       );
       return;
     }
-    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    final watchdoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid)
+        .collection('watchlist')
+        .doc(imdbId);
+    final seendoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid)
+        .collection('seenEpisodes')
+        .doc(imdbId);
     try {
-      await docRef.set({
-        'watchlist': FieldValue.arrayRemove([imdbId]),
-        'watchlist_meta.$imdbId': FieldValue.delete(),
-        // verwijder ook eventuele seenEpisodes-vermeldingen voor dit id zodat het uit 'aan het kijken' verdwijnt
-        'seenEpisodes.$imdbId': FieldValue.delete(),
-      }, SetOptions(merge: true));
-      // verwijder item uit watchlist en bijbehorende metadata uit Firestore
+      await watchdoc.delete();
+      await seendoc.delete();
+      // verwijder item uit watchlist subcollection en bijbehorende seen data
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.item_removed_watchlist),
@@ -843,16 +846,23 @@ if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
       );
       return;
     }
-    final docRef = FirebaseFirestore.instance.collection('users').doc(u.uid);
+    final watchdoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(u.uid)
+        .collection('watchlist')
+        .doc(id);
     try {
-      final meta = {'mediaType': 'series', 'title': title, 'seasons': seasons};
+      final meta = {
+        'imdbId': id,
+        'mediaType': 'series',
+        'title': title,
+        'seasons': seasons,
+        'savedAt': FieldValue.serverTimestamp(),
+      };
       if (schedule != null) meta['schedule'] = schedule;
 
-      await docRef.set({
-        'watchlist': FieldValue.arrayUnion([id]),
-        'watchlist_meta.$id': meta,
-      }, SetOptions(merge: true));
-      // voeg custom series toe aan watchlist en sla metadata op
+      await watchdoc.set(meta);
+      // voeg custom series toe aan watchlist subcollection en sla metadata op
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.series_added)),
@@ -962,64 +972,109 @@ if (!await launchUrl(uri, mode: LaunchMode.inAppWebView)) {
                 // gebruiker is ingelogd; luister naar Firestore gebruikersdocument
               }
 
-              return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(user.uid)
-                    .snapshots(),
+              return StreamBuilder<List<Object>>(
+                stream: Rx.combineLatest3(
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .collection('watchlist')
+                      .snapshots(),
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .collection('seenEpisodes')
+                      .snapshots(),
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .snapshots(),
+                  (QuerySnapshot watch, QuerySnapshot seen,
+                          DocumentSnapshot userDoc) =>
+                      [watch, seen, userDoc],
+                ),
                 builder: (ctx, snap) {
                   if (snap.hasError) {
-                    if (snap.error.toString().contains('permission-denied')) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
                     return Center(
                       child: Text(
                         AppLocalizations.of(
                           ctx,
-                        )!.error_loading(snap.error ?? ''),
+                        )!.error_loading(snap.error.toString()),
                       ),
                     );
                   }
                   if (!snap.hasData)
                     return const Center(child: CircularProgressIndicator());
-                  final data = snap.data!.data() ?? {};
 
-                  final watchlist =
-                      (data['watchlist'] as List?)
-                          ?.map((e) => e.toString())
-                          .toList() ??
-                      <String>[];
-                  // lees watchlist uit Firestore-data en converteer naar stringlijst
-                  // seenEpisodes may be stored either as a map under 'seenEpisodes'
-                  // or as individual fields named 'seenEpisodes.<imdbId>' (Firestore flattened keys).
-                  final Map<String, dynamic> seenMap = {};
-                  final seenMapRaw = data['seenEpisodes'];
-                  if (seenMapRaw is Map) {
-                    seenMapRaw.forEach((k, v) => seenMap[k.toString()] = v);
+                  final watchDocs = (snap.data![0] as QuerySnapshot).docs;
+                  final seenDocs = (snap.data![1] as QuerySnapshot).docs;
+                  final userDoc = snap.data![2] as DocumentSnapshot;
+                  final userData =
+                      (userDoc.data() as Map<String, dynamic>?) ?? {};
+
+                  // 1. COLLECT WATCHLIST (Subcollection + Legacy)
+                  final Set<String> watchlistSet =
+                      watchDocs.map((d) => d.id).toSet();
+                  final legacyWatchlist =
+                      userData['watchlist'] as List? ?? [];
+                  for (var item in legacyWatchlist) {
+                    watchlistSet.add(item.toString());
                   }
-                  // voeg geflatteerde keys zoals 'seenEpisodes.tt1632701' samen
-                  for (final k in data.keys) {
+                  final watchlist = watchlistSet.toList();
+
+                  // 2. COLLECT SEEN MAP (Subcollection + Legacy)
+                  final Map<String, dynamic> seenMap = {};
+
+                  // A. Legacy from top-level fields
+                  final legacySeenMapRaw = userData['seenEpisodes'];
+                  if (legacySeenMapRaw is Map) {
+                    legacySeenMapRaw
+                        .forEach((k, v) => seenMap[k.toString()] = v);
+                  }
+                  for (final k in userData.keys) {
                     if (k.startsWith('seenEpisodes.')) {
                       final imdb = k.split('.').last;
-                      seenMap[imdb] = data[k];
+                      seenMap[imdb] = userData[k];
                     }
                   }
 
-                  // merge eventuele flattened seenEpisodes velden in dezelfde map
+                  // B. Legacy seenFilm flags
+                  if (userData['seenFilm'] is Map) {
+                    (userData['seenFilm'] as Map).forEach((k, v) {
+                      if (v == true) {
+                        final list = seenMap[k.toString()] as List? ?? [];
+                        if (!list.contains('movie')) {
+                          seenMap[k.toString()] = [...list, 'movie'];
+                        }
+                      }
+                    });
+                  }
 
-                  // watchlist_meta may be stored as a map under 'watchlist_meta'
-                  // or as flattened keys like 'watchlist_meta.<imdbId>'
+                  // C. Override with Subcollection data (Subcollection is leading)
+                  for (var doc in seenDocs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    seenMap[doc.id] = data['episodes'] ?? [];
+                  }
+
+                  // 3. COLLECT METADATA (Subcollection + Legacy)
                   final Map<String, dynamic> metaMap = {};
-                  final metaRaw = data['watchlist_meta'];
+
+                  // A. Legacy Watchlist Meta
+                  final metaRaw = userData['watchlist_meta'];
                   if (metaRaw is Map) {
                     metaRaw.forEach((k, v) => metaMap[k.toString()] = v);
                   }
-                  for (final k in data.keys) {
+                  for (final k in userData.keys) {
                     if (k.startsWith('watchlist_meta.')) {
                       final imdb = k.split('.').last;
-                      metaMap[imdb] = data[k];
+                      metaMap[imdb] = userData[k];
                     }
                   }
+
+                  // B. Subcollection Meta (Leading)
+                  for (var doc in watchDocs) {
+                    metaMap[doc.id] = doc.data();
+                  }
+
 
                   // normaliseer watchlist metadata en merge flattened keys
 

@@ -1195,107 +1195,72 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     });
 
     try {
-      final doc = await FirebaseFirestore.instance
+      // 1. Check if movie is in watchlist (Subcollection)
+      final watchlistDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(u.uid)
+          .collection('watchlist')
+          .doc(widget.imdbId)
           .get();
-      // Haalt het gebruikersdocument op uit Firestore.
-      final data = doc.data() ?? {};
-      // Haalt de data uit het document, of een lege map.
+
+      // 2. Load seen episodes from subcollection
+      final seenDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(u.uid)
+          .collection('seenEpisodes')
+          .doc(widget.imdbId)
+          .get();
+
+      // 3. LEGACY FALLBACK: Check top-level user doc for old structure
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(u.uid).get();
+      final userData = userDoc.data() ?? {};
+
       debugPrint('--- DEBUG USER DATA FOR ${widget.imdbId} ---');
-      // Print debugging info.
-      debugPrint('Firestore keys: ${data.keys.toList()}');
-      // Print alle sleutels in de data.
+      bool isInWatchlist = watchlistDoc.exists;
 
-      final watchlist =
-          (data['watchlist']
-              is List) // We controleren of het 'watchlist' veld in de data een lijst is.
-          ? List<String>.from(data['watchlist'])
-          // Zet watchlist om naar List<String> als dat een lijst is.
-          : <String>[];
-      // Gebruik een lege lijst als fallback.
-
-      // Robuuste check voor seenEpisodes (genest of plat veld)
-      final seenMap = data['seenEpisodes'];
-      // Haalt de seenEpisodes map op.
-      List<dynamic> rawSeen = [];
-      // Initialiseert de lege seen episodes lijst.
-
-      // probeer eerst platte keys (zoals 'seenEpisodes.tt0944947' of 'seenEpisodes.TT0944947')
-      final flatKey = 'seenEpisodes.${widget.imdbId}';
-      // Bouwt de platte sleutel met standaard casing.
-      final flatKeyLower = 'seenEpisodes.${widget.imdbId.toLowerCase()}';
-      // Bouwt de platte sleutel met lowercase casing.
-
-      if (data.containsKey(flatKey) && data[flatKey] is List) {
-        rawSeen = data[flatKey];
-        // Gebruikt platte sleutel met standaard casing.
-      } else if (data.containsKey(flatKeyLower) && data[flatKeyLower] is List) {
-        rawSeen = data[flatKeyLower];
-        // Gebruikt platte sleutel met lowercase casing.
+      // Legacy Watchlist Check
+      if (!isInWatchlist) {
+        final legacyWatchlist = userData['watchlist'] as List? ?? [];
+        if (legacyWatchlist.contains(widget.imdbId)) {
+          isInWatchlist = true;
+        }
       }
-      // Als we geen platte keys vinden, kijk dan of 'seenEpisodes' zelf een map is waar de imdbId als key in voorkomt
-      else if (seenMap is Map) {
-        final entry =
-            seenMap[widget.imdbId] ??
-            seenMap[widget.imdbId.toLowerCase()] ??
-            seenMap[widget.imdbId.toUpperCase()];
-        // Zoekt de imdbId in verschillende casings.
-        if (entry is List)
-          rawSeen = entry;
-        // Gebruikt de entry als deze een lijst is.
-        else if (entry is Map)
-          rawSeen = entry.values.toList();
-        // Converteert map values naar lijst.
+
+      final seenData = seenDoc.data() ?? {};
+      List<dynamic> rawSeen = seenData['episodes'] as List? ?? [];
+
+      // Legacy Seen Episodes Check
+      if (rawSeen.isEmpty) {
+        final flatKey = 'seenEpisodes.${widget.imdbId}';
+        final seenMap = userData['seenEpisodes'];
+
+        if (userData.containsKey(flatKey) && userData[flatKey] is List) {
+          rawSeen = userData[flatKey];
+        } else if (seenMap is Map && seenMap[widget.imdbId] is List) {
+          rawSeen = seenMap[widget.imdbId];
+        }
+
+        // Legacy "seenFilm" flag for movies
+        if (userData['seenFilm'] is Map &&
+            userData['seenFilm'][widget.imdbId] == true) {
+          if (!rawSeen.contains('movie')) {
+            rawSeen.add('movie');
+          }
+        } else if (userData['seenFilm.${widget.imdbId}'] == true) {
+          if (!rawSeen.contains('movie')) {
+            rawSeen.add('movie');
+          }
+        }
       }
 
       final imdbSeenList = rawSeen.map((e) => e.toString().trim()).toList();
-      // Converteert alle items naar strings en verwijdert whitespace.
       debugPrint('Found seen items: $imdbSeenList');
-      // Print de gevonden seen items.
-
-      // check seenFilm.<imdbId> as nested map or dotted key
-      bool isSeenFilm = false;
-      // Initialiseert de seen film boolean.
-      try {
-        if (data.containsKey('seenFilm') && data['seenFilm'] is Map) {
-          // Checkt of seenFilm een geneste map is.
-          final sf = data['seenFilm'] as Map;
-          // Cast seenFilm naar Map.
-          if (sf.containsKey(widget.imdbId)) {
-            // Checkt of de imdbId in de map zit.
-            isSeenFilm = sf[widget.imdbId] == true;
-            // Zet isSeenFilm op basis van de waarde.
-          }
-        }
-        // fallback: dotted key
-        if (!isSeenFilm && data.containsKey('seenFilm.${widget.imdbId}')) {
-          // Checkt als fallback voor platte sleutel.
-          isSeenFilm = data['seenFilm.${widget.imdbId}'] == true;
-          // Zet isSeenFilm op basis van de platte sleutel.
-        }
-      } catch (e) {
-        debugPrint('Error reading seenFilm flag: $e');
-        // Print error als het uitlezen mislukt.
-      }
 
       setState(() {
-        // Zet hier setState als opmerking
-        _isInWatchlist = watchlist.contains(widget.imdbId);
-        // Controleert of de imdbId in de watchlist zit.
+        _isInWatchlist = isInWatchlist;
         _seenSet.clear();
-        // Wist alle eerder geladen seen items.
         _seenSet.addAll(imdbSeenList);
-        // Voegt alle nieuwe seen items toe.
-        // Zorg dat de 'movie'-sleutel op filmoniveau de seenFilm-flag weerspiegelt
-        // zodat de 'Gezien'-checkbox de juiste status toont, ongeacht hoe de
-        // data is opgeslagen (seenFilm map vs seenEpisodes lijst).
-        if (isSeenFilm)
-          _seenSet.add('movie');
-        // Voegt 'movie' toe als de film als gezien is gemarkeerd.
-        else
-          _seenSet.remove('movie');
-        // Verwijdert 'movie' als de film niet als gezien is gemarkeerd.
       });
     } catch (e, s) {
       debugPrint('Error loading user data: $e\n$s');
@@ -1382,38 +1347,27 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       () => _isInWatchlist = newState,
     ); // Update UI optimistisch naar nieuwe staat
 
-    final docRef = FirebaseFirestore.instance
+    final watchdoc = FirebaseFirestore.instance
         .collection('users')
-        .doc(u.uid); // Referentie naar user document
+        .doc(u.uid)
+        .collection('watchlist')
+        .doc(widget.imdbId);
     try {
       if (newState) {
         // Als toevoegen aan watchlist
         final meta = {
           // Bouw metadata object met film info
+          'imdbId': widget.imdbId,
           'title': _title ?? '',
           'overview': _overview ?? '',
           'mediaType': _detectMediaType(),
           'genres': _genres,
           'savedAt': FieldValue.serverTimestamp(),
         };
-        await docRef.set({
-          // Update Firestore document
-          'watchlist': FieldValue.arrayUnion([
-            widget.imdbId,
-          ]), // Voeg imdbId aan watchlist array toe
-          'watchlist_meta.${widget.imdbId}':
-              meta, // Sla metadata op voor sneller laden
-        }, SetOptions(merge: true)); // Merge met bestaande data
+        await watchdoc.set(meta); // Sla metadata op in movie doc in subcollection
       } else {
         // Als verwijderen van watchlist
-        await docRef.set({
-          // Update Firestore document
-          'watchlist': FieldValue.arrayRemove([
-            widget.imdbId,
-          ]), // Verwijder imdbId uit watchlist
-          'watchlist_meta.${widget.imdbId}':
-              FieldValue.delete(), // Verwijder metadata
-        }, SetOptions(merge: true)); // Merge met bestaande data
+        await watchdoc.delete(); // Verwijder doc uit subcollection
       }
     } catch (e, s) {
       // Catch fouten
@@ -1448,35 +1402,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       }
     }); // Einde state update
 
-    final docRef = FirebaseFirestore.instance
+    final seendoc = FirebaseFirestore.instance
         .collection('users')
-        .doc(u.uid); // Referentie naar user document
+        .doc(u.uid)
+        .collection('seenEpisodes')
+        .doc(widget.imdbId);
     try {
       if (seen) {
         // Als aflevering markeren als gezien
-        final meta = {
-          // Bouw metadata object
-          'title': _title ?? '',
-          'overview': _overview ?? '',
-          'mediaType': _detectMediaType(),
-          'genres': _genres,
-          'savedAt': FieldValue.serverTimestamp(),
-        };
-        await docRef.set({
-          // Update Firestore document
-          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([
-            epKey,
-          ]), // Voeg episode key toe
-          'watchlist_meta.${widget.imdbId}': meta, // Sla metadata op
-        }, SetOptions(merge: true)); // Merge met bestaande data
+        await seendoc.set({
+          'episodes': FieldValue.arrayUnion([epKey]),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       } else {
         // Als aflevering markeren als niet gezien
-        await docRef.set({
-          // Update Firestore document
-          'seenEpisodes.${widget.imdbId}': FieldValue.arrayRemove([
-            epKey,
-          ]), // Verwijder episode key
-        }, SetOptions(merge: true)); // Merge met bestaande data
+        await seendoc.set({
+          'episodes': FieldValue.arrayRemove([epKey]),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       }
     } catch (e, s) {
       // Catch fouten
@@ -1522,34 +1465,24 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       }
     }); // Einde state update
 
-    final docRef = FirebaseFirestore.instance
+    final seendoc = FirebaseFirestore.instance
         .collection('users')
-        .doc(u.uid); // Referentie naar user document
+        .doc(u.uid)
+        .collection('seenEpisodes')
+        .doc(widget.imdbId);
     try {
       if (seen) {
         // Als film markeren als gezien
-        final meta = {
-          // Bouw metadata object
-          'title': _title ?? '',
-          'overview': _overview ?? '',
-          'mediaType': _detectMediaType(),
-          'genres': _genres,
-          'savedAt': FieldValue.serverTimestamp(),
-        };
-        await docRef.set({
-          // Update Firestore document
-          'seenEpisodes.${widget.imdbId}': FieldValue.arrayUnion([
-            epKey,
-          ]), // Voeg 'movie' key toe
-          'watchlist_meta.${widget.imdbId}': meta, // Sla metadata op
-        }, SetOptions(merge: true)); // Merge met bestaande data
+        await seendoc.set({
+          'episodes': FieldValue.arrayUnion([epKey]),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       } else {
         // Als film markeren als niet gezien
-        await docRef.set({
-          // Update Firestore document
-          'seenEpisodes.${widget.imdbId}':
-              FieldValue.delete(), // Verwijder hele field
-        }, SetOptions(merge: true)); // Merge met bestaande data
+        await seendoc.set({
+          'episodes': FieldValue.arrayRemove([epKey]),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       }
     } catch (e, s) {
       // Catch fouten
