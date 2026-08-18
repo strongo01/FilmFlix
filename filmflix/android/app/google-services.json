@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "937930146429-bejp9bodrl64vk9bmuffch4k0htha0l0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.MBS.CineTrackr",
+            "certificate_hash": "ee796b1cbe8aa01af693ecac5d6c2fca3bc7df3f"
+          }
+        },
+        {
+          "client_id": "937930146429-g809r5gqrooacjlhvd8deo8gmetbptu2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.MBS.CineTrackr",
+            "certificate_hash": "45f61092b081e6919505769e09401680b4dfc086"
+          }
+        },
+        {
           "client_id": "937930146429-f6kt803ottldsfitk1rn3k726gav4j53.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -34,7 +50,7 @@
               "client_id": "937930146429-dht3dgjpk5h1cn56qhk2qor0s5ui7bt2.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.MBS.CineTrackr"
+                "bundle_id": "com.example.filmflix"
               }
             }
           ]

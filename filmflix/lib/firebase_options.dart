@@ -57,26 +57,24 @@ class DefaultFirebaseOptions {
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA295HZ1bg4_S9nJLzb1sFl1IH8jRWfgx8',
     appId: '1:937930146429:ios:3b7db3aaa3eafa923fe714',
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
-    iosClientId:
-        '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
+    androidClientId: '937930146429-bejp9bodrl64vk9bmuffch4k0htha0l0.apps.googleusercontent.com',
+    iosClientId: '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
     iosBundleId: 'com.MBS.CineTrackr',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA295HZ1bg4_S9nJLzb1sFl1IH8jRWfgx8',
     appId: '1:937930146429:ios:3b7db3aaa3eafa923fe714',
     messagingSenderId: '937930146429',
     projectId: 'assistant-434717',
     storageBucket: 'assistant-434717.firebasestorage.app',
-    iosClientId:
-        '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
+    androidClientId: '937930146429-bejp9bodrl64vk9bmuffch4k0htha0l0.apps.googleusercontent.com',
+    iosClientId: '937930146429-r53sq7fpjik4dg6l0lo05af6fs3bmoom.apps.googleusercontent.com',
     iosBundleId: 'com.MBS.CineTrackr',
   );
 

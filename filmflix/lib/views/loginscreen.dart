@@ -14,8 +14,8 @@ import 'package:cinetrackr/l10n/app_localizations.dart'; // Lokalisatie/vertalin
 import 'package:flutter/foundation.dart'; // Flutter framework utiliteiten
 import 'package:google_sign_in/google_sign_in.dart'; // Google inloggen
 import 'package:sign_in_with_apple/sign_in_with_apple.dart'; // Apple inloggen
-import 'package:flutter_signin_button/flutter_signin_button.dart'; // Social login buttons
-
+//import 'package:flutter_signin_button/flutter_signin_button.dart'; // Social login buttons
+import 'package:sign_in_button/sign_in_button.dart';
 class LoginScreen extends StatefulWidget {
   // Login scherm widget met state
   final bool returnAfterLogin; // Property om terug te keren na login
@@ -869,51 +869,53 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         const SizedBox(height: 20), // Voeg verticale spatie toe
-                        SignInButton(
-                          // Creëer Google inlog knop
-                          Buttons.Google,
-                          text: loc.loginSignInWithGoogle,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          onPressed: _isLoading
-                              ? null
-                              : () =>
-                                    _signInWithGoogle(), // Zet onPress handler
-                        ),
-                        if (!kIsWeb && // Toon Apple knop alleen op iOS/macOS
-                            (defaultTargetPlatform == TargetPlatform.iOS ||
-                                defaultTargetPlatform ==
-                                    TargetPlatform.macOS)) ...[
-                          const SizedBox(
-                            height: 12,
-                          ), // Voeg verticale spatie toe
-                          SignInButton(
-                            // Creëer Apple inlog knop
-                            Buttons.Apple,
-                            text: loc.loginSignInWithApple,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            onPressed: _isLoading
-                                ? null
-                                : () =>
-                                      signInWithApple(), // Zet onPress handler
-                          ),
-                        ],
-                        const SizedBox(height: 12), // Voeg verticale spatie toe
-                        SignInButton(
-                          // Creëer GitHub inlog knop
-                          Buttons.GitHub,
-                          text: loc.loginSignInWithGitHub,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          onPressed: _isLoading
-                              ? null
-                              : () =>
-                                    _signInWithGitHub(), // Zet onPress handler
-                        ),
+                        // Google Sign-In Button
+SignInButton(
+  Buttons.google,
+  text: loc.loginSignInWithGoogle,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  onPressed: () {
+    if (!_isLoading) {
+      _signInWithGoogle();
+    }
+  },
+),
+
+if (!kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS)) ...[
+  const SizedBox(height: 12),
+  // Apple Sign-In Button
+  SignInButton(
+    Buttons.apple,
+    text: loc.loginSignInWithApple,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    onPressed: () {
+      if (!_isLoading) {
+        signInWithApple();
+      }
+    },
+  ),
+],
+
+const SizedBox(height: 12),
+// GitHub Sign-In Button
+SignInButton(
+  Buttons.gitHub,
+  text: loc.loginSignInWithGitHub,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(12),
+  ),
+  onPressed: () {
+    if (!_isLoading) {
+      _signInWithGitHub();
+    }
+  },
+),
                       ],
                     ),
                   ),

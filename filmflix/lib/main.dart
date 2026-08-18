@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cinetrackr/services/tutorial_service.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -38,6 +40,27 @@ Future<void> main() async {
   ]);
   // Initialiseer Firebase met de juiste opties voor het huidige platform.
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode
+        ? AndroidProvider.debug
+        : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
+  );
+
+  try {
+    // Luister naar veranderingen in de App Check token status
+    FirebaseAppCheck.instance.onTokenChange.listen((token) {
+      debugPrint('[AppCheck] Token gewijzigd/ontvangen: $token');
+    });
+
+    // Haal handmatig een token op om direct te testen of het werkt
+    final token = await FirebaseAppCheck.instance.getToken(true);
+    debugPrint('[AppCheck] Succesvol geactiveerd! Token: $token');
+  } catch (e) {
+    debugPrint('[AppCheck] FOUT bij ophalen token: $e');
+  }
+
   final analytics = FirebaseAnalytics.instance;
 
   final user = FirebaseAuth.instance.currentUser;
@@ -386,7 +409,8 @@ class _MainNavigationState extends State<MainNavigation> {
           if (_selectedIndex == 0) {
             () async {
               final prefs = await SharedPreferences.getInstance();
-              final homeDone = prefs.getBool('tutorial_done_home_screen') ?? true;
+              final homeDone =
+                  prefs.getBool('tutorial_done_home_screen') ?? true;
               if (!homeDone) {
                 HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
               }
@@ -407,7 +431,8 @@ class _MainNavigationState extends State<MainNavigation> {
           if (_selectedIndex == 0) {
             () async {
               final prefs = await SharedPreferences.getInstance();
-              final homeDone = prefs.getBool('tutorial_done_home_screen') ?? true;
+              final homeDone =
+                  prefs.getBool('tutorial_done_home_screen') ?? true;
               if (!homeDone) {
                 HomeScreen.homeKey.currentState?.startHomeScreenTutorial();
               }
@@ -813,7 +838,8 @@ class _MainNavigationState extends State<MainNavigation> {
   Future<void> _askToStartTutorial() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final alreadyDone = prefs.getBool('tutorial_done_main_navigation') ?? false;
+      final alreadyDone =
+          prefs.getBool('tutorial_done_main_navigation') ?? false;
       if (alreadyDone) return;
 
       final l10n = L10n.of(context);
@@ -823,8 +849,10 @@ class _MainNavigationState extends State<MainNavigation> {
         builder: (dialogContext) {
           return AlertDialog(
             title: Text(l10n?.tutorialPromptTitle ?? 'Introductietour'),
-            content: Text(l10n?.tutorialPromptBody ??
-                'Wil je graag een korte rondleiding door de app?'),
+            content: Text(
+              l10n?.tutorialPromptBody ??
+                  'Wil je graag een korte rondleiding door de app?',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -842,8 +870,8 @@ class _MainNavigationState extends State<MainNavigation> {
       if (start == true) {
         _showTutorial();
       } else {
-       // Markeer bekende tutorial keys als done (ook als ze nog niet bestaan),
-       // en zet ook alle bestaande tutorial-pref keys op true.
+        // Markeer bekende tutorial keys als done (ook als ze nog niet bestaan),
+        // en zet ook alle bestaande tutorial-pref keys op true.
         final knownKeys = [
           'tutorial_done_main_navigation',
           'tutorial_done_home_screen',
@@ -852,7 +880,7 @@ class _MainNavigationState extends State<MainNavigation> {
           'tutorial_done_watchlist_screen',
           'tutorial_done_profile_screen',
           'tutorial_done_movie_detail',
-          'tutorial_done', 
+          'tutorial_done',
         ];
         for (final key in knownKeys) {
           await prefs.setBool(key, true);
